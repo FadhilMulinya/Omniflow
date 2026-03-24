@@ -1,0 +1,12 @@
+{
+  "name": "omniflow-root",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter \"*\" dev",
+    "build": "pnpm --filter \"*\" build",
+    "start": "pnpm --filter \"*\" start"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}

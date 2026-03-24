@@ -1,0 +1,30 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "@fastify/cookie": "9",
+        "@fastify/cors": "9",
+        "@fastify/jwt": "^6.7.1",
+        "agenda": "^5.0.0",
+        "bcrypt": "^6.0.0",
+        "borgen": "^2.0.0",
+        "dotenv": "^16.4.5",
+        "ethers": "^6.13.5",
+        "fastify": "^4.26.2",
+        "mongoose": "^8.2.1",
+        "openai": "^6.32.0",
+        "telegraf": "^4.16.3"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^6.0.0",
+        "@types/node": "^20.0.0",
+        "tsx": "^4.7.1",
+        "typescript": "^5.0.0"
+    }
+}
