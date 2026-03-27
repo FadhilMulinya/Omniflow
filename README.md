@@ -132,8 +132,10 @@ FIBER_NODE_URL=http://localhost:8227
 
 ### Agent Management
 - Create agents with AI-enhanced personas (name + summary → full character schema with bio, traits, system instructions, and dashboard description).
+- Automated Wallet Provisioning: Each agent is automatically provisioned with a dedicated CKB wallet upon creation, enabling immediate participation in the Nervos ecosystem.
+- Workflow Templates: Start from pre-built templates for common DeFi and automation tasks.
 - Edit agents and re-enhance their character schema from an updated persona.
-- Agents support a configurable `modelProvider` (emini / OpenAI / Anthropic) and custom API key overrides stored in browser session.
+- Agents support a configurable `modelProvider` (Ollama(Default qwen2.5:3b)/Gemini / OpenAI / Anthropic) and custom API key overrides stored in browser session.
 - Public transparency endpoint: `GET /api/agents/:id.json` exposes the stored character JSON.
 
 The agent id is accessible via the url immediately after creation.
@@ -157,6 +159,8 @@ it will look like this http://localhost:3000/sandbox?agentId=69c4e884596fa8e3e3c
 - Transaction builder for creating unsigned CKB transfers.
 - Fiber channel open/close lifecycle with on-chain settlement.
 - Fiber off-chain payments via multi-hop invoice routing.
+- Native Fiber Payment Rails: Agents can autonomously open/close Fiber channels and route micro-payments as part of their workflow logic.
+- Security & Consent: Critical blockchain operations (like large transfers or channel settlements) require explicit user consent via the sandbox agent chat interaction, ensuring safety without sacrificing automation.
 - Biscuit-based authentication for secure Fiber RPC endpoints.
 - On-chain data anchoring for Omniflow state run receipts.
 
@@ -170,7 +174,6 @@ it will look like this http://localhost:3000/sandbox?agentId=69c4e884596fa8e3e3c
 ## 7. Future Functionality
 
 - **Multi-Agent Orchestration**: Connect multiple agents as sub-agents within a parent workflow graph, enabling complex delegation trees.
-- **Workflow Templates**: Pre-built workflow packs (e.g., "DeFi Portfolio Monitor", "Fiber Liquidity Manager", "On-chain Activity Notifier") distributable as one-click templates.
 - **Omniflow Runtime**: A lightweight headless execution runtime for deploying agent graphs to production without the sandbox UI.
 - **Token-Gated Agents**: Integrate CKB cell ownership as agent access control — only wallets owning specific cells can invoke certain agents.
 - **Multi-Chain Expansion**: Extend the blockchain tooling namespace to support EVM chains (Base, Ethereum) and Solana with the same drag-and-drop abstraction.
@@ -178,7 +181,6 @@ it will look like this http://localhost:3000/sandbox?agentId=69c4e884596fa8e3e3c
 - **Collaborative Workspaces**: Multi-member workspaces with role-based access, shared agents, and team execution history.
 - **Agent Marketplace**: A curated directory where developers can publish and monetise agent workflows as reusable Omniflow packages.
 - **On-Chain Execution Receipts**: Automatically anchor agent run summaries (inputs, outputs, timestamps) into CKB Cell Data for auditability and verifiability.
-- **Native Fiber Payment Rails Inside Agents**: Allow agents to autonomously open/close Fiber channels and route micro-payments as part of a workflow logic step.
 
 ---
 
