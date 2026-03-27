@@ -90,11 +90,16 @@ const TelegramNode: React.FC<TelegramNodeProps> = ({ data, isConnectable, select
     });
   };
 
+  const shellClass = [
+    'node-base',
+    'node-teal',
+    selected ? 'node-selected' : '',
+    data.isActive === false ? 'node-inactive' : '',
+    data.isPlaying ? 'node-playing' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div
-      className={`p-3 rounded-md border-2 ${selected ? 'border-blue-500' : 'border-cyan-200'} ${data.isActive === false ? 'opacity-50' : ''
-        } ${data.isPlaying ? 'animate-pulse shadow-lg shadow-cyan-200' : ''} bg-cyan-50 shadow-sm w-48 relative`}
-    >
+    <div className={shellClass}>
       <NodeControls
         nodeId={id}
         isPlaying={data.isPlaying || false}
@@ -102,14 +107,12 @@ const TelegramNode: React.FC<TelegramNodeProps> = ({ data, isConnectable, select
       />
 
       {/* Node Icon */}
-      <div className="absolute top-1 left-1 flex items-center text-xs">
-        <div className="flex items-center text-cyan-600">
-          <MessageCircle className="h-4 w-4" />
-        </div>
+      <div className="node-icon">
+        <MessageCircle className="h-4 w-4 text-teal-600" />
       </div>
 
-      <div className="font-medium text-sm mt-6">{data.name}</div>
-      <div className="text-xs text-black-500 mb-2">{data.description}</div>
+      <div className="node-title">{data.name}</div>
+      <div className="node-description">{data.description}</div>
 
       {/* Live Mode Toggle */}
       <div className="flex items-center justify-between mb-2">
@@ -186,27 +189,20 @@ const TelegramNode: React.FC<TelegramNodeProps> = ({ data, isConnectable, select
 
       {/* Display output data when the node is playing */}
       {data.isPlaying && data.outputData && (
-        <div className="mt-2 p-2 bg-gray-50 border rounded-md">
-          <div className="text-xs text-black-500 mb-1 flex items-center justify-between">
-            <span>Telegram Bot</span>
-            <span
-              className={`text-xs px-1.5 py-0.5 rounded ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}
-            >
+        <div className="node-output-panel">
+          <div className="flex items-center justify-between mb-1">
+            <span className="node-output-panel-label">Telegram Bot</span>
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isConnected ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+              }`}>
               {isConnected ? (isLiveMode ? 'LIVE' : 'Connected') : 'Disconnected'}
             </span>
           </div>
           {isConnected && (
             <>
-              <div className="text-sm font-medium">
-                {data.outputData.telegramInfo?.botName || 'Trading Bot'}
-              </div>
+              <div className="node-output-panel-value">{data.outputData.telegramInfo?.botName || 'Trading Bot'}</div>
               {data.outputData.lastMessage && (
-                <div className="text-xs text-black-500 mt-1">
-                  <div className="font-medium">Last Message:</div>
-                  <div className="whitespace-pre-wrap break-words">
-                    {data.outputData.lastMessage.text}
-                  </div>
+                <div className="node-output-panel-value mt-1 whitespace-pre-wrap break-words">
+                  {data.outputData.lastMessage.text}
                 </div>
               )}
             </>
@@ -214,16 +210,11 @@ const TelegramNode: React.FC<TelegramNodeProps> = ({ data, isConnectable, select
         </div>
       )}
 
-      {/* Show execution status indicator if available */}
       {data.executionStatus && (
-        <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-            ? 'bg-green-500'
-            : data.executionStatus === 'error'
-              ? 'bg-red-500'
-              : 'bg-yellow-500'
-            }`}
-        />
+        <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+            : data.executionStatus === 'error' ? 'node-status-error'
+              : 'node-status-pending'
+          }`} />
       )}
 
       {/* Telegram Configuration Modal */}

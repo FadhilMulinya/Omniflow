@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Agent Studio</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Manage your AI agents and workflows.</p>
+          <p className="mt-1 text-sm">Manage your AI agents and workflows.</p>
         </div>
         <Button
           onClick={() => setIsCreateModalOpen(true)}
@@ -82,7 +82,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab(tab)}
             className={`px-6 py-2 text-xs font-semibold rounded-lg transition-all capitalize ${activeTab === tab
               ? 'bg-card text-primary shadow-sm border border-border/50'
-              : 'text-muted-foreground hover:text-foreground'
+              : 'hover:text-foreground'
               }`}
           >
             {tab}
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       {!loading && filteredAgents.length === 0 && (
         <div className="text-center py-20 border-2 border-dashed border-muted rounded-2xl bg-muted/5">
           <div className="text-4xl mb-4">🤖</div>
-          <p className="text-muted-foreground font-medium">No {activeTab === 'all' ? '' : activeTab} agents found.</p>
+          <p className="font-medium">No {activeTab === 'all' ? '' : activeTab} agents found.</p>
           <Link href="/sandbox" className="text-primary text-sm font-bold mt-2 inline-block hover:underline">
             Start building one now
           </Link>
@@ -124,7 +124,7 @@ export default function DashboardPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                  className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
                   onClick={() => handleEditClick(agent)}
                 >
                   <Settings className="h-4 w-4" />
@@ -146,7 +146,7 @@ export default function DashboardPage() {
             <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Updated</span>
-                <span className="text-xs font-medium">{new Date(agent.updatedAt).toLocaleDateString()}</span>
+                <span className="text-xs text-muted-foreground font-medium">{new Date(agent.updatedAt).toLocaleDateString()}</span>
               </div>
 
               <Link href={`/sandbox?agentId=${agent._id}`}>

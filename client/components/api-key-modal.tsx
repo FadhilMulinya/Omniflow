@@ -176,7 +176,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSave }: ApiKeyModalProp
                   </Button>
                 </div>
 
-                <div className="p-4 rounded-lg bg-muted/50 text-muted-foreground border border-border">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border">
                   <p className="text-xs">
                     <strong>Note:</strong> Your OpenAI key is stored locally in your browser and used to execute your agents.
                     If no key is provided, the agent will attempt to use the system's default model (if available).
@@ -212,7 +212,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSave }: ApiKeyModalProp
                     }}
                   />
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 text-muted-foreground border border-border">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border">
                   <p className="text-sm font-medium">Anthropic integration coming soon!</p>
                 </div>
               </TabsContent>

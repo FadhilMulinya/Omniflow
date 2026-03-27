@@ -24,9 +24,14 @@ export function simulateConditionNode(data: any, inputValues: Record<string, any
         case 'lessThan':
             isTrue = Number(actualValue) < Number(valueToCompare);
             break;
+        case 'intent_match':
+            // Check if the AI extracted intent matches the configured value
+            isTrue = String(actualValue).toLowerCase().includes(String(valueToCompare).toLowerCase());
+            break;
     }
 
-    outputs[isTrue ? 'true' : 'false'] = actualValue;
+    // Forward ALL upstream inputValues to the chosen path so parameters (address, amount) are preserved
+    outputs[isTrue ? 'true' : 'false'] = { ...inputValues, conditionMatched: true };
     outputs['conditionResult'] = isTrue;
 
     return outputs;

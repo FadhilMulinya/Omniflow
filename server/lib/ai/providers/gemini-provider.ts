@@ -9,6 +9,35 @@ import { buildSystemPrompt } from '../utils';
 export class GeminiProvider implements IAIProvider {
     private defaultModel = 'gemini-2.0-flash';
 
+    async *generateStream(request: CompletionRequest): AsyncIterableIterator<string> {
+        const apiKey = request.apiKey || process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('Gemini API key is missing.');
+
+        const ai = new GoogleGenAI({ apiKey });
+        const model = request.model || this.defaultModel;
+
+        const systemInstruction = request.character ? buildSystemPrompt(request.character) : '';
+        const contents = request.messages.map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const result = await ai.models.generateContentStream({
+            model: model,
+            contents,
+            config: {
+                systemInstruction: systemInstruction || undefined,
+                temperature: request.temperature ?? 0.7,
+                maxOutputTokens: request.maxTokens,
+            }
+        });
+
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) yield chunkText;
+        }
+    }
+
     async generateCompletion(request: CompletionRequest): Promise<CompletionResponse> {
         const apiKey = request.apiKey || process.env.GEMINI_API_KEY;
 

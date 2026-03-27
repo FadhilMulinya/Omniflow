@@ -6,6 +6,7 @@ export interface IAgentDefinition extends Document {
     workspaceId: Types.ObjectId;
     name: string;
     description?: string;
+    agentType: 'financial_agent' | 'social_agent' | 'operational_agent';
     character?: CharacterSchema;
     identities: Record<string, any>; // Chain specific traits (addresses, lock scripts)
     memory: Record<string, any>; // Persistent agent memory
@@ -18,6 +19,18 @@ export interface IAgentDefinition extends Document {
     isActive: boolean;
     isDraft: boolean;
     persona?: string; // Original persona summary provided by user
+    blockchain?: {
+        network: string;
+        rpcUrl?: string;
+        walletAddress?: string;
+        publicKey?: string;
+        privateKey?: string;
+        walletType?: 'managed' | 'externally_owned';
+    }[];
+    graph: {
+        nodes: any[];
+        edges: any[];
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -28,6 +41,7 @@ const AgentDefinitionSchema: Schema = new Schema(
         workspaceId: { type: Schema.Types.ObjectId, ref: 'Workspace', required: true },
         name: { type: String, required: true },
         description: { type: String },
+        agentType: { type: String, enum: ['financial_agent', 'social_agent', 'operational_agent'], default: 'operational_agent' },
         character: { type: Schema.Types.Mixed },
         identities: { type: Schema.Types.Mixed, default: {} },
         memory: { type: Schema.Types.Mixed, default: {} },
@@ -40,6 +54,15 @@ const AgentDefinitionSchema: Schema = new Schema(
         isActive: { type: Boolean, default: true },
         isDraft: { type: Boolean, default: true },
         persona: { type: String },
+        blockchain: [{
+            network: { type: String },
+            rpcUrl: { type: String },
+            walletAddress: { type: String },
+            publicKey: { type: String },
+            privateKey: { type: String },
+            walletType: { type: String, enum: ['managed', 'externally_owned'] }
+        }],
+        graph: { type: Schema.Types.Mixed, default: { nodes: [], edges: [] } },
     },
     { timestamps: true }
 );

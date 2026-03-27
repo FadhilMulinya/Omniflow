@@ -25,7 +25,7 @@ export const Hero: React.FC<HeroProps> = ({ handleAnchorClick }) => {
                             Build AI Agents <br />
                             Without Code
                         </h1>
-                        <p className="text-lg md:text-xl mb-8 text-muted-foreground max-w-xl">
+                        <p className="text-lg md:text-xl mb-8 max-w-xl">
                             Create powerful, autonomous AI workflows in minutes, not months. Our intuitive
                             platform makes automation accessible to everyone.
                         </p>

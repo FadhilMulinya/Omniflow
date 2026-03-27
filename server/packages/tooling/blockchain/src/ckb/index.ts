@@ -3,6 +3,7 @@ import { rpcTools } from "./rpc";
 import { indexerTools } from "./indexer";
 import { txBuilderTools } from "./tx_builder";
 import { anchoringTools } from "./anchoring";
+import { agentTools } from "./agent_tools";
 
 import { nodeAdminTools } from "./fiber/node_admin";
 import { biscuitTools } from "./fiber/biscuit";
@@ -14,7 +15,8 @@ export const ckbTools: BlockchainTool<any, any>[] = [
     ...rpcTools,
     ...indexerTools,
     ...txBuilderTools,
-    ...anchoringTools
+    ...anchoringTools,
+    ...agentTools
 ];
 
 export const ckbFiberTools: BlockchainTool<any, any>[] = [

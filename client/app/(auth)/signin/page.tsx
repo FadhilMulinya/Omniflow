@@ -48,7 +48,7 @@ export default function SigninPage() {
                         <input
                             type="text"
                             required
-                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
+                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                             placeholder="Enter your username or email"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -62,7 +62,7 @@ export default function SigninPage() {
                         <input
                             type="password"
                             required
-                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
+                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
                             placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

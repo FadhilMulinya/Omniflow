@@ -37,9 +37,60 @@ export const useAgentManager = () => {
         }
     }, []);
 
-    const loadAgents = useCallback(async (id?: string) => {
+    const listAgents = useCallback(async () => {
         try {
-            const data = id ? await agentApi.getAgent(id) : await agentApi.loadAgents();
+            const data = await agentApi.loadAgents();
+            return Array.isArray(data) ? data : [];
+        } catch (err: any) {
+            toast({
+                title: 'Error',
+                description: 'Failed to list agents.',
+                variant: 'destructive',
+            });
+            return [];
+        }
+    }, [toast]);
+
+    const deleteAgent = useCallback(async (id: string) => {
+        try {
+            await agentApi.deleteAgent(id);
+            toast({
+                title: 'Agent deleted',
+                description: 'The agent and its data have been removed.',
+            });
+            return true;
+        } catch (err: any) {
+            toast({
+                title: 'Error',
+                description: 'Failed to delete agent.',
+                variant: 'destructive',
+            });
+            return false;
+        }
+    }, [toast]);
+
+    const loadAgentById = useCallback(async (id: string) => {
+        try {
+            const agent = await agentApi.getAgent(id);
+            if (agent && agent.graph) {
+                setNodes(agent.graph.nodes || []);
+                setEdges(agent.graph.edges || []);
+                return agent;
+            }
+        } catch (err: any) {
+            toast({
+                title: 'Error',
+                description: 'Failed to load agent details.',
+                variant: 'destructive',
+            });
+        }
+    }, [setNodes, setEdges, toast]);
+
+    const loadAgents = useCallback(async (id?: string) => {
+        if (id) return loadAgentById(id);
+
+        try {
+            const data = await agentApi.loadAgents();
             const agent = Array.isArray(data) ? data[0] : data;
 
             if (agent && agent.graph) {
@@ -50,11 +101,50 @@ export const useAgentManager = () => {
         } catch (err: any) {
             toast({
                 title: 'Error',
-                description: 'Failed to load agent.',
+                description: 'Failed to load default agent.',
                 variant: 'destructive',
             });
         }
-    }, [setNodes, setEdges, toast]);
+    }, [loadAgentById, setNodes, setEdges, toast]);
 
-    return { saveAgent, updateAgent, loadAgents };
+    const getTemplates = useCallback(async () => {
+        try {
+            return await agentApi.getTemplates();
+        } catch (err: any) {
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch templates.',
+                variant: 'destructive',
+            });
+            return [];
+        }
+    }, [toast]);
+
+    const createAgentFromTemplate = useCallback(async (templateId: string, name: string, modelProvider?: string, modelName?: string, apiKey?: string) => {
+        try {
+            const agent = await agentApi.createAgentFromTemplate(templateId, name, modelProvider, modelName, apiKey);
+            toast({
+                title: 'Agent Created',
+                description: `Agent "${name}" created from template.`,
+            });
+            return agent;
+        } catch (err: any) {
+            toast({
+                title: 'Error',
+                description: 'Failed to create agent from template.',
+                variant: 'destructive',
+            });
+            throw err;
+        }
+    }, [toast]);
+
+    const chatWithAgent = useCallback(async (provider: string, model: string, messages: any[], apiKey?: string) => {
+        return agentApi.chatWithAgent(provider, model, messages, apiKey);
+    }, []);
+
+    const chatWithAgentStream = useCallback(async (provider: string, model: string, messages: any[], apiKey?: string, agentId?: string) => {
+        return agentApi.chatWithAgentStream(provider, model, messages, apiKey, agentId);
+    }, []);
+
+    return { saveAgent, updateAgent, loadAgents, listAgents, deleteAgent, loadAgentById, getTemplates, createAgentFromTemplate, chatWithAgent, chatWithAgentStream };
 };

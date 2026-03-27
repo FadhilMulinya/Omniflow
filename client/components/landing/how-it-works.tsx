@@ -9,7 +9,7 @@ export const HowItWorks: React.FC = () => {
                         How It Works
                     </h2>
                     <p
-                        className="text-muted-foreground max-w-2xl mx-auto"
+                        className="max-w-2xl mx-auto"
                         data-aos="fade-up"
                         data-aos-delay="100"
                     >
@@ -27,7 +27,7 @@ export const HowItWorks: React.FC = () => {
                         <h3 className="text-2xl font-bold mb-4">
                             Choose your template or start from scratch
                         </h3>
-                        <p className="text-muted-foreground mb-6">
+                        <p className="mb-6">
                             Begin your journey by selecting from our library of pre-built AI agent templates, or
                             start with a blank canvas and build your own from scratch.
                         </p>
@@ -228,7 +228,7 @@ export const HowItWorks: React.FC = () => {
                                             <p className="text-lg font-bold dark:text-white">5</p>
                                         </div>
                                         <div className="bg-background p-3 rounded-md border border-border shadow-sm">
-                                            <h5 className="text-xs font-medium text-muted-foreground mb-1">
+                                            <h5 className="text-xs font-medium mb-1">
                                                 Executions Today
                                             </h5>
                                             <p className="text-lg font-bold">1,243</p>

@@ -15,7 +15,7 @@ export const Pricing: React.FC<PricingProps> = ({ pricingPlans, handleAnchorClic
                         Simple, Transparent Pricing
                     </h2>
                     <p
-                        className="text-muted-foreground max-w-2xl mx-auto"
+                        className="max-w-2xl mx-auto"
                         data-aos="fade-up"
                         data-aos-delay="100"
                     >

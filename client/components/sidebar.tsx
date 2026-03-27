@@ -66,7 +66,7 @@ const Sidebar = () => {
                 'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 pathname === item.href
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  : 'hover:bg-accent hover:text-accent-foreground',
                 collapsed && 'justify-center'
               )}
             >
@@ -80,7 +80,7 @@ const Sidebar = () => {
         <Button
           variant="ghost"
           className={cn(
-            'w-full flex items-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors',
+            'w-full flex items-center hover:text-destructive hover:bg-destructive/10 transition-colors',
             collapsed ? 'justify-center' : 'justify-start px-3'
           )}
           onClick={async () => {

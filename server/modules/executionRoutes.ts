@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { Readable } from 'stream';
 import { ExecutionRun } from '../models/ExecutionRun';
 import { eventBus } from '../lib/eventBus';
 import { FlowEngine } from '../engine/FlowEngine';
@@ -14,20 +15,19 @@ export const executionRoutes: FastifyPluginAsync = async (fastify) => {
 
     fastify.get<{ Params: { id: string } }>('/executions/:id/stream', (request, reply) => {
         const { id } = request.params;
+        const origin = request.headers.origin || 'http://localhost:3000';
 
-        reply.raw.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
+        const stream = new Readable({
+            read() { } // Push-based stream
         });
 
-        reply.raw.write(`data: ${JSON.stringify({ type: 'connected', executionId: id })}\n\n`);
+        stream.push(`data: ${JSON.stringify({ type: 'connected', executionId: id })}\n\n`);
 
         const listener = (data: any) => {
-            reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+            stream.push(`data: ${JSON.stringify(data)}\n\n`);
             if (data.status === 'completed' || data.status === 'failed' || data.status === 'done') {
                 executionEmitter.removeListener(`execution-${id}`, listener);
-                // Optionally reply.raw.end() if the client shouldn't keep waiting
+                stream.push(null); // End the stream gracefully
             }
         };
 
@@ -35,7 +35,16 @@ export const executionRoutes: FastifyPluginAsync = async (fastify) => {
 
         request.raw.on('close', () => {
             executionEmitter.removeListener(`execution-${id}`, listener);
+            stream.destroy();
         });
+
+        return reply
+            .header('Content-Type', 'text/event-stream')
+            .header('Cache-Control', 'no-cache')
+            .header('Connection', 'keep-alive')
+            .header('Access-Control-Allow-Origin', origin)
+            .header('Access-Control-Allow-Credentials', 'true')
+            .send(stream);
     });
 
     fastify.get<{ Querystring: { agentId: string } }>('/executions', async (request, reply) => {

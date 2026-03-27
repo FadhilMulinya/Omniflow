@@ -23,15 +23,18 @@ import { useEffect } from 'react';
 interface CreateAgentModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onComplete?: (agentId: string) => void;
 }
 
-export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalProps) {
+export default function CreateAgentModal({ isOpen, onClose, onComplete }: CreateAgentModalProps) {
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
     const [persona, setPersona] = useState('');
     const [provider, setProvider] = useState<string>('ollama');
     const [model, setModel] = useState<string>('qwen2.5:3b');
     const [apiKey, setApiKey] = useState<string>('');
+    const [agentType, setAgentType] = useState<string>('operational_agent');
+    const [selectedChain, setSelectedChain] = useState<string>('ckb-testnet');
     const [enhancedData, setEnhancedData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
@@ -64,7 +67,7 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
             } else if (apiKey) {
                 localStorage.setItem(`${provider}_api_key`, apiKey);
             }
-            const data = await agentApi.enhancePersona(name, persona, provider, apiKey, model);
+            const data = await agentApi.enhancePersona(name, persona, provider, apiKey, model, agentType);
             setEnhancedData(data);
             setStep(2);
         } catch (error: any) {
@@ -81,18 +84,30 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
     const handleCreate = async () => {
         setIsLoading(true);
         try {
-            // Send the pre-expanded character to avoid double expansion and ensure rules are enforced
-            const agent = await agentApi.saveAgent(name, undefined, persona, undefined, true, provider, apiKey, enhancedData);
+            // Send the pre-expanded character with the selected chain for auto-provisioning
+            const agent = await agentApi.saveAgent(
+                name,
+                undefined,
+                persona,
+                undefined,
+                true,
+                provider,
+                apiKey,
+                enhancedData,
+                agentType,
+                selectedChain
+            );
             toast({
                 title: 'Agent Created',
                 description: 'Your agent has been initialized with the reviewed persona.',
             });
-            router.push(`/sandbox?agentId=${agent._id}`);
+            if (onComplete) onComplete(agent._id);
             onClose();
             setStep(1);
             setEnhancedData(null);
             setName('');
             setPersona('');
+            router.push(`/sandbox?agentId=${agent._id}`);
         } catch (error: any) {
             toast({
                 title: 'Creation Failed',
@@ -131,7 +146,7 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
                                     placeholder="e.g. Satoshi, Trading Bot, Fiber Guide"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl h-12"
+                                    className="bg-black/20 text-white border-border/50 focus:border-primary/50 transition-all rounded-xl h-12 placeholder:text-white/40"
                                 />
                             </div>
 
@@ -142,15 +157,43 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
                                     placeholder="e.g. A helpful assistant that specialized in CKB transactions and Fiber network payments."
                                     value={persona}
                                     onChange={(e) => setPersona(e.target.value)}
-                                    className="bg-muted/30 border-border/50 focus:border-primary/50 min-h-[120px] transition-all rounded-xl py-3"
+                                    className="bg-black/20 text-white border-border/50 focus:border-primary/50 min-h-[120px] transition-all rounded-xl py-3 placeholder:text-white/40"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="text-sm font-bold uppercase tracking-wider opacity-70">Target Blockchain (Auto-Wallet)</Label>
+                                    <Select value={selectedChain} onValueChange={setSelectedChain}>
+                                        <SelectTrigger className="bg-black/20 text-white border-border/50 focus:border-primary/50 rounded-xl h-12">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="ckb-testnet">Nervos CKB (Testnet)</SelectItem>
+                                            <SelectItem value="ethereum">Ethereum (Managed)</SelectItem>
+                                            <SelectItem value="polygon">Polygon (Managed)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="text-sm font-bold uppercase tracking-wider opacity-70">Agent Class (Schema Profile)</Label>
+                                    <Select value={agentType} onValueChange={setAgentType}>
+                                        <SelectTrigger className="bg-black/20 text-white border-border/50 focus:border-primary/50 rounded-xl h-12">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="operational_agent">Operational Agent (Workflows & Default)</SelectItem>
+                                            <SelectItem value="financial_agent">Financial Agent (High Security & Balances)</SelectItem>
+                                            <SelectItem value="social_agent">Social Agent (Community & Platforms)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold uppercase tracking-wider opacity-70">AI Provider</Label>
                                     <Select value={provider} onValueChange={setProvider}>
-                                        <SelectTrigger className="bg-muted/30 border-border/50 focus:border-primary/50 rounded-xl h-12">
+                                        <SelectTrigger className="bg-black/20 text-white border-border/50 focus:border-primary/50 rounded-xl h-12">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -171,7 +214,7 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
                                         placeholder={provider === 'ollama' ? 'http://localhost:11434' : 'Optional SDK Key'}
                                         value={apiKey}
                                         onChange={(e) => setApiKey(e.target.value)}
-                                        className="bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl h-12"
+                                        className="bg-black/20 text-white border-border/50 focus:border-primary/50 transition-all rounded-xl h-12 placeholder:text-white/40"
                                     />
                                 </div>
 
@@ -183,7 +226,7 @@ export default function CreateAgentModal({ isOpen, onClose }: CreateAgentModalPr
                                             placeholder="e.g. qwen2.5:3b, llama3, etc."
                                             value={model}
                                             onChange={(e) => setModel(e.target.value)}
-                                            className="bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl h-12"
+                                            className="bg-black/20 text-white border-border/50 focus:border-primary/50 transition-all rounded-xl h-12 placeholder:text-white/40"
                                         />
                                     </div>
                                 )}

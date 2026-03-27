@@ -131,7 +131,7 @@ export default function FlowConsole() {
         <div className="flex items-center">
           <Terminal className="h-4 w-4 mr-2 text-primary" />
           <span className="text-sm font-bold uppercase tracking-wider">Flow Console</span>
-          <span className="ml-3 text-xs text-muted-foreground font-medium">
+          <span className="ml-3 text-xs font-medium">
             {logs.length} {logs.length === 1 ? 'entry' : 'entries'}
           </span>
         </div>
@@ -181,7 +181,7 @@ export default function FlowConsole() {
             <TabsContent value={activeTab} className="h-[calc(100%-2.5rem)] p-0 m-0">
               <ScrollArea className="h-full p-4" ref={scrollRef}>
                 {filteredLogs.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm italic py-10">
+                  <div className="flex items-center justify-center h-full text-sm italic py-10">
                     No logs to display
                   </div>
                 ) : (
@@ -198,7 +198,7 @@ export default function FlowConsole() {
                               : 'border-muted-foreground/30 text-foreground'
                           }`}
                       >
-                        <span className="text-muted-foreground font-medium opacity-70">[{log.timestamp}]</span>
+                        <span className="font-medium opacity-70">[{log.timestamp}]</span>
                         {log.nodeName && (
                           <span className="text-primary font-bold ml-2">
                             [{log.nodeName}]

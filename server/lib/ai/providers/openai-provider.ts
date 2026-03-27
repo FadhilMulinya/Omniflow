@@ -9,6 +9,37 @@ import { buildSystemPrompt } from '../utils';
 export class OpenAIProvider implements IAIProvider {
     private defaultModel = process.env.OPENAI_MODEL || 'gpt-4o'; // Fallback to gpt-4o or rely on ENV
 
+    async *generateStream(request: CompletionRequest): AsyncIterableIterator<string> {
+        const apiKey = request.apiKey || process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new Error('OpenAI API key is missing.');
+
+        const client = new OpenAI({
+            apiKey,
+            baseURL: process.env.OPENAI_BASE_URL
+        });
+
+        const model = request.model || this.defaultModel;
+        const messages: any[] = [...request.messages];
+
+        if (request.character && request.character.instructions && request.character.instructions.length > 0) {
+            const systemPrompt = buildSystemPrompt(request.character);
+            messages.unshift({ role: 'system', content: systemPrompt });
+        }
+
+        const stream = await client.chat.completions.create({
+            model: model,
+            messages: messages,
+            temperature: request.temperature ?? 0.7,
+            max_tokens: request.maxTokens,
+            stream: true,
+        });
+
+        for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) yield content;
+        }
+    }
+
     async generateCompletion(request: CompletionRequest): Promise<CompletionResponse> {
         const apiKey = request.apiKey || process.env.OPENAI_API_KEY;
 

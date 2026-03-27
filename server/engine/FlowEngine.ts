@@ -145,7 +145,7 @@ export class FlowEngine {
                             result = await simulateWhatsAppSendMessage(node.data, inputValues, consoleOutput);
                             break;
                         case 'crypto_wallet':
-                            result = await simulateCryptoWallet(node.data);
+                            result = await (simulateCryptoWallet as any)(node.data, inputValues, agent);
                             break;
                         case 'crypto_trade':
                             result = await simulateCryptoTrade(node.data, inputValues);
@@ -162,6 +162,7 @@ export class FlowEngine {
                     // Update execution state for this node
                     execution.state[node.id] = {
                         ...execution.state[node.id],
+                        inputValues,
                         outputData: result.outputData || result,
                         consoleOutput,
                         status: 'completed',
@@ -231,14 +232,27 @@ export class FlowEngine {
                 let val;
                 if (edge.sourceHandle && sourceState.outputData[edge.sourceHandle] !== undefined) {
                     val = sourceState.outputData[edge.sourceHandle];
+                } else if (!edge.sourceHandle) {
+                    // Use entire outputData for generic source connections
+                    val = sourceState.outputData;
                 } else {
-                    // Fallback to first available value
+                    // Fallback to first available value for backwards compatibility
                     const keys = Object.keys(sourceState.outputData);
                     if (keys.length > 0) val = sourceState.outputData[keys[0]];
                 }
 
-                if (val !== undefined && edge.targetHandle) {
-                    inputValues[edge.targetHandle] = val;
+                if (val !== undefined) {
+                    if (edge.targetHandle) {
+                        inputValues[edge.targetHandle] = val;
+                    } else {
+                        // Merge into top-level if no target handle (generic input)
+                        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+                            Object.assign(inputValues, val);
+                        } else {
+                            // If it's a primitive and generic, we just store it as 'value' or similar
+                            inputValues['value'] = val;
+                        }
+                    }
                 }
             }
         });

@@ -15,6 +15,8 @@ import { useToast } from '@/components/ui/notifications/use-toast';
 interface FlowContextType {
   nodes: Node[];
   edges: Edge[];
+  isConnected: boolean;
+  walletAddress: string | null;
   reactFlowInstance: ReactFlowInstance | null;
   selectedNode: Node | null;
   consoleNode: Node | null;
@@ -42,22 +44,66 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [consoleNode, setConsoleNode] = useState<Node | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const { toast } = useToast();
 
   const onNodesChange = (changes: any) => {
     setNodes((nds) => applyNodeChanges(changes, nds));
   };
 
-  const onEdgesChange = (changes: any) => {
+  const onEdgesChange = useCallback((changes: any[]) => {
+    // Check for edge removals and notify if any connected node was "playing"
+    changes.forEach(change => {
+      if (change.type === 'remove') {
+        const removedEdge = edges.find(e => e.id === change.id);
+        if (removedEdge) {
+          const sourceNode = nodes.find(n => n.id === removedEdge.source);
+          const targetNode = nodes.find(n => n.id === removedEdge.target);
+
+          if ((sourceNode?.data?.isPlaying) || (targetNode?.data?.isPlaying)) {
+            toast({
+              title: "Chain Disconnected",
+              description: `The connection between ${sourceNode?.data?.name || 'Source'} and ${targetNode?.data?.name || 'Target'} has been severed.`,
+              variant: "destructive",
+            });
+          }
+        }
+      }
+    });
+
     setEdges((eds) => applyEdgeChanges(changes, eds));
-  };
+  }, [edges, nodes, toast]);
 
   const onConnect = (connection: any) => {
     setEdges((eds) => addEdge(connection, eds));
+
+    // Vibrant console log for connection
+    const sourceNode = nodes.find(n => n.id === connection.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+    console.log(
+      `%c[Flow] Node Connected: ${sourceNode?.data?.name || 'Unknown'} -> ${targetNode?.data?.name || 'Unknown'}`,
+      'color: #6366f1; font-weight: bold; background: #eef2ff; padding: 2px 6px; border-radius: 4px;'
+    );
   };
 
   // Synchronize state from backend execution
   const syncExecutionState = useCallback((executionState: Record<string, any>) => {
+    // Audit nodes for wallet data to log in console
+    Object.values(executionState).forEach((nodeState: any) => {
+      if (nodeState.outputData?.walletInfo?.address) {
+        const addr = nodeState.outputData.walletInfo.address;
+        if (addr !== walletAddress) {
+          setWalletAddress(addr);
+          setIsConnected(true);
+          console.log(
+            `%c[Wallet] Connected Address: ${addr}`,
+            'color: #10b981; font-weight: bold; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;'
+          );
+        }
+      }
+    });
+
     setNodes((currentNodes) =>
       currentNodes.map((node) => {
         const nodeState = executionState[node.id];
@@ -66,6 +112,7 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...node,
             data: {
               ...node.data,
+              inputValues: nodeState.inputValues,
               outputData: nodeState.outputData,
               consoleOutput: nodeState.consoleOutput,
               executionStatus: nodeState.status,
@@ -95,6 +142,13 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               ...((node.data.consoleOutput as any) || []),
               `[${new Date().toLocaleTimeString()}] Node ${isPlaying ? 'started' : 'paused'}`,
             ];
+
+            if (isPlaying) {
+              console.log(
+                `%c[Node] Execution Started: ${node.data.name || 'Unknown'} (${node.id})`,
+                'color: #f59e0b; font-weight: bold; background: #fffbeb; padding: 2px 6px; border-radius: 4px;'
+              );
+            }
 
             return {
               ...node,
@@ -187,6 +241,8 @@ export const FlowProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         nodes,
         edges,
+        isConnected,
+        walletAddress,
         reactFlowInstance,
         selectedNode,
         consoleNode,

@@ -16,6 +16,7 @@
         "@google/genai": "^1.46.0",
         "@nervosnetwork/ckb-sdk-core": "^0.109.5",
         "agenda": "^5.0.0",
+        "ajv": "^8.18.0",
         "bcrypt": "^6.0.0",
         "borgen": "^2.0.0",
         "dotenv": "^16.4.5",

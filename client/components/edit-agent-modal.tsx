@@ -131,6 +131,7 @@ export default function EditAgentModal({ isOpen, onClose, agent, onSuccess }: Ed
                                     <SelectItem value="gemini">Google Gemini</SelectItem>
                                     <SelectItem value="openai">OpenAI</SelectItem>
                                     <SelectItem value="anthropic">Anthropic</SelectItem>
+                                    <SelectItem value="ollama">Ollama</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -145,7 +146,7 @@ export default function EditAgentModal({ isOpen, onClose, agent, onSuccess }: Ed
                                 onChange={(e) => setApiKey(e.target.value)}
                                 className="bg-muted/30 border-border/50 focus:border-primary/50 transition-all rounded-xl h-12"
                             />
-                            <p className="text-[10px] text-muted-foreground mt-1">Leave empty to use system default keys</p>
+                            <p className="text-[10px] mt-1">Leave empty to use system default keys</p>
                         </div>
                     </div>
 

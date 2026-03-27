@@ -81,7 +81,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
           Settings
         </h1>
-        <p className="text-muted-foreground mt-2">Manage your account settings and preferences.</p>
+        <p className="mt-2">Manage your account settings and preferences.</p>
       </div>
 
       <Card className="border-border shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                     className="pl-9 bg-background border-border focus:ring-2 focus:ring-ring transition-all"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs mt-1">
                   Include country code (e.g., +1 for US)
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                     className="pl-9 bg-background border-border focus:ring-2 focus:ring-ring transition-all"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs mt-1">
                   Your Telegram username without the @ symbol
                 </p>
               </div>
@@ -213,7 +213,7 @@ export default function SettingsPage() {
               <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 rounded-lg bg-background border border-border/50">
             <div className="space-y-1">
               <p className="font-medium text-foreground">Daily Summaries</p>
@@ -223,7 +223,7 @@ export default function SettingsPage() {
               <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between p-4 rounded-lg bg-background border border-border/50">
             <div className="space-y-1">
               <p className="font-medium text-foreground">Email Notifications</p>

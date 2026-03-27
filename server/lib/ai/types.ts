@@ -30,5 +30,6 @@ export interface CompletionResponse {
 
 export interface IAIProvider {
     generateCompletion(request: CompletionRequest): Promise<CompletionResponse>;
+    generateStream?(request: CompletionRequest): AsyncIterableIterator<string>;
     testConnection(apiKey: string): Promise<boolean>;
 }

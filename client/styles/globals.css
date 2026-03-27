@@ -85,6 +85,7 @@
     @apply bg-background text-foreground font-sans;
     letter-spacing: var(--tracking-normal);
   }
+
   .theme {
     --font-sans: Plus Jakarta Sans, sans-serif;
     --font-mono: Roboto Mono, monospace;
@@ -96,6 +97,7 @@
     --tracking-wider: calc(var(--tracking-normal) + 0.05em);
     --tracking-widest: calc(var(--tracking-normal) + 0.1em);
   }
+
   :root {
     --background: oklch(0.9232 0.0026 48.7171);
     --foreground: oklch(0.2795 0.0368 260.0310);
@@ -151,6 +153,7 @@
     --shadow-2xl: 2px 2px 10px 4px hsl(240 4% 60% / 0.45);
     --tracking-normal: 0em;
   }
+
   .dark {
     --background: oklch(0.2244 0.0074 67.4370);
     --foreground: oklch(0.9288 0.0126 255.5078);
@@ -220,3 +223,254 @@
 .neo-shadow-lg {
   box-shadow: 2px 4px 6px 3px hsl(240 4% 60% / 0.18);
 }
+
+/* ============================================================
+   FLOW CANVAS NODE SYSTEM
+   All custom node types share these base classes.
+   Nodes always use a fixed light background so they remain
+   readable regardless of the app's color-scheme / dark-mode.
+   ============================================================ */
+
+/* --- Base node shell --- */
+.node-base {
+  position: relative;
+  padding: 0.75rem;
+  /* p-3 */
+  border-radius: 0.375rem;
+  /* rounded-md */
+  border-width: 2px;
+  border-style: solid;
+  width: 12rem;
+  /* w-48 */
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+  /* Force white background — nodes must always be legible */
+  background-color: #ffffff;
+}
+
+/* --- Color variants (border + tinted background) --- */
+.node-green {
+  border-color: #bbf7d0;
+  background-color: #f0fdf4;
+}
+
+/* input  */
+.node-purple {
+  border-color: #e9d5ff;
+  background-color: #faf5ff;
+}
+
+/* output */
+.node-blue {
+  border-color: #bfdbfe;
+  background-color: #eff6ff;
+}
+
+/* blockchain / action */
+.node-indigo {
+  border-color: #c7d2fe;
+  background-color: #eef2ff;
+}
+
+/* crypto wallet */
+.node-amber {
+  border-color: #fde68a;
+  background-color: #fffbeb;
+}
+
+/* trade */
+.node-teal {
+  border-color: #99f6e4;
+  background-color: #f0fdfa;
+}
+
+/* telegram / social */
+.node-gray {
+  border-color: #e5e7eb;
+  background-color: #ffffff;
+}
+
+/* action / generic */
+.node-red {
+  border-color: #fecaca;
+  background-color: #fff1f2;
+}
+
+/* unknown / error */
+
+/* --- Selected ring — overrides the border color --- */
+.node-selected {
+  border-color: #3b82f6 !important;
+}
+
+/* --- Inactive / disabled state --- */
+.node-inactive {
+  opacity: 0.5;
+}
+
+/* --- Playing / running state --- */
+.node-playing {
+  animation: nodePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.18);
+  }
+}
+
+/* --- Node title & description --- */
+.node-title {
+  font-size: 0.875rem;
+  /* text-sm */
+  font-weight: 700;
+  color: #1e293b;
+  /* slate-800 */
+  margin-top: 1.5rem;
+  /* mt-6 — room for controls */
+  line-height: 1.25;
+}
+
+.node-description {
+  font-size: 0.75rem;
+  /* text-xs */
+  color: #64748b;
+  /* slate-500 */
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* --- Sub-label above the title (e.g. "CKB Node Instance") --- */
+.node-parent-label {
+  font-size: 0.5rem;
+  /* ~8px */
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6366f1;
+  /* indigo-500 */
+  margin-top: 1.5rem;
+  margin-bottom: 0.1rem;
+  line-height: 1;
+}
+
+/* .node-title companion when parent label is present */
+.node-parent-label+.node-title {
+  margin-top: 0;
+}
+
+/* --- Pill badge for tool full-path --- */
+.node-badge {
+  display: inline-block;
+  font-size: 0.5625rem;
+  /* ~9px */
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background-color: #e0e7ff;
+  /* indigo-100 */
+  color: #3730a3;
+  /* indigo-800 */
+}
+
+/* --- Status dot (top-left corner) --- */
+.node-status-dot {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+
+.node-status-success {
+  background-color: #22c55e;
+}
+
+.node-status-error {
+  background-color: #ef4444;
+}
+
+.node-status-pending {
+  background-color: #eab308;
+}
+
+/* --- Icon slot (top-left, inside padding) --- */
+.node-icon {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+/* --- Inline form elements inside nodes --- */
+.node-select,
+.node-input {
+  width: 100%;
+  font-size: 0.625rem;
+  /* 10px */
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.25rem;
+  border: 1px solid #c7d2fe;
+  /* indigo-200 */
+  background-color: #ffffff;
+  color: #1e1b4b;
+  /* indigo-950 */
+  outline: none;
+  margin-bottom: 0.375rem;
+}
+
+.node-select:focus,
+.node-input:focus {
+  box-shadow: 0 0 0 2px #818cf8;
+  /* indigo-400 ring */
+}
+
+.node-form-label {
+  display: block;
+  font-size: 0.5rem;
+  /* 8px */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4338ca;
+  /* indigo-700 */
+  margin-bottom: 0.2rem;
+}
+
+/* --- Connected wallet / output info panel --- */
+.node-output-panel {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #1e1b4b;
+  /* indigo-950 — always dark so text is white */
+  border: 1px solid #312e81;
+  /* indigo-900 */
+  border-radius: 0.375rem;
+  font-size: 0.625rem;
+}
+
+.node-output-panel-label {
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+/* indigo-300 */
+.node-output-panel-value {
+  color: #e0e7ff;
+  font-family: monospace;
+}
+
+/* indigo-100 */

@@ -1,5 +1,9 @@
 import { AIFactory } from '../../lib/ai/factory';
 import { timestamp } from './base';
+import { ProcessorContext, BaseProcessor } from '../processors/base-processor';
+import { CKBProcessor } from '../processors/financial/ckb-processor';
+import { SocialProcessor } from '../processors/social/social-processor';
+import { OperationalProcessor } from '../processors/operational/operational-processor';
 
 // Simulate processing node
 export async function simulateProcessingNode(
@@ -8,42 +12,42 @@ export async function simulateProcessingNode(
     consoleOutput: string[],
     agent?: any
 ) {
+    const nodeName = data.name;
     const outputs: Record<string, any> = {};
 
-    if (data.name === 'Text Processor') {
+    if (nodeName.includes('Processor') || nodeName === 'AI Text Analyzer') {
         const inputText =
             inputValues['text'] ||
             data.inputs?.find((input: any) => input.key === 'text')?.value ||
-            'Default text';
+            '';
 
-        // Prioritize: Agent Config > Node Data > Defaults
-        const provider = agent?.modelProvider || data.modelProvider || 'ollama';
-        const model = agent?.modelConfig?.modelName || data.inputs?.find((input: any) => input.key === 'model')?.value || 'qwen2.5:3b';
-
-        consoleOutput.push(`${timestamp()} Connecting to ${provider.toUpperCase()} API for ${model}...`);
+        const ctx: ProcessorContext = { agent, inputValues, consoleOutput };
 
         try {
-            const aiProvider = AIFactory.getProvider(provider);
+            let result;
+            if (nodeName === 'Financial Processor') {
+                result = await CKBProcessor.execute(ctx, inputText);
+            } else if (nodeName === 'Social Processor') {
+                result = await SocialProcessor.execute(ctx, inputText);
+            } else if (nodeName === 'Operational Processor') {
+                result = await OperationalProcessor.execute(ctx, inputText);
+            } else {
+                // Fallback to a general analysis
+                const provider = agent?.modelProvider || 'ollama';
+                const model = agent?.modelConfig?.modelName || 'qwen2.5:3b';
+                const systemPrompt = `${BaseProcessor.getIdentityContext(agent)}\n\nGeneral Text Analysis:\nIdentify intent and reply.\nReturn ONLY valid JSON: { "intent": "general", "message": "..." }`;
+                const response = await BaseProcessor.getCompletion(provider, model, systemPrompt, inputText);
+                result = BaseProcessor.parseJsonResponse(response.content, consoleOutput) || { intent: 'general', message: response.content };
+            }
 
-            const response = await aiProvider.generateCompletion({
-                provider: provider as any,
-                model,
-                messages: [{ role: 'user', content: inputText }],
-                temperature: 0.7,
-            });
-
-            consoleOutput.push(`${timestamp()} Received response from ${model}`);
-
-            outputs['result'] = response.content;
-            outputs['model'] = response.model;
-            outputs['tokenUsage'] = response.usage;
+            Object.assign(outputs, result);
         } catch (error: any) {
-            consoleOutput.push(`${timestamp()} Error: ${error.message}`);
-            outputs['result'] = `Error: ${error.message}`;
+            consoleOutput.push(`${timestamp()} Error in Processor: ${error.message}`);
             outputs['error'] = error.message;
             throw error;
         }
-    } else if (data.name === 'Data Transformer') {
+    }
+    else if (data.name === 'Data Transformer') {
         const inputData = inputValues['data'] || data.inputs?.find((input: any) => input.key === 'data')?.value || {};
         const transformationType = data.inputs?.find((input: any) => input.key === 'transformation')?.value || 'default';
 

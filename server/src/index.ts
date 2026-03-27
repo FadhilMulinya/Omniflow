@@ -10,6 +10,7 @@ import { agentRoutes } from '../modules/agentRoutes'
 import { executionRoutes } from '../modules/executionRoutes'
 import { teleCronRoutes } from '../modules/teleCronRoutes'
 import { aiRoutes } from '../modules/aiRoutes'
+import { templateRoutes } from '../modules/templateRoutes'
 import toolsRoutes from '../modules/toolsRoutes'
 import { syncBlockchainToolsToDb } from '../services/ToolSyncer'
 import { ENV } from '../lib/environments'
@@ -23,7 +24,7 @@ const fastify = Fastify({
 fastify.register(cors, {
     origin: ENV.ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-ai-api-key'],
     credentials: true
 })
 
@@ -37,6 +38,7 @@ fastify.register(workspaceRoutes, { prefix: '/api' })
 fastify.register(agentRoutes, { prefix: '/api' })
 fastify.register(executionRoutes, { prefix: '/api' })
 fastify.register(teleCronRoutes, { prefix: '/api' })
+fastify.register(templateRoutes, { prefix: '/api' })
 fastify.register(toolsRoutes, { prefix: '/api/tools' })
 
 fastify.get('/api/health', async (request, reply) => {

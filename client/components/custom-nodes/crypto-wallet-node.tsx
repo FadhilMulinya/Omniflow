@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type React from 'react';
 import NodeControls from './node-controls';
-import { Wallet, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Wallet, AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/button';
 import ConnectWalletModal from '../modals/connect-wallet-modal';
 import { useFlow } from '@/contexts/FlowContext';
@@ -16,40 +16,35 @@ interface CryptoWalletNodeProps {
   id: string;
 }
 
-const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({
-  data,
-  isConnectable,
-  selected,
-  id,
-}) => {
+const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({ data, isConnectable, selected, id }) => {
   const { updateNodeData } = useFlow();
 
-  // Determine connection status
   const isConnected = data.outputData?.connected || false;
-  const connectionType =
-    data.inputs?.find((input: any) => input.key === 'connectionType')?.value || 'Wallet Address';
-  const isPrivateKey = connectionType === 'Private Key';
-  const isMetaMask = connectionType === 'MetaMask';
 
-  // State for wallet connection modal
+  const [network, setNetwork] = useState(data.network || 'ckb-testnet');
+  const [walletType, setWalletType] = useState(data.walletType || 'System');
+  const [privateKeyInput, setPrivateKeyInput] = useState(data.privateKey || '');
+  const [rpcUrl, setRpcUrl] = useState(data.rpcUrl || '');
+  const [useCustomRpc, setUseCustomRpc] = useState(!!data.rpcUrl);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Check if MetaMask is available in the browser
   const [isMetaMaskAvailable, setIsMetaMaskAvailable] = useState(false);
 
+  const isPrivateKey = walletType === 'Private Key';
+  const isSystemWallet = walletType === 'System';
+  const isMetaMask = walletType === 'MetaMask';
+
   useEffect(() => {
-    // Check if window.ethereum exists (MetaMask or other wallet)
     if (typeof window !== 'undefined') {
-      setIsMetaMaskAvailable(!!window.ethereum);
+      setIsMetaMaskAvailable(!!(window as any).ethereum);
     }
   }, []);
 
-  // Update the handleWalletConnected function to ensure proper data structure
-  const handleWalletConnected = (walletInfo: any) => {
-    // Update node data with wallet info
-    console.log('Wallet connected:', walletInfo);
+  const handleNetworkChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNetwork(e.target.value);
+    updateNodeData(id, { ...data, network: e.target.value });
+  };
 
-    // Create a properly structured output that can be consumed by other nodes
+  const handleWalletConnected = (walletInfo: any) => {
     const outputData = {
       connected: true,
       walletInfo: {
@@ -63,90 +58,211 @@ const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({
       balance: walletInfo.balance || '0',
     };
 
-    // Update the node data with the wallet info
     updateNodeData(id, {
       ...data,
       outputData,
-      // Add wallet info to inputs so it's visible in the sidebar
       inputs: data.inputs?.map((input: any) => {
-        if (input.key === 'walletAddress') {
-          return {
-            ...input,
-            value: walletInfo.address || input.value,
-          };
-        }
-        if (input.key === 'network') {
-          return {
-            ...input,
-            value: walletInfo.network || input.value,
-          };
-        }
+        if (input.key === 'walletAddress') return { ...input, value: walletInfo.address || input.value };
+        if (input.key === 'network') return { ...input, value: walletInfo.network || input.value };
         return input;
       }),
     });
 
-    // Log successful connection to console output
     const consoleOutput = [...(data.consoleOutput || [])];
-    consoleOutput.push(
-      `[${new Date().toLocaleTimeString()}] Wallet connected: ${walletInfo.address} on ${walletInfo.network}`
-    );
-
-    updateNodeData(id, {
-      consoleOutput,
-      outputData: {
-        ...outputData,
-        connected: true,
-      },
-    });
+    consoleOutput.push(`[${new Date().toLocaleTimeString()}] Wallet connected: ${walletInfo.address} on ${walletInfo.network}`);
+    updateNodeData(id, { consoleOutput, outputData: { ...outputData, connected: true } });
   };
 
-  return (
-    <div
-      className={`p-3 rounded-md border-2 ${selected ? 'border-blue-500' : 'border-orange-200'} ${data.isActive === false ? 'opacity-50' : ''
-        } ${data.isPlaying ? 'animate-pulse shadow-lg shadow-orange-200' : ''} bg-orange-50 shadow-sm w-48 relative`}
-    >
-      <NodeControls
-        nodeId={id}
-        isPlaying={data.isPlaying || false}
-        isActive={data.isActive !== false}
-      />
+  const shellClass = [
+    'node-base',
+    'node-indigo',
+    selected ? 'node-selected' : '',
+    data.isActive === false ? 'node-inactive' : '',
+    data.isPlaying ? 'node-playing' : '',
+  ].filter(Boolean).join(' ');
 
-      {/* Node Icon */}
-      <div className="absolute top-1 left-1 flex items-center text-xs">
-        <div className="flex items-center text-orange-600">
-          <Wallet className="h-4 w-4" />
-        </div>
+  return (
+    <div className={shellClass}>
+      <NodeControls nodeId={id} isPlaying={data.isPlaying || false} isActive={data.isActive !== false} />
+
+      {/* Icon */}
+      <div className="node-icon">
+        <Wallet className="h-4 w-4 text-indigo-500" />
       </div>
 
-      {/* Security indicator for private key */}
+      {/* Private Key warning */}
       {isPrivateKey && (
-        <div className="absolute top-1 right-8 flex items-center text-xs">
-          <div className="flex items-center text-red-600">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            <span className="text-[10px]">Private Key</span>
-          </div>
+        <div className="absolute top-1.5 right-8 flex items-center gap-0.5">
+          <AlertTriangle className="h-3 w-3 text-amber-500" />
+          <span className="text-[9px] text-amber-600 font-bold">Private Key</span>
         </div>
       )}
 
-      <div className="font-medium text-sm mt-6">{data.name}</div>
-      <div className="text-xs text-black-500 mb-2">{data.description}</div>
+      <div className="node-title">{data.name || 'Crypto Wallet'}</div>
+      <div className="node-description">{data.description || 'Manage wallet connections'}</div>
 
-      {/* MetaMask Connect Button (only show if MetaMask is selected and available) */}
+      {/* Connection status */}
+      <div className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded mb-2 ${isConnected ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+        }`}>
+        <CheckCircle2 className={`h-2.5 w-2.5 ${isConnected ? 'text-green-500' : 'text-slate-400'}`} />
+        {isConnected ? 'Connected' : 'Not Connected'}
+      </div>
+
+      {/* Network */}
+      <div className="mb-1 relative z-10 nodrag">
+        <label className="node-form-label">Network</label>
+        <select value={network} onChange={handleNetworkChange} className="node-select">
+          <option value="ckb-testnet">CKB Testnet</option>
+          <option value="ckb-mainnet">CKB Mainnet</option>
+          <option value="ckb-devnet">CKB Devnet</option>
+          <option value="evm">EVM Network</option>
+        </select>
+      </div>
+
+      {/* Wallet Type */}
+      <div className="mb-1 relative z-10 nodrag">
+        <label className="node-form-label">Wallet Type</label>
+        <select
+          value={walletType}
+          onChange={(e) => { setWalletType(e.target.value); updateNodeData(id, { ...data, walletType: e.target.value }); }}
+          className="node-select"
+        >
+          <option value="System">System Managed (Auto-Provisioned)</option>
+          <option value="Private Key">Import Private Key</option>
+        </select>
+      </div>
+      {/* Storage Type */}
+      <div className="mb-2 relative z-10 nodrag text-[10px]">
+        <label className="flex items-center gap-1.5 mb-1 node-form-label cursor-pointer text-indigo-700 font-bold">
+          <input
+            type="checkbox"
+            checked={data.inputs?.find((i: any) => i.key === 'storageType')?.value === 'permanent'}
+            onChange={(e) => {
+              const val = e.target.checked ? 'permanent' : 'temporary';
+              const newInputs = [...(data.inputs || [])];
+              const idx = newInputs.findIndex(i => i.key === 'storageType');
+              if (idx >= 0) newInputs[idx].value = val;
+              else newInputs.push({ key: 'storageType', value: val });
+              updateNodeData(id, { ...data, inputs: newInputs });
+            }}
+            className="accent-indigo-600 h-3 w-3 rounded border-gray-300"
+          />
+          Store Wallet Permanently
+        </label>
+      </div>
+
+      {/* Custom RPC */}
+      {(isPrivateKey || isSystemWallet) && (
+        <div className="mb-1 relative z-10 nodrag text-[10px]">
+          <label className="flex items-center gap-1.5 mb-1 node-form-label cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useCustomRpc}
+              onChange={(e) => {
+                setUseCustomRpc(e.target.checked);
+                if (!e.target.checked) { setRpcUrl(''); updateNodeData(id, { ...data, rpcUrl: '' }); }
+              }}
+              className="accent-indigo-600"
+            />
+            Use Custom RPC URL
+          </label>
+          {useCustomRpc && (
+            <input
+              type="text"
+              placeholder="https://..."
+              value={rpcUrl}
+              onChange={(e) => { setRpcUrl(e.target.value); updateNodeData(id, { ...data, rpcUrl: e.target.value }); }}
+              className="node-input"
+            />
+          )}
+        </div>
+      )}
+
+      {/* MetaMask connect */}
       {isMetaMask && !isConnected && (
-        <div className="mb-2">
+        <div className="mb-1 relative z-10 nodrag">
           <Button
             size="sm"
             variant="outline"
-            className="w-full text-xs h-7 flex items-center gap-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsModalOpen(true);
-            }}
+            className="w-full text-xs h-7 flex items-center gap-1.5 border-indigo-300 text-indigo-700 hover:bg-indigo-50 bg-white"
+            onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
             disabled={!isMetaMaskAvailable}
           >
             <Wallet className="h-3 w-3" />
             {isMetaMaskAvailable ? 'Connect MetaMask' : 'MetaMask Not Found'}
           </Button>
+        </div>
+      )}
+
+      {/* Private Key input */}
+      {isPrivateKey && !isConnected && (
+        <div className="mb-1 space-y-1 relative z-10 nodrag">
+          <input
+            type="password"
+            placeholder="Enter Private Key (0x...)"
+            value={privateKeyInput}
+            onChange={(e) => setPrivateKeyInput(e.target.value)}
+            className="node-input"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs h-7 border-indigo-300 text-indigo-700 hover:bg-indigo-50 bg-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (privateKeyInput) {
+                updateNodeData(id, { ...data, privateKey: privateKeyInput });
+                handleWalletConnected({ address: 'Managed Key (Hidden)', network: 'Local/Managed', connectionType: 'Private Key' });
+              }
+            }}
+            disabled={!privateKeyInput}
+          >
+            Save Key
+          </Button>
+        </div>
+      )}
+
+      {/* System Wallet */}
+      {isSystemWallet && !isConnected && (
+        <div className="mb-1 relative z-10 nodrag">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs h-7 border-indigo-300 text-indigo-700 hover:bg-indigo-50 bg-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              updateNodeData(id, { ...data, requestSystemWallet: true });
+              handleWalletConnected({ address: 'System Managed (Pending)', network: data.network || 'Local', connectionType: 'System' });
+            }}
+          >
+            Create System Wallet
+          </Button>
+        </div>
+      )}
+
+      {/* Connected wallet panel */}
+      {isConnected && data.outputData?.walletInfo && (
+        <div className="node-output-panel">
+          <div className="flex items-center justify-between mb-1">
+            <span className="node-output-panel-label">Connected Wallet</span>
+            <span className="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[9px] font-bold">
+              {data.outputData.walletInfo.network}
+            </span>
+          </div>
+          <div className="node-output-panel-value flex items-center gap-1">
+            <span className="truncate">{formatAddress(data.outputData.walletInfo.address)}</span>
+            {data.outputData.walletInfo.address && (
+              <a
+                href={`https://etherscan.io/address/${data.outputData.walletInfo.address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            )}
+          </div>
         </div>
       )}
 
@@ -175,57 +291,14 @@ const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({
         />
       ))}
 
-      {/* Display output data when the node is playing */}
-      {data.isPlaying && data.outputData && (
-        <div className="mt-2 p-2 bg-gray-800 border rounded-md">
-          <div className="text-xs text-black-500 mb-1 flex items-center justify-between">
-            <span className="text-white">Wallet Status</span>
-            <span
-              className={`text-xs px-1.5 py-0.5 rounded ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}
-            >
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-          {isConnected && (
-            <>
-              <div className="text-sm font-medium text-white">
-                {data.outputData.walletInfo?.network || 'Ethereum'} Wallet
-              </div>
-              <div className="text-xs text-black-400 mt-1 flex items-center">
-                <span className="truncate">
-                  {formatAddress(data.outputData.walletInfo?.address)}
-                </span>
-                {data.outputData.walletInfo?.address && (
-                  <a
-                    href={`https://etherscan.io/address/${data.outputData.walletInfo.address}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 text-blue-400 hover:text-blue-300"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Show execution status indicator if available */}
+      {/* Status dot */}
       {data.executionStatus && (
-        <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-            ? 'bg-green-500'
-            : data.executionStatus === 'error'
-              ? 'bg-red-500'
-              : 'bg-yellow-500'
-            }`}
-        />
+        <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+          : data.executionStatus === 'error' ? 'node-status-error'
+            : 'node-status-pending'
+          }`} />
       )}
 
-      {/* Wallet Connection Modal */}
       {isModalOpen && (
         <ConnectWalletModal
           isOpen={isModalOpen}
@@ -237,7 +310,6 @@ const CryptoWalletNode: React.FC<CryptoWalletNodeProps> = ({
   );
 };
 
-// Helper function to format wallet address
 function formatAddress(address?: string): string {
   if (!address) return '0x...';
   return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;

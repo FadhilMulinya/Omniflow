@@ -24,7 +24,7 @@ interface NodeSidebarProps {
 export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSidebarProps) {
     const [nodeData, setNodeData] = useState<any>(node.data);
     const [fetchedTools, setFetchedTools] = useState<any>(null);
-    const { cascadeNodeExecution, handleDeleteNode, handleNodePlayPause } = useFlow();
+    const { handleDeleteNode, handleNodePlayPause } = useFlow();
 
     useEffect(() => {
         setNodeData(node.data);
@@ -50,12 +50,6 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
 
         setNodeData(updatedData);
         updateNodeData(node.id, updatedData);
-
-        if (node.data.isPlaying) {
-            setTimeout(() => {
-                cascadeNodeExecution(node.id);
-            }, 0);
-        }
     };
 
     return (
@@ -101,7 +95,7 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
                 )}
             </div>
 
-            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{nodeData.description}</p>
+            <p className="text-sm mb-6 leading-relaxed">{nodeData.description}</p>
 
             <Separator className="my-4" />
 
@@ -147,12 +141,12 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
                             }
                         }
                     }
-                    return inputsToRender;
+                    return inputsToRender.filter((i: any) => !['model', 'prompt'].includes(i.key));
                 })().map((input: any) => (
                     <div key={input.key} className="space-y-2">
                         <Label htmlFor={input.key}>{input.label}</Label>
                         <FieldRenderer input={input} handleInputChange={handleInputChange} />
-                        {input.description && <p className="text-xs text-muted-foreground mt-1">{input.description}</p>}
+                        {input.description && <p className="text-xs mt-1">{input.description}</p>}
                     </div>
                 ))}
             </div>
@@ -165,7 +159,7 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
                         {nodeData.outputs.map((output: any) => (
                             <div key={output.key} className="p-3 border border-border rounded-xl bg-muted/50">
                                 <div className="font-bold text-sm">{output.label}</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">Type: {output.type}</div>
+                                <div className="text-xs mt-0.5">Type: {output.type}</div>
                             </div>
                         ))}
                     </div>
@@ -197,7 +191,7 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
             )}
 
             {/* Domain-specific sections */}
-            {(nodeData.name?.includes('Bot') || node.type === 'processing' || node.type === 'trading_bot') && (
+            {(nodeData.name?.includes('Bot') || node.type === 'trading_bot') && (
                 <AICharacterSection
                     nodeData={nodeData}
                     nodeId={node.id}

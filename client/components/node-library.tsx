@@ -70,14 +70,34 @@ export default function NodeLibrary({ isOpen, setIsOpen }: NodeLibraryProps) {
       whileHover={{ scale: 1.02, x: 4 }}
       className="p-3 mb-2 border border-border rounded-lg cursor-grab bg-card hover:bg-muted/50 transition-all shadow-sm group"
       draggable
-      onDragStart={(event: any) => onDragStart(event, 'blockchain_tool', {
-        name: tool.name.split('.').pop(),
-        description: tool.description,
-        tool: tool.name,
-        chain: tool.network,
-        params: {},
-        uiSchema: tool.schemaDef
-      })}
+      onDragStart={(event: any) => {
+        // Build inputs from uiSchema if present
+        const toolInputs = tool.schemaDef
+          ? Object.entries(tool.schemaDef).map(([key, config]: [string, any]) => ({
+            key,
+            label: config.label,
+            type: config.type,
+            placeholder: config.placeholder || '',
+            value: ''
+          }))
+          : [];
+
+        // Add standard output handles
+        const toolOutputs = [
+          { key: 'result', label: 'Result', type: 'object' },
+          { key: 'status', label: 'Status', type: 'string' }
+        ];
+
+        onDragStart(event, 'blockchain_tool', {
+          name: tool.name.split('.').pop(),
+          description: tool.description,
+          tool: tool.name,
+          chain: tool.network,
+          params: {},
+          inputs: toolInputs,
+          outputs: toolOutputs
+        });
+      }}
     >
       <div className="flex items-center gap-3">
         <div className="bg-primary/10 p-2 rounded-md group-hover:bg-primary/20 transition-colors">
@@ -85,7 +105,7 @@ export default function NodeLibrary({ isOpen, setIsOpen }: NodeLibraryProps) {
         </div>
         <div className="flex-1">
           <div className="font-semibold text-xs truncate">{tool.name.split('.').pop()}</div>
-          <div className="text-[10px] text-muted-foreground line-clamp-1">{tool.description}</div>
+          <div className="text-[10px] line-clamp-1">{tool.description}</div>
         </div>
       </div>
     </motion.div>
@@ -132,7 +152,7 @@ export default function NodeLibrary({ isOpen, setIsOpen }: NodeLibraryProps) {
                     <div key={network} className="space-y-1">
                       <button
                         onClick={() => toggleFolder(network)}
-                        className="flex items-center gap-2 w-full text-left font-bold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors py-1"
+                        className="flex items-center gap-2 w-full text-left font-bold text-xs uppercase tracking-wider hover:text-foreground transition-colors py-1"
                       >
                         {expandedFolders[network] ? <ChevronRight className="w-3 h-3 rotate-90" /> : <ChevronRight className="w-3 h-3" />}
                         <Folder className="w-3 h-3 fill-primary/20 text-primary" />
@@ -191,9 +211,9 @@ export default function NodeLibrary({ isOpen, setIsOpen }: NodeLibraryProps) {
                         <div className="flex justify-between items-center">
                           <div className="space-y-1">
                             <div className="font-bold text-sm group-hover:text-primary transition-colors">{node.name}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-2">{node.description}</div>
+                            <div className="text-xs line-clamp-2">{node.description}</div>
                           </div>
-                          <Layers3 className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <Layers3 className="w-4 h-4 group-hover:text-primary transition-colors" />
                         </div>
                       </motion.div>
                     ))}

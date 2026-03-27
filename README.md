@@ -133,7 +133,7 @@ FIBER_NODE_URL=http://localhost:8227
 ### Agent Management
 - Create agents with AI-enhanced personas (name + summary → full character schema with bio, traits, system instructions, and dashboard description).
 - Edit agents and re-enhance their character schema from an updated persona.
-- Agents support a configurable `modelProvider` (Gemini / OpenAI / Anthropic) and custom API key overrides stored in browser session.
+- Agents support a configurable `modelProvider` (emini / OpenAI / Anthropic) and custom API key overrides stored in browser session.
 - Public transparency endpoint: `GET /api/agents/:id.json` exposes the stored character JSON.
 
 The agent id is accessible via the url immediately after creation.

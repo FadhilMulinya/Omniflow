@@ -39,7 +39,7 @@ export default function NodeConsoleModal({
             </div>
             <ScrollArea className="h-80 p-4">
               {consoleOutput.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic text-center py-8">No console output yet.</div>
+                <div className="text-sm italic text-center py-8">No console output yet.</div>
               ) : (
                 <div className="space-y-2">
                   {consoleOutput.map((message, index) => (

@@ -109,16 +109,17 @@ export const baseNodes = [
             { key: 'value', label: 'Value', type: 'string', placeholder: 'Input value', value: '' },
         ],
         outputs: [
-            { key: 'true', label: 'True', type: 'boolean' },
-            { key: 'false', label: 'False', type: 'boolean' },
+            { key: 'true', label: 'True (If)', type: 'boolean' },
+            { key: 'false', label: 'False (Else)', type: 'boolean' },
         ],
         meta: { advanced: false },
     },
     {
+        id: 'text_processor',
         type: 'processing',
-        category: 'processing',
-        name: 'Text Processor',
-        description: 'Processes text using AI models (Gemini, GPT, etc.)',
+        category: 'processors',
+        name: 'AI Text Analyzer',
+        description: 'Analyzes text using AI models (Gemini, GPT, etc.) for general purpose understanding.',
         icon: 'Bot',
         inputs: [
             {
@@ -128,26 +129,87 @@ export const baseNodes = [
                 placeholder: 'Text to process',
                 value: '',
             },
-            {
-                key: 'model',
-                label: 'AI Model',
-                type: 'select',
-                options: ['gemini-2.0-flash', 'GPT-4', 'Claude'],
-                value: 'gemini-2.0-flash',
-            },
-            {
-                key: 'prompt',
-                label: 'System Prompt',
-                type: 'string',
-                placeholder: 'You are a helpful assistant',
-                value: 'You are a helpful assistant',
-            },
         ],
         outputs: [
-            { key: 'result', label: 'Processed Text', type: 'string' },
+            { key: 'result', label: 'Analysis', type: 'object' },
+            { key: 'intent', label: 'Intent', type: 'string' },
+            { key: 'message', label: 'Direct Reply', type: 'string' },
             { key: 'tokenUsage', label: 'Token Usage', type: 'object' },
         ],
         meta: { apiKey: true, streaming: true },
+    },
+    {
+        id: 'financial_processor',
+        name: 'Financial Processor',
+        description: 'AI processor specialized for Web3 transactions, balance checks, and financial analysis.',
+        type: 'processing',
+        category: 'processors',
+        icon: 'Wallet', // Added icon
+        inputs: [
+            {
+                key: 'text',
+                label: 'Financial Inquiry',
+                type: 'string',
+                placeholder: 'e.g. "Transfer 100 CKB"',
+                value: '',
+            },
+        ],
+        outputs: [
+            { key: 'intent', label: 'Transaction Type', type: 'string' },
+            { key: 'amount', label: 'Amount', type: 'number' },
+            { key: 'address', label: 'Target Address', type: 'string' },
+            { key: 'message', label: 'Confirmation Message', type: 'string' },
+            { key: 'result', label: 'Full Extraction', type: 'object' },
+        ],
+        meta: { apiKey: true, streaming: true }, // Added meta
+    },
+    {
+        id: 'social_processor',
+        name: 'Social Processor',
+        description: 'AI processor specialized for social interaction, community engagement, and tone consistency.',
+        type: 'processing',
+        category: 'processors',
+        icon: 'MessageSquare', // Added icon
+        inputs: [
+            {
+                key: 'text',
+                label: 'User Input',
+                type: 'string',
+                placeholder: 'e.g. "What do you think of this NFT?"',
+                value: '',
+            },
+        ],
+        outputs: [
+            { key: 'intent', label: 'Engagement Type', type: 'string' },
+            { key: 'tone', label: 'Detected Tone', type: 'string' },
+            { key: 'message', label: 'Draft Response', type: 'string' },
+            { key: 'result', label: 'Full Analysis', type: 'object' },
+        ],
+        meta: { apiKey: true, streaming: true }, // Added meta
+    },
+    {
+        id: 'operational_processor',
+        name: 'Operational Processor',
+        description: 'AI processor specialized for task coordination, scheduling, and system monitoring.',
+        type: 'processing',
+        category: 'processors',
+        icon: 'Settings', // Added icon
+        inputs: [
+            {
+                key: 'text',
+                label: 'Action Task',
+                type: 'string',
+                placeholder: 'e.g. "Schedule a backup for midnight"',
+                value: '',
+            },
+        ],
+        outputs: [
+            { key: 'task', label: 'Parsed Task', type: 'string' },
+            { key: 'schedule', label: 'Detected Time', type: 'string' },
+            { key: 'message', label: 'Acknowledgement', type: 'string' },
+            { key: 'result', label: 'Execution Plan', type: 'object' },
+        ],
+        meta: { apiKey: true, streaming: true }, // Added meta
     },
     {
         type: 'input',

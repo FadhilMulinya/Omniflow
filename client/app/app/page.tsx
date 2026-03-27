@@ -137,7 +137,7 @@ export default function AppPage() {
                 <Search className="h-6 w-6 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold">No agents found</h3>
-              <p className="text-muted-foreground mt-2 mb-4 max-w-md">
+              <p className="mt-2 mb-4 max-w-md">
                 We couldn't find any agents matching your search. Try a different search term or
                 create a new agent.
               </p>

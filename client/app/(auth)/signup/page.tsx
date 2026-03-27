@@ -45,7 +45,7 @@ export default function SignupPage() {
                         <input
                             type="text"
                             required
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                             placeholder="Enter your username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -59,7 +59,7 @@ export default function SignupPage() {
                         <input
                             type="email"
                             required
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                             placeholder="Enter your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -73,7 +73,7 @@ export default function SignupPage() {
                         <input
                             type="password"
                             required
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                             placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

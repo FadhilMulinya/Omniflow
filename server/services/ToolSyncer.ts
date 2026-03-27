@@ -13,7 +13,7 @@ export async function syncBlockchainToolsToDb() {
             if (tool.name.startsWith('blockchain.ckb.')) {
                 network = 'CKB';
                 const parts = tool.name.split('.');
-                category = parts[2] === 'rpc' ? 'RPC' : (parts[2] === 'indexer' ? 'Indexer' : 'Transactions');
+                category = parts[2] === 'node' ? 'Nodes' : (parts[2] === 'rpc' ? 'RPC' : (parts[2] === 'indexer' ? 'Indexer' : 'Transactions'));
                 subCategory = parts[3] ? parts[2] : '';
             } else if (tool.name.startsWith('blockchain.ckb_fiber.')) {
                 network = 'CKB';

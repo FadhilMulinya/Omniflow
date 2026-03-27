@@ -33,7 +33,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     ))}
                 </div>
                 <div className="flex items-center space-x-6">
-                    <a href="/signin" className="font-medium text-muted-foreground hover:text-primary transition-colors">
+                    <a href="/signin" className="font-medium hover:text-primary transition-colors">
                         Sign In
                     </a>
                     <a

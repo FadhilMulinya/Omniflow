@@ -30,42 +30,36 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
   // Get tokens to trade
   const tokens = data.inputs?.find((input: any) => input.key === 'tokens')?.value || ['ETH', 'BTC'];
 
+  const shellClass = [
+    'node-base',
+    'node-indigo',
+    selected ? 'node-selected' : '',
+    data.isActive === false ? 'node-inactive' : '',
+    data.isPlaying ? 'node-playing' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div
-      className={`p-3 rounded-md border-2 ${selected ? 'border-blue-500' : 'border-indigo-200'} ${data.isActive === false ? 'opacity-50' : ''
-        } ${data.isPlaying ? 'animate-pulse shadow-lg shadow-indigo-200' : ''} bg-indigo-50 shadow-sm w-48 relative`}
-    >
+    <div className={shellClass}>
       <NodeControls
         nodeId={id}
         isPlaying={data.isPlaying || false}
         isActive={data.isActive !== false}
       />
 
-      {/* Node Icon */}
-      <div className="absolute top-1 left-1 flex items-center text-xs">
-        <div className="flex items-center text-indigo-600">
-          <BrainCircuit className="h-4 w-4" />
-        </div>
+      {/* Icon + strategy badge */}
+      <div className="node-icon">
+        <BrainCircuit className="h-4 w-4 text-indigo-600" />
+      </div>
+      <div className={`absolute top-1 right-8 text-[10px] font-semibold ${strategy === 'Aggressive' ? 'text-red-600'
+          : strategy === 'Conservative' ? 'text-green-600'
+            : strategy === 'Custom' ? 'text-purple-600'
+              : 'text-blue-600'
+        }`}>
+        {strategy}
       </div>
 
-      {/* Strategy indicator */}
-      <div className="absolute top-1 right-8 flex items-center text-xs">
-        <div
-          className={`flex items-center ${strategy === 'Aggressive'
-            ? 'text-red-600'
-            : strategy === 'Conservative'
-              ? 'text-green-600'
-              : strategy === 'Custom'
-                ? 'text-purple-600'
-                : 'text-blue-600'
-            }`}
-        >
-          <span className="text-[10px]">{strategy}</span>
-        </div>
-      </div>
-
-      <div className="font-medium text-sm mt-6">{data.name}</div>
-      <div className="text-xs text-black-500 mb-2">{data.description}</div>
+      <div className="node-title">{data.name}</div>
+      <div className="node-description">{data.description}</div>
 
       {/* Wallet connection status indicator */}
       {isWalletConnected ? (
@@ -80,14 +74,10 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
         </div>
       )}
 
-      {/* Tokens display */}
       {Array.isArray(tokens) && tokens.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
           {tokens.map((token, index) => (
-            <span
-              key={index}
-              className="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded"
-            >
+            <span key={index} className="text-[10px] px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded font-semibold">
               {token}
             </span>
           ))}
@@ -118,59 +108,36 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
         />
       ))}
 
-      {/* Display output data when the node is playing */}
       {data.isPlaying && data.outputData && (
-        <div className="mt-2 p-2 bg-gray-50 border rounded-md">
-          <div className="text-xs text-black-500 mb-1">AI Trading Analysis</div>
-
+        <div className="node-output-panel">
+          <div className="node-output-panel-label mb-1">AI Trading Analysis</div>
           {data.outputData.recommendation && (
-            <div className="mb-2">
-              <div className="text-sm font-medium flex items-center">
+            <div className="mb-1">
+              <div className="node-output-panel-value flex items-center gap-1">
                 {data.outputData.recommendation.action === 'buy' ? (
-                  <>
-                    <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-                    <span className="text-green-600">Buy</span>
-                  </>
+                  <TrendingUp className="h-3 w-3 text-green-400" />
                 ) : data.outputData.recommendation.action === 'sell' ? (
-                  <>
-                    <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
-                    <span className="text-red-600">Sell</span>
-                  </>
+                  <TrendingDown className="h-3 w-3 text-red-400" />
                 ) : (
-                  <>
-                    <BarChart className="h-3 w-3 text-blue-500 mr-1" />
-                    <span className="text-blue-600">Hold</span>
-                  </>
-                )}{' '}
-                {data.outputData.recommendation.token}
+                  <BarChart className="h-3 w-3 text-blue-400" />
+                )}
+                {data.outputData.recommendation.action?.toUpperCase()} {data.outputData.recommendation.token}
               </div>
-              <div className="text-xs text-black-600 mt-1">
-                {data.outputData.recommendation.reason}
-              </div>
+              <div className="node-output-panel-value mt-0.5">{data.outputData.recommendation.reason}</div>
             </div>
           )}
-
           {data.outputData.performance && (
-            <div className="text-xs border-t pt-1 mt-1">
+            <div className="node-output-panel-value border-t border-indigo-800 pt-1 mt-1 space-y-0.5">
               <div className="flex justify-between">
                 <span>Win Rate:</span>
-                <span
-                  className={
-                    data.outputData.performance.winRate > 50 ? 'text-green-600' : 'text-red-600'
-                  }
-                >
+                <span className={data.outputData.performance.winRate > 50 ? 'text-green-400' : 'text-red-400'}>
                   {data.outputData.performance.winRate}%
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Profit:</span>
-                <span
-                  className={
-                    data.outputData.performance.profit > 0 ? 'text-green-600' : 'text-red-600'
-                  }
-                >
-                  {data.outputData.performance.profit > 0 ? '+' : ''}
-                  {data.outputData.performance.profit}%
+                <span className={data.outputData.performance.profit > 0 ? 'text-green-400' : 'text-red-400'}>
+                  {data.outputData.performance.profit > 0 ? '+' : ''}{data.outputData.performance.profit}%
                 </span>
               </div>
             </div>
@@ -178,22 +145,16 @@ const TradingBotNode: React.FC<TradingBotNodeProps> = ({ data, isConnectable, se
         </div>
       )}
 
-      {/* Show execution status indicator if available */}
       {data.executionStatus && (
-        <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-            ? 'bg-green-500'
-            : data.executionStatus === 'error'
-              ? 'bg-red-500'
-              : 'bg-yellow-500'
-            }`}
-        />
+        <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+            : data.executionStatus === 'error' ? 'node-status-error'
+              : 'node-status-pending'
+          }`} />
       )}
 
-      {/* Show processing indicator when node is playing but no output yet */}
       {data.isPlaying && !data.outputData && (
-        <div className="mt-2 p-2 bg-gray-50 border rounded-md animate-pulse">
-          <div className="text-xs text-black-500">AI analyzing market data...</div>
+        <div className="node-output-panel animate-pulse">
+          <div className="node-output-panel-label">AI analyzing market data...</div>
         </div>
       )}
     </div>

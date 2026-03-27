@@ -8,7 +8,7 @@ export const Waitlist: React.FC = () => {
                     <div className="flex flex-col md:flex-row">
                         <div className="w-full md:w-1/2 p-10 md:p-12" data-aos="fade-right">
                             <h2 className="text-3xl font-bold mb-4">Join Our Waitlist</h2>
-                            <p className="text-muted-foreground mb-8">
+                            <p className="mb-8">
                                 Be among the first to experience the future of AI agent building. Our beta is
                                 launching soon.
                             </p>
@@ -16,7 +16,7 @@ export const Waitlist: React.FC = () => {
                                 <div>
                                     <label
                                         htmlFor="name"
-                                        className="block text-sm font-medium text-muted-foreground mb-1"
+                                        className="block text-sm font-medium mb-1"
                                     >
                                         Full Name
                                     </label>
@@ -30,7 +30,7 @@ export const Waitlist: React.FC = () => {
                                 <div>
                                     <label
                                         htmlFor="email"
-                                        className="block text-sm font-medium text-muted-foreground mb-1"
+                                        className="block text-sm font-medium mb-1"
                                     >
                                         Email Address
                                     </label>

@@ -12,33 +12,29 @@ interface OutputNodeProps {
 }
 
 const OutputNode: React.FC<OutputNodeProps> = ({ data, isConnectable, selected, id }) => {
-  // Get the icon component from Lucide
   const IconComponent = (data.icon
     ? LucideIcons[data.icon as keyof typeof LucideIcons]
     : LucideIcons.Circle) as React.ElementType;
 
-  return (
-    <div
-      className={`p-3 rounded-md border-2 ${selected ? 'border-blue-500' : 'border-purple-200'} ${data.isActive === false ? 'opacity-50' : ''
-        } ${data.isPlaying ? 'animate-pulse shadow-lg shadow-purple-200' : ''} bg-purple-50 shadow-sm w-48 relative`}
-    >
-      <NodeControls
-        nodeId={id}
-        isPlaying={data.isPlaying || false}
-        isActive={data.isActive !== false}
-      />
+  const shellClass = [
+    'node-base',
+    'node-purple',
+    selected ? 'node-selected' : '',
+    data.isActive === false ? 'node-inactive' : '',
+    data.isPlaying ? 'node-playing' : '',
+  ].filter(Boolean).join(' ');
 
-      {/* Node Icon */}
-      <div className="absolute top-1 left-1 flex items-center text-xs">
-        <div className="flex items-center text-purple-600">
-          {IconComponent && <IconComponent className="h-4 w-4" />}
-        </div>
+  return (
+    <div className={shellClass}>
+      <NodeControls nodeId={id} isPlaying={data.isPlaying || false} isActive={data.isActive !== false} />
+
+      <div className="node-icon">
+        {IconComponent && <IconComponent className="h-4 w-4 text-purple-600" />}
       </div>
 
-      <div className="font-medium text-sm mt-6">{data.name}</div>
-      <div className="text-xs text-black-500 mb-2">{data.description}</div>
+      <div className="node-title">{data.name}</div>
+      <div className="node-description">{data.description}</div>
 
-      {/* Input Handles */}
       {data.inputs?.map((input: any, index: number) => (
         <Handle
           key={input.key}
@@ -51,21 +47,25 @@ const OutputNode: React.FC<OutputNodeProps> = ({ data, isConnectable, selected, 
         />
       ))}
 
-      {/* Display output data when the node is playing */}
+      {/* Input Data Inspector (for debugging) */}
+      {data.inputValues && Object.keys(data.inputValues).length > 0 && (
+        <div className="mt-2 p-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] font-mono overflow-hidden">
+          <div className="text-slate-500 mb-1 font-bold uppercase tracking-wider">Received Data:</div>
+          <div className="max-h-20 overflow-y-auto">
+            <pre className="text-slate-700">{JSON.stringify(data.inputValues, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
       {data.isPlaying && data.outputData && (
         <NodeOutputDisplay nodeType="output" nodeName={data.name} outputData={data.outputData} />
       )}
 
-      {/* Show execution status indicator if available */}
       {data.executionStatus && (
-        <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-              ? 'bg-green-500'
-              : data.executionStatus === 'error'
-                ? 'bg-red-500'
-                : 'bg-yellow-500'
-            }`}
-        />
+        <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+          : data.executionStatus === 'error' ? 'node-status-error'
+            : 'node-status-pending'
+          }`} />
       )}
     </div>
   );

@@ -37,41 +37,34 @@ const CryptoTradeNode: React.FC<CryptoTradeNodeProps> = ({ data, isConnectable, 
   // Get amount from inputs
   const amount = data.inputs?.find((input: any) => input.key === 'amount')?.value || 0.1;
 
+  const shellClass = [
+    'node-base',
+    'node-amber',
+    selected ? 'node-selected' : '',
+    data.isActive === false ? 'node-inactive' : '',
+    data.isPlaying ? 'node-playing' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div
-      className={`p-3 rounded-md border-2 ${selected ? 'border-blue-500' : 'border-green-200'} ${data.isActive === false ? 'opacity-50' : ''
-        } ${data.isPlaying ? 'animate-pulse shadow-lg shadow-green-200' : ''} bg-green-50 shadow-sm w-48 relative`}
-    >
+    <div className={shellClass}>
       <NodeControls
         nodeId={id}
         isPlaying={data.isPlaying || false}
         isActive={data.isActive !== false}
       />
 
-      {/* Node Icon */}
-      <div className="absolute top-1 left-1 flex items-center text-xs">
-        <div className="flex items-center text-green-600">
-          <TrendingUp className="h-4 w-4" />
-        </div>
+      {/* Icon + action badge */}
+      <div className="node-icon">
+        <TrendingUp className="h-4 w-4 text-amber-600" />
+      </div>
+      <div className={`absolute top-1 right-8 flex items-center gap-0.5 text-[10px] font-semibold ${action === 'Buy' ? 'text-green-600' : action === 'Sell' ? 'text-red-600' : 'text-blue-600'
+        }`}>
+        <ActionIcon className="h-3 w-3" />
+        {action}
       </div>
 
-      {/* Action indicator */}
-      <div className="absolute top-1 right-8 flex items-center text-xs">
-        <div
-          className={`flex items-center ${action === 'Buy'
-            ? 'text-green-600'
-            : action === 'Sell'
-              ? 'text-red-600'
-              : 'text-blue-600'
-            }`}
-        >
-          <ActionIcon className="h-3 w-3 mr-1" />
-          <span className="text-[10px]">{action}</span>
-        </div>
-      </div>
-
-      <div className="font-medium text-sm mt-6">{data.name}</div>
-      <div className="text-xs text-black-500 mb-2">{data.description}</div>
+      <div className="node-title">{data.name}</div>
+      <div className="node-description">{data.description}</div>
 
       {/* Wallet connection status indicator */}
       {isWalletConnected ? (
@@ -110,59 +103,39 @@ const CryptoTradeNode: React.FC<CryptoTradeNodeProps> = ({ data, isConnectable, 
         />
       ))}
 
-      {/* Display output data when the node is playing */}
       {data.isPlaying && data.outputData && (
-        <div className="mt-2 p-2 bg-gray-50 border rounded-md">
-          <div className="text-xs text-black-500 mb-1 flex items-center justify-between">
-            <span>Transaction Status</span>
-            <span
-              className={`text-xs px-1.5 py-0.5 rounded ${data.outputData.status === 'completed'
-                ? 'bg-green-100 text-green-700'
-                : data.outputData.status === 'pending'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-red-100 text-red-700'
-                }`}
-            >
-              {data.outputData.status === 'completed'
-                ? 'Completed'
-                : data.outputData.status === 'pending'
-                  ? 'Pending'
-                  : 'Failed'}
+        <div className="node-output-panel">
+          <div className="flex items-center justify-between mb-1">
+            <span className="node-output-panel-label">Transaction</span>
+            <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${data.outputData.status === 'completed' ? 'bg-green-500/20 text-green-400'
+                : data.outputData.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400'
+                  : 'bg-red-500/20 text-red-400'
+              }`}>
+              {data.outputData.status === 'completed' ? 'Completed' : data.outputData.status === 'pending' ? 'Pending' : 'Failed'}
             </span>
           </div>
-          <div className="text-sm font-medium">
-            {action} {data.outputData.details?.amount || amount}{' '}
-            {data.outputData.details?.token || token}
+          <div className="node-output-panel-value">
+            {action} {data.outputData.details?.amount || amount} {data.outputData.details?.token || token}
           </div>
           {data.outputData.details?.price && (
-            <div className="text-xs text-black-500 mt-1">
-              Price: ${data.outputData.details.price}
-            </div>
+            <div className="node-output-panel-value mt-0.5">Price: ${data.outputData.details.price}</div>
           )}
           {data.outputData.transactionId && (
-            <div className="text-xs text-black-500 mt-1">
-              TX: {formatTxId(data.outputData.transactionId)}
-            </div>
+            <div className="node-output-panel-value mt-0.5">TX: {formatTxId(data.outputData.transactionId)}</div>
           )}
-          {/* Display wallet info if available */}
           {isWalletConnected && (
-            <div className="text-xs text-black-500 mt-1 pt-1 border-t border-gray-200">
+            <div className="node-output-panel-value mt-1 pt-1 border-t border-indigo-800">
               Wallet: {formatTxId(walletInfo.address)} ({walletInfo.network || 'Ethereum'})
             </div>
           )}
         </div>
       )}
 
-      {/* Show execution status indicator if available */}
       {data.executionStatus && (
-        <div
-          className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-            ? 'bg-green-500'
-            : data.executionStatus === 'error'
-              ? 'bg-red-500'
-              : 'bg-yellow-500'
-            }`}
-        />
+        <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+            : data.executionStatus === 'error' ? 'node-status-error'
+              : 'node-status-pending'
+          }`} />
       )}
     </div>
   );

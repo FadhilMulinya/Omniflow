@@ -43,7 +43,7 @@ export function AICharacterSection({ nodeData, nodeId, updateNodeData, setNodeDa
                     <Label className="text-xs uppercase tracking-wider font-bold">Character Identity</Label>
                     <div className="flex gap-2">
                         <div className="flex-1 space-y-2">
-                            <Label htmlFor="char-name" className="text-[10px] text-muted-foreground uppercase">Name</Label>
+                            <Label htmlFor="char-name" className="text-[10px] uppercase">Name</Label>
                             <Input
                                 id="char-name"
                                 placeholder="e.g. Zen Trader"
@@ -97,7 +97,7 @@ export function AICharacterSection({ nodeData, nodeId, updateNodeData, setNodeDa
                             updateNodeData(nodeId, updatedData);
                         }}
                     />
-                    <p className="text-[10px] text-muted-foreground italic">
+                    <p className="text-[10px] italic">
                         Press enter for multiple instructions.
                     </p>
                 </div>

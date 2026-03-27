@@ -3,8 +3,7 @@
 import { Handle, Position } from '@xyflow/react';
 import type React from 'react';
 import NodeControls from './node-controls';
-import { Link } from 'lucide-react';
-import { useEffect, useRef } from 'react'; // Added for FlowConsole simulation feedback
+import { Link, Cpu } from 'lucide-react';
 
 interface BlockchainNodeProps {
     data: any;
@@ -13,36 +12,95 @@ interface BlockchainNodeProps {
     id: string;
 }
 
-const BlockchainNode: React.FC<BlockchainNodeProps> = ({
-    data,
-    isConnectable,
-    selected,
-    id,
-}) => {
-    const toolName = data.inputs?.find((input: any) => input.key === 'tool_name')?.value || 'Blockchain Tool';
-    const shortName = toolName.split('.').pop() || 'Tool';
+function parseTool(data: any) {
+    const toolName: string =
+        data.inputs?.find((i: any) => i.key === 'tool_name')?.value ||
+        data.tool ||
+        '';
+    const shortName = toolName.split('.').pop() || 'Blockchain Tool';
+
+    let parentLabel = '';
+    let isCkbNode = false;
+    if (toolName.startsWith('blockchain.ckb.node.')) {
+        parentLabel = 'CKB Node Instance';
+        isCkbNode = true;
+    } else if (toolName.startsWith('blockchain.ckb_fiber.')) {
+        parentLabel = 'CKB Fiber';
+    } else if (toolName.startsWith('blockchain.ckb.')) {
+        parentLabel = 'CKB';
+    }
+
+    return { toolName, shortName, parentLabel, isCkbNode };
+}
+
+const BlockchainNode: React.FC<BlockchainNodeProps> = ({ data, isConnectable, selected, id }) => {
+    const { toolName, shortName, parentLabel, isCkbNode } = parseTool(data);
+
+    const shellClass = [
+        'node-base',
+        'node-blue',
+        selected ? 'node-selected' : '',
+        data.isActive === false ? 'node-inactive' : '',
+        data.isPlaying ? 'node-playing' : '',
+    ].filter(Boolean).join(' ');
 
     return (
-        <div
-            className={`p-4 rounded-xl border-2 transition-all duration-300 ${selected ? 'border-indigo-500 shadow-xl shadow-indigo-100' : 'border-border'} ${data.isActive === false ? 'opacity-40 grayscale' : ''
-                } ${data.isPlaying ? 'ring-2 ring-indigo-500 ring-offset-2 shadow-xl shadow-indigo-100 bg-indigo-50/30' : 'bg-card'} shadow-sm w-52 relative overflow-hidden`}
-        >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-blue-500 opacity-70" />
-            <NodeControls
-                nodeId={id}
-                isPlaying={data.isPlaying || false}
-                isActive={data.isActive !== false}
-            />
+        <div className={shellClass}>
+            <NodeControls nodeId={id} isPlaying={data.isPlaying || false} isActive={data.isActive !== false} />
 
-            {/* Node Icon */}
-            <div className="absolute top-1 left-1 flex items-center text-xs">
-                <div className="flex items-center text-indigo-600">
-                    <Link className="h-4 w-4" />
-                </div>
+            {/* Icon */}
+            <div className="node-icon">
+                {isCkbNode
+                    ? <Cpu className="h-4 w-4 text-indigo-500" />
+                    : <Link className="h-4 w-4 text-blue-500" />
+                }
             </div>
 
-            <div className="font-bold text-sm mt-6 text-indigo-950 uppercase tracking-tight">{shortName}</div>
-            <div className="text-[10px] font-semibold text-indigo-700 mb-2 leading-tight bg-indigo-100/50 px-1 rounded truncate" title={toolName}>{toolName}</div>
+            {/* Parent label */}
+            {parentLabel && (
+                <div className="node-parent-label">{parentLabel}</div>
+            )}
+
+            {/* Tool short name */}
+            <div className={`node-title ${parentLabel ? '!mt-0' : ''}`}>{shortName}</div>
+
+            {/* Full tool path badge */}
+            {toolName && (
+                <div className="node-badge" title={toolName}>{toolName}</div>
+            )}
+
+            {/* Dynamic Inputs form */}
+            {data.inputs?.length > 0 && (
+                <div className="mt-2 space-y-2 relative z-10 nodrag">
+                    {data.inputs.map((input: any) => (
+                        <div key={input.key}>
+                            <label className="node-form-label">{input.label || input.key}</label>
+                            <input
+                                type={input.type === 'number' ? 'number' : 'text'}
+                                placeholder={input.placeholder || `Enter ${input.label || input.key}`}
+                                className="node-input"
+                                value={input.value || ''}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    // Normally you'd use updateNodeData from useFlow context here
+                                    // but we'll mutate directly as a fallback if context isn't hooked up
+                                    input.value = input.type === 'number' ? Number(val) : val;
+                                }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Input Data Inspector */}
+            {data.inputValues && Object.keys(data.inputValues).length > 0 && (
+                <div className="mt-2 p-1.5 bg-slate-50 border border-slate-200 rounded text-[9px] font-mono overflow-hidden mb-2">
+                    <div className="text-slate-500 mb-1 font-bold uppercase tracking-wider">Received Data:</div>
+                    <div className="max-h-20 overflow-y-auto">
+                        <pre className="text-slate-700">{JSON.stringify(data.inputValues, null, 2)}</pre>
+                    </div>
+                </div>
+            )}
 
             {/* Input Handles */}
             {data.inputs?.map((input: any, index: number) => (
@@ -69,16 +127,12 @@ const BlockchainNode: React.FC<BlockchainNodeProps> = ({
                 />
             ))}
 
-            {/* Status indicator */}
+            {/* Status dot */}
             {data.executionStatus && (
-                <div
-                    className={`absolute top-0 left-0 w-2 h-2 rounded-full m-1 ${data.executionStatus === 'success'
-                        ? 'bg-green-500'
-                        : data.executionStatus === 'error'
-                            ? 'bg-red-500'
-                            : 'bg-yellow-500'
-                        }`}
-                />
+                <div className={`node-status-dot ${data.executionStatus === 'success' ? 'node-status-success'
+                    : data.executionStatus === 'error' ? 'node-status-error'
+                        : 'node-status-pending'
+                    }`} />
             )}
         </div>
     );

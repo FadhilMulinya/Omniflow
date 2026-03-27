@@ -18,4 +18,6 @@ export interface CharacterSchema {
         telegram?: string;
         discord?: string;
     };
+    agent_type?: string;
+    [key: string]: any; // Allows extending with dynamic validation schema fields
 }

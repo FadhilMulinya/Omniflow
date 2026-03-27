@@ -1,31 +1,36 @@
 import { AIFactory } from '../lib/ai/factory';
-import { CharacterSchema } from '../characters/schema';
 import { ENV } from '../lib/environments';
 
+import { financialAgentSchema } from '../characters/schemas/financial';
+import { socialAgentSchema } from '../characters/schemas/social';
+import { operationalAgentSchema } from '../characters/schemas/operational';
+
 export class AgentEnhancer {
-    static async enhancePersona(name: string, persona: string, providerName: string = 'ollama', customApiKey?: string, modelName?: string): Promise<Partial<CharacterSchema> & { description?: string }> {
+    static async enhancePersona(name: string, persona: string, providerName: string = 'ollama', customApiKey?: string, modelName?: string, agentType: string = 'operational_agent'): Promise<any> {
         const provider = AIFactory.getProvider(providerName);
 
-        const prompt = `
-You are an expert AI character designer for Omniflow, a blockchain-enabled agent platform on CKB and Fiber.
-Given an agent name and a summarized persona, expand it into a comprehensive character schema.
-The agent will be operating in a decentralized environment, so include traits or knowledge related to blockchain if implied, but keep the core personality based on the persona.
+        let targetSchema: any;
+        switch (agentType) {
+            case 'financial_agent': targetSchema = financialAgentSchema; break;
+            case 'social_agent': targetSchema = socialAgentSchema; break;
+            case 'operational_agent':
+            default: targetSchema = operationalAgentSchema; break;
+        }
 
-Output MUST be a valid JSON object ONLY, with no extra text.
-Structure:
-{
-  "name": "string",
-  "description": "string (A very brief 1-sentence summary of the agent to display on cards)",
-  "bio": "string (engaging, 2-3 sentences)",
-  "instructions": ["string (detailed system instructions on how the agent should behave)"],
-  "traits": {
-    "personality": ["string"],
-    "knowledge": ["string"],
-    "technical_skills": ["string"]
-  }
-}
+        const prompt = `
+You are an expert AI character designer for Omniflow, a decentralized agent platform.
+Given an agent name, a summarized persona, and a strict target schema, expand the persona into a comprehensive character profile.
+
+CRITICAL REQUIREMENT:
+Your output MUST be a valid JSON object ONLY. 
+You MUST strictly conform to the provided JSON Schema below. 
+Fill out ALL strictly required fields thoroughly. For arrays of strings (like traits, allowed_actions, etc.), provide at least 3 thoughtful items.
+
+TARGET JSON SCHEMA:
+${JSON.stringify(targetSchema, null, 2)}
 
 Agent Name: ${name}
+Agent Type: ${agentType}
 Summarized Persona: ${persona}
         `.trim();
 
@@ -38,19 +43,16 @@ Summarized Persona: ${persona}
                 apiKey: customApiKey || (providerName === 'openai' ? ENV.OPENAI_API_KEY : providerName === 'ollama' ? ENV.OLLAMA_BASE_URL : ENV.GEMINI_API_KEY)
             });
 
-            // Extract JSON from response (handling potential markdown blocks or extra text)
             let jsonStr = response.content || '';
 
             if (!jsonStr.trim()) {
                 throw new Error('AI returned an empty response.');
             }
 
-            // Look for JSON block
             const jsonMatch = jsonStr.match(/```json\s*([\s\S]*?)\s*```/) || jsonStr.match(/```\s*([\s\S]*?)\s*```/);
             if (jsonMatch && jsonMatch[1]) {
                 jsonStr = jsonMatch[1];
             } else {
-                // If no markdown block, try to find the first { and last }
                 const startIdx = jsonStr.indexOf('{');
                 const endIdx = jsonStr.lastIndexOf('}');
                 if (startIdx !== -1 && endIdx !== -1) {
@@ -59,6 +61,7 @@ Summarized Persona: ${persona}
             }
 
             const enhancedData = JSON.parse(jsonStr.trim());
+            enhancedData.agent_type = agentType;
             return enhancedData;
         } catch (error: any) {
             const msg = error?.message || String(error);

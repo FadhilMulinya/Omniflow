@@ -1,5 +1,9 @@
 export function generateRandomAddress(network = 'Ethereum'): string {
     const chars = '0123456789abcdef';
+    if (network.includes('ckb')) {
+        // Mock CKB address format
+        return 'ckt' + Array.from({ length: 42 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
     let address = '0x';
     for (let i = 0; i < 40; i++) {
         address += chars[Math.floor(Math.random() * chars.length)];
@@ -17,6 +21,9 @@ export function getCurrencyForNetwork(network = 'Ethereum'): string {
         case 'Polygon': return 'MATIC';
         case 'Solana': return 'SOL';
         case 'Bitcoin': return 'BTC';
+        case 'ckb-mainnet':
+        case 'ckb-testnet':
+            return 'CKB';
         default: return 'ETH';
     }
 }
