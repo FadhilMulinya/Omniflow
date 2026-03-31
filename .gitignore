@@ -55,3 +55,17 @@ temp/
 
 # Product proposal folder
 ProjectProposal/
+
+# python
+__pycache__/
+*.pyc
+
+# local tools
+.claude/
+.marscode/
+
+# env
+.env
+
+# node
+node_modules/
