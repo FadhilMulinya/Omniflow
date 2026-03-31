@@ -1,4 +1,8 @@
+'use client';
+
 import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Check, Sparkles } from 'lucide-react';
 import { PricingPlan } from './types';
 
 interface PricingProps {
@@ -7,140 +11,123 @@ interface PricingProps {
 }
 
 export const Pricing: React.FC<PricingProps> = ({ pricingPlans, handleAnchorClick }) => {
-    return (
-        <section id="pricing" className="py-20 bg-muted/20">
-            <div className="container mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">
-                        Simple, Transparent Pricing
-                    </h2>
-                    <p
-                        className="max-w-2xl mx-auto"
-                        data-aos="fade-up"
-                        data-aos-delay="100"
-                    >
-                        Choose the plan that works best for your needs. All plans include core features with
-                        no hidden fees.
-                    </p>
-                </div>
+    const shouldReduce = useReducedMotion();
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                    {pricingPlans.map((plan, index) => (
-                        <div
-                            key={index}
-                            className="card-flip h-96"
-                            data-aos="fade-up"
-                            data-aos-delay={200 + index * 100}
+    return (
+        <section id="pricing" className="py-28 bg-muted/20 relative overflow-hidden">
+            {/* Depth accents */}
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-primary/4 blur-[120px]" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: shouldReduce ? 0 : 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-80px' }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-center mb-16 max-w-2xl mx-auto"
+                >
+                    <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+                        Pricing
+                    </p>
+                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+                        Simple, transparent plans
+                    </h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                        No hidden fees, no surprises. Scale up as your needs grow.
+                    </p>
+                </motion.div>
+
+                {/* Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    {pricingPlans.map((plan, i) => (
+                        <motion.div
+                            key={plan.name}
+                            initial={{ opacity: 0, y: shouldReduce ? 0 : 28 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: '-40px' }}
+                            transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                            whileHover={shouldReduce ? {} : { y: -6, transition: { duration: 0.2 } }}
+                            className={`relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden cursor-default ${
+                                plan.popular
+                                    ? 'border-primary bg-primary text-white shadow-2xl shadow-primary/25'
+                                    : 'border-border/60 bg-card/50 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg hover:shadow-black/5'
+                            }`}
                         >
-                            <div className="card-inner h-full">
-                                <div
-                                    className={`card-front ${plan.popular ? 'bg-primary dark:bg-primary' : 'bg-white dark:bg-foreground'} rounded-xl shadow-lg dark:shadow-neon p-8 flex flex-col justify-between h-full relative overflow-hidden`}
-                                >
-                                    {plan.popular && (
-                                        <div className="absolute top-0 right-0 bg-neonblue text-white text-xs px-4 py-1 transform rotate-45 translate-x-8 translate-y-4">
-                                            Popular
-                                        </div>
+                            {/* Popular badge */}
+                            {plan.popular && (
+                                <div className="flex items-center gap-1.5 px-6 py-2 bg-white/10 border-b border-white/20">
+                                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                                    <span className="text-xs font-bold tracking-widest uppercase text-white">
+                                        Most Popular
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="p-7 flex flex-col flex-1">
+                                {/* Plan name */}
+                                <h3 className={`text-lg font-bold mb-1 ${plan.popular ? 'text-white' : ''}`}>
+                                    {plan.name}
+                                </h3>
+                                <p className={`text-sm mb-6 leading-relaxed ${plan.popular ? 'text-white/70' : 'text-muted-foreground'}`}>
+                                    {plan.description}
+                                </p>
+
+                                {/* Price */}
+                                <div className="flex items-end gap-1 mb-8">
+                                    <span className={`text-5xl font-extrabold tracking-tight ${plan.popular ? 'text-white' : ''}`}>
+                                        {plan.price}
+                                    </span>
+                                    {plan.period && (
+                                        <span className={`text-sm mb-2 ${plan.popular ? 'text-white/60' : 'text-muted-foreground'}`}>
+                                            {plan.period}
+                                        </span>
                                     )}
-                                    <div>
-                                        <h3
-                                            className={`text-xl font-bold mb-2 ${plan.popular ? 'text-white' : 'dark:text-white'}`}
-                                        >
-                                            {plan.name}
-                                        </h3>
-                                        <div className="flex items-end mb-4">
-                                            <span
-                                                className={`text-4xl font-bold ${plan.popular ? 'text-white' : 'dark:text-white'}`}
-                                            >
-                                                {plan.price}
+                                </div>
+
+                                {/* Features */}
+                                <ul className="space-y-3 mb-8 flex-1">
+                                    {plan.detailedFeatures.map((f) => (
+                                        <li key={f} className="flex items-start gap-3 text-sm">
+                                            <span className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.popular ? 'bg-white/20' : 'bg-primary/10'}`}>
+                                                <Check className={`w-2.5 h-2.5 ${plan.popular ? 'text-white' : 'text-primary'}`} />
                                             </span>
-                                            {plan.period && (
-                                                <span
-                                                    className={`${plan.popular ? 'text-white/70' : 'text-black-500 dark:text-black-400'} ml-1`}
-                                                >
-                                                    {plan.period}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p
-                                            className={`${plan.popular ? 'text-white/80' : 'text-black-600 dark:text-black-400'} mb-6`}
-                                        >
-                                            {plan.description}
-                                        </p>
-                                        <ul className="space-y-3 mb-8">
-                                            {plan.features.map((feature, i) => (
-                                                <li key={i} className="flex items-start">
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className={`h-5 w-5 ${plan.popular ? 'text-white' : 'text-primary'} mt-1 mr-2`}
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M5 13l4 4L19 7"
-                                                        />
-                                                    </svg>
-                                                    <span
-                                                        className={
-                                                            plan.popular ? 'text-white' : 'text-black-700 dark:text-black-300'
-                                                        }
-                                                    >
-                                                        {feature}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div className="text-center">
-                                        <p
-                                            className={`text-sm ${plan.popular ? 'text-white/70' : 'text-black-500 dark:text-black-400'} italic mb-2`}
-                                        >
-                                            Hover to see more details
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="card-back bg-white dark:bg-foreground rounded-xl shadow-lg dark:shadow-neon p-8 flex flex-col justify-between h-full">
-                                    <div>
-                                        <h3 className="text-xl font-bold mb-6 dark:text-white">
-                                            {plan.name} Plan Includes:
-                                        </h3>
-                                        <ul className="space-y-3 mb-8">
-                                            {plan.detailedFeatures.map((feature, i) => (
-                                                <li key={i} className="flex items-start">
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="h-5 w-5 text-primary mt-1 mr-2"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M5 13l4 4L19 7"
-                                                        />
-                                                    </svg>
-                                                    <span className="text-black-700 dark:text-black-300">{feature}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <a
-                                        href="#waitlist"
-                                        className="block text-center px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-full transition-all duration-300 transform hover:scale-105"
-                                        onClick={(e) => handleAnchorClick(e, '#waitlist')}
-                                    >
-                                        {plan.ctaText}
-                                    </a>
-                                </div>
+                                            <span className={plan.popular ? 'text-white/90' : ''}>
+                                                {f}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* CTA */}
+                                <a
+                                    href="#waitlist"
+                                    onClick={(e) => handleAnchorClick(e, '#waitlist')}
+                                    className={`block text-center px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 cursor-pointer ${
+                                        plan.popular
+                                            ? 'bg-white text-primary hover:bg-white/90 shadow-md hover:-translate-y-0.5'
+                                            : 'bg-primary/8 text-primary border border-primary/20 hover:bg-primary/12 hover:border-primary/40'
+                                    }`}
+                                >
+                                    {plan.ctaText}
+                                </a>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
+
+                {/* Trust note */}
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="text-center text-sm text-muted-foreground mt-10"
+                >
+                    All plans include a 14-day free trial. No credit card required.
+                </motion.p>
             </div>
         </section>
     );

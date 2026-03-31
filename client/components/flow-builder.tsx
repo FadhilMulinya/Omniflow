@@ -15,7 +15,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { Button, useToast, toast } from '@/components/ui';
-import { Plus, Save, Upload, Key, Send, Loader2, User, Bot, Sparkles } from 'lucide-react';
+import { Plus, Save, Upload, Key, Send, Loader2, User, Bot, Sparkles, Share2 } from 'lucide-react';
 import NodeLibrary from '@/components/node-library';
 import NodeSidebar from '@/components/node-sidebar';
 import NodeConsoleModal from '@/components/node-console-modal';
@@ -30,6 +30,7 @@ import CreateAgentModal from '@/components/create-agent-modal';
 import LoadAgentModal from '@/components/modals/load-agent-modal';
 import TemplateModal from '@/components/modals/template-modal';
 import ChatSidebar from '@/components/modals/chat-sidebar';
+import ExportAgentModal from '@/components/modals/export-agent-modal';
 import { Badge } from '@/components/ui/feedback/badge';
 import {
   Rocket,
@@ -50,6 +51,7 @@ function FlowBuilderContent() {
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [currentAgentId, setCurrentAgentId] = useState<string | null>(null);
   const [currentAgent, setCurrentAgent] = useState<any>(null);
 
@@ -396,6 +398,16 @@ function FlowBuilderContent() {
                     <MessageSquare className="h-3.5 w-3.5 mr-1" />
                     Interact
                   </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-emerald-300 font-bold hover:text-emerald-200 hover:bg-emerald-500/20 h-8 px-2"
+                    onClick={() => setIsExportModalOpen(true)}
+                  >
+                    <Share2 className="h-3.5 w-3.5 mr-1" />
+                    Export
+                  </Button>
                 </div>
               )}
 
@@ -491,6 +503,14 @@ function FlowBuilderContent() {
           onClose={() => setIsChatOpen(false)}
           agentId={currentAgentId}
         />
+        {currentAgentId && (
+          <ExportAgentModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            agentId={currentAgentId}
+            agentName={currentAgent?.name || 'Agent'}
+          />
+        )}
       </ReactFlowProvider>
     </div>
   );

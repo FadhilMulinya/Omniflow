@@ -7,6 +7,9 @@
 **/.next/
 **/out/
 
+CLAUDE.md
+
+
 # Production
 **/build
 **/dist

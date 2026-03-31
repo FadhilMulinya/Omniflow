@@ -30,8 +30,8 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-        throw new Error(error.message || response.statusText);
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || body.message || response.statusText || 'An error occurred');
     }
 
     return response.json();

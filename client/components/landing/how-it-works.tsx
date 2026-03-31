@@ -1,243 +1,151 @@
+'use client';
+
 import React from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { BookOpen, Workflow, Rocket, Check } from 'lucide-react';
+
+const steps = [
+    {
+        number: '01',
+        icon: BookOpen,
+        label: 'Step 1',
+        title: 'Choose a template or start from scratch',
+        description:
+            'Pick from our library of industry-specific AI agent templates, or open a blank canvas and build exactly what you need.',
+        bullets: ['Industry-specific templates', 'Customisable starting points', 'Blank canvas for full control'],
+        accent: 'from-primary/20 to-primary/5',
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
+    },
+    {
+        number: '02',
+        icon: Workflow,
+        label: 'Step 2',
+        title: 'Design your workflow with drag-and-drop',
+        description:
+            'Connect triggers, actions, and conditions visually. Our smart connector UI makes even complex logic feel simple.',
+        bullets: ['Visual flow builder', 'Pre-built components', 'Smart logic connectors'],
+        accent: 'from-violet-500/20 to-violet-500/5',
+        iconColor: 'text-violet-500',
+        iconBg: 'bg-violet-500/10',
+    },
+    {
+        number: '03',
+        icon: Rocket,
+        label: 'Step 3',
+        title: 'Test, deploy, and monitor your agent',
+        description:
+            'Validate in real-time, ship with one click, and watch your agent perform in production with full observability.',
+        bullets: ['One-click deployment', 'Real-time monitoring', 'Seamless iteration'],
+        accent: 'from-amber-500/20 to-amber-500/5',
+        iconColor: 'text-amber-500',
+        iconBg: 'bg-amber-500/10',
+    },
+];
 
 export const HowItWorks: React.FC = () => {
+    const shouldReduce = useReducedMotion();
+
     return (
-        <section id="how-it-works" className="py-20 bg-muted/20">
-            <div className="container mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">
-                        How It Works
-                    </h2>
-                    <p
-                        className="max-w-2xl mx-auto"
-                        data-aos="fade-up"
-                        data-aos-delay="100"
-                    >
-                        Building sophisticated AI agents has never been easier. Follow these simple steps to
-                        get started.
+        <section id="how-it-works" className="py-28 bg-muted/20 relative overflow-hidden">
+            {/* Subtle background depth */}
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: shouldReduce ? 0 : 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-80px' }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-center mb-20 max-w-2xl mx-auto"
+                >
+                    <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+                        Process
                     </p>
-                </div>
+                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+                        From idea to agent in minutes
+                    </h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                        Three simple steps — and you have a live, autonomous AI agent working for you.
+                    </p>
+                </motion.div>
 
-                {/* Step 1 */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-20">
-                    <div className="w-full md:w-1/2 order-2 md:order-1" data-aos="fade-right">
-                        <span className="inline-block text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full mb-2">
-                            Step 1
-                        </span>
-                        <h3 className="text-2xl font-bold mb-4">
-                            Choose your template or start from scratch
-                        </h3>
-                        <p className="mb-6">
-                            Begin your journey by selecting from our library of pre-built AI agent templates, or
-                            start with a blank canvas and build your own from scratch.
-                        </p>
-                        <ul className="space-y-3">
-                            {[
-                                'Industry-specific templates',
-                                'Customizable starting points',
-                                'Blank canvas option for full flexibility',
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-start">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-primary mt-1 mr-2"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                    <span className="text-black-700 dark:text-black-300">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div className="w-full md:w-1/2 order-1 md:order-2" data-aos="fade-left">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary to-neonblue rounded-lg opacity-20 blur-xl"></div>
-                            <div className="relative bg-white dark:bg-foreground p-4 rounded-lg shadow-xl">
-                                <div className="bg-gray-100 dark:bg-dark-bg rounded-lg p-6 h-64 flex flex-col">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="font-semibold dark:text-white">Templates</h4>
-                                        <div className="flex space-x-2">
-                                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-4">
-                                        {[
-                                            { initials: 'CS', label: 'Customer Service', color: 'blue' },
-                                            { initials: 'DA', label: 'Data Analysis', color: 'green' },
-                                            { initials: 'CG', label: 'Content Generator', color: 'purple' },
-                                            { initials: '+', label: 'Blank Canvas', color: 'gray' },
-                                        ].map((item, i) => (
-                                            <div
-                                                key={i}
-                                                className="bg-white dark:bg-foreground rounded-md p-3 shadow-sm hover:shadow-md cursor-pointer transform hover:scale-105 transition-all"
-                                            >
-                                                <div
-                                                    className={`w-8 h-8 bg-${item.color}-100 dark:bg-${item.color}-900 rounded-md flex items-center justify-center mb-2`}
-                                                >
-                                                    <span className={`text-${item.color}-600 dark:text-${item.color}-300 text-sm`}>
-                                                        {item.initials}
-                                                    </span>
-                                                </div>
-                                                <h5 className="text-sm font-medium dark:text-white">{item.label}</h5>
-                                            </div>
+                {/* Steps */}
+                <div className="flex flex-col gap-16">
+                    {steps.map((step, i) => {
+                        const Icon = step.icon;
+                        const isReverse = i % 2 !== 0;
+                        return (
+                            <motion.div
+                                key={step.number}
+                                initial={{ opacity: 0, x: shouldReduce ? 0 : (isReverse ? 40 : -40) }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true, margin: '-60px' }}
+                                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                                className={`flex flex-col md:flex-row items-center gap-10 ${isReverse ? 'md:flex-row-reverse' : ''}`}
+                            >
+                                {/* Content */}
+                                <div className="w-full md:w-1/2">
+                                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase bg-primary/8 text-primary border border-primary/20 mb-4">
+                                        {step.label}
+                                    </span>
+                                    <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-snug">
+                                        {step.title}
+                                    </h3>
+                                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                                        {step.description}
+                                    </p>
+                                    <ul className="space-y-2.5">
+                                        {step.bullets.map((b) => (
+                                            <li key={b} className="flex items-center gap-3 text-[15px]">
+                                                <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <Check className="w-3 h-3 text-primary" />
+                                                </span>
+                                                {b}
+                                            </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Step 2 */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-20">
-                    <div className="w-full md:w-1/2 order-2" data-aos="fade-left">
-                        <span className="inline-block text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full mb-2">
-                            Step 2
-                        </span>
-                        <h3 className="text-2xl font-bold mb-4 dark:text-white">
-                            Design your workflow with drag and drop
-                        </h3>
-                        <p className="text-black-600 dark:text-black-400 mb-6">
-                            Use our intuitive drag-and-drop interface to create your AI workflow. Connect
-                            triggers, actions, and conditions to define how your agent behaves.
-                        </p>
-                        <ul className="space-y-3">
-                            {[
-                                'Visual flow builder',
-                                'Pre-built components',
-                                'Smart connectors and logic',
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-start">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-primary mt-1 mr-2"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
+                                {/* Visual card */}
+                                <div className="w-full md:w-1/2">
+                                    <motion.div
+                                        whileHover={shouldReduce ? {} : { y: -6, transition: { duration: 0.25 } }}
+                                        className={`relative rounded-2xl border border-border/60 bg-gradient-to-br ${step.accent} p-8 shadow-sm overflow-hidden`}
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                    <span className="text-black-700 dark:text-black-300">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div className="w-full md:w-1/2 order-1" data-aos="fade-right">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary to-neonblue rounded-lg opacity-20 blur-xl"></div>
-                            <div className="relative bg-white dark:bg-foreground p-4 rounded-lg shadow-xl">
-                                <div className="bg-gray-100 dark:bg-dark-bg rounded-lg p-6 h-64">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="font-semibold dark:text-white">Workflow Builder</h4>
-                                        <div className="flex space-x-2">
-                                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                    <div className="relative h-44">
-                                        {/* Simplified Workflow UI Representation */}
-                                        <div className="absolute top-2 left-2 w-20 h-12 bg-blue-500 rounded-md flex items-center justify-center text-white text-xs shadow-md">
-                                            Trigger
-                                        </div>
-                                        <div className="absolute top-2 left-28 w-20 h-12 bg-green-500 rounded-md flex items-center justify-center text-white text-xs shadow-md">
-                                            Process
-                                        </div>
-                                        <div className="absolute top-28 left-40 w-20 h-12 bg-purple-500 rounded-md flex items-center justify-center text-white text-xs shadow-md">
-                                            Decision
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                        {/* Step number watermark */}
+                                        <span className="absolute top-4 right-6 text-7xl font-black text-foreground/5 select-none leading-none">
+                                            {step.number}
+                                        </span>
 
-                {/* Step 3 */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-10">
-                    <div className="w-full md:w-1/2 order-2 md:order-1" data-aos="fade-right">
-                        <span className="inline-block text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full mb-2">
-                            Step 3
-                        </span>
-                        <h3 className="text-2xl font-bold mb-4 dark:text-white">
-                            Test, deploy, and monitor your AI agent
-                        </h3>
-                        <p className="text-black-600 dark:text-black-400 mb-6">
-                            Test your AI agent in real-time, make adjustments as needed, and deploy it with a
-                            single click. Monitor performance and scale as your needs grow.
-                        </p>
-                        <ul className="space-y-3">
-                            {[
-                                'One-click deployment',
-                                'Real-time monitoring',
-                                'Seamless iteration and improvement',
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-start">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-primary mt-1 mr-2"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                    <span className="text-black-700 dark:text-black-300">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div className="w-full md:w-1/2 order-1 md:order-2" data-aos="fade-left">
-                        <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary to-neonblue rounded-lg opacity-20 blur-xl"></div>
-                            <div className="relative bg-white dark:bg-foreground p-4 rounded-lg shadow-xl">
-                                <div className="bg-gray-100 dark:bg-dark-bg rounded-lg p-6 h-64">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="font-semibold dark:text-white">Dashboard</h4>
-                                        <div className="flex space-x-2">
-                                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        {/* Icon */}
+                                        <div className={`w-14 h-14 rounded-2xl ${step.iconBg} flex items-center justify-center mb-6`}>
+                                            <Icon className={`w-7 h-7 ${step.iconColor}`} />
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <div className="bg-white dark:bg-foreground p-3 rounded-md shadow-sm">
-                                            <h5 className="text-xs font-medium text-black-500 dark:text-black-400 mb-1">
-                                                Active Agents
-                                            </h5>
-                                            <p className="text-lg font-bold dark:text-white">5</p>
+
+                                        {/* Mock UI */}
+                                        <div className="space-y-3">
+                                            {[80, 60, 45, 70].map((w, j) => (
+                                                <motion.div
+                                                    key={j}
+                                                    initial={{ scaleX: 0 }}
+                                                    whileInView={{ scaleX: 1 }}
+                                                    viewport={{ once: true }}
+                                                    transition={{ delay: 0.3 + j * 0.08, duration: 0.5, ease: 'easeOut' }}
+                                                    style={{ originX: 0 }}
+                                                    className={`h-2.5 rounded-full bg-foreground/10 w-[${w}%]`}
+                                                />
+                                            ))}
                                         </div>
-                                        <div className="bg-background p-3 rounded-md border border-border shadow-sm">
-                                            <h5 className="text-xs font-medium mb-1">
-                                                Executions Today
-                                            </h5>
-                                            <p className="text-lg font-bold">1,243</p>
-                                        </div>
-                                    </div>
+                                    </motion.div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </div>
         </section>

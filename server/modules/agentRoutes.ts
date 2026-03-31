@@ -8,6 +8,9 @@ import { validateCharacter } from '../characters/validator';
 import { WalletService } from '../services/WalletService';
 import { Orchestrator } from '../engine/orchestrator';
 import { Readable } from 'stream';
+import { Purchase } from '../models/Purchase';
+import { User } from '../models/User';
+import { PLANS } from '../lib/tokens';
 
 export const agentRoutes: FastifyPluginAsync = async (fastify) => {
     // Get all agents for the authenticated user's workspace
@@ -284,8 +287,9 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
                     }
                 }
 
-                // Strict validation using AJV
-                if (Object.keys(intermediateCharacter).length > 0) {
+                // Only validate character when it was explicitly included in this request
+                // (skip for graph-only auto-saves to avoid re-validating untouched characters)
+                if (character !== undefined && Object.keys(intermediateCharacter).length > 0) {
                     const validationResult = validateCharacter(currentAgentType, intermediateCharacter);
                     if (!validationResult.isValid) {
                         return reply.code(400).send({
@@ -293,6 +297,9 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
                             details: validationResult.errors
                         });
                     }
+                    agent.character = intermediateCharacter;
+                } else if (character === undefined && Object.keys(intermediateCharacter).length > 0) {
+                    // Preserve existing character unchanged
                     agent.character = intermediateCharacter;
                 }
 
@@ -382,26 +389,19 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
 
             if (!template) return reply.code(404).send({ error: 'Template not found' });
 
-            // Generate AI character persona based on template description
-            let character = {};
-            let description = template.description;
-
-            try {
-                const enhanced = await AgentEnhancer.enhancePersona(name, template.description, modelProvider, apiKey, modelName);
-                character = enhanced;
-                if (enhanced.description) description = enhanced.description;
-            } catch (err) {
-                console.warn('[AgentRoutes] AI Enhancement failed, using default description:', err);
-            }
+            // Use pre-built template character — skip LLM generation entirely
+            const character = template.character || {};
+            const agentType = template.agentType || 'operational_agent';
 
             // Create Agent
             const agent = new AgentDefinition({
                 ownerId: decoded.id,
                 workspaceId: workspace._id,
                 name,
-                description,
+                description: template.description,
                 character,
-                persona: template.description, // Store original template description as persona seed
+                agentType,
+                persona: template.description,
                 modelProvider,
                 modelConfig: {
                     modelName: modelName
@@ -482,4 +482,93 @@ export const agentRoutes: FastifyPluginAsync = async (fastify) => {
             }
         }
     );
+
+    // ── Revenue dashboard ─────────────────────────────────────────────────────
+    fastify.get('/agents/revenue', async (request, reply) => {
+        const token = (request.cookies as any)['auth_token'];
+        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
+        let decoded: any;
+        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+
+        const workspace = await Workspace.findOne({ ownerId: decoded.id });
+        if (!workspace) return { agents: [], totalViews: 0, totalPurchases: 0, totalRevenue: 0, chartData: [] };
+
+        // All agents owned by user
+        const agents = await AgentDefinition.find({ workspaceId: workspace._id })
+            .select('name description marketplace agentType isDraft createdAt');
+
+        // All purchases where user is seller
+        const purchases = await Purchase.find({ sellerId: decoded.id, status: 'confirmed' })
+            .populate('agentId', 'name')
+            .sort({ createdAt: -1 });
+
+        // Aggregate totals
+        const totalViews     = agents.reduce((s, a) => s + (Number((a.marketplace as any)?.stats?.views) || 0), 0);
+        const totalPurchases = agents.reduce((s, a) => s + (Number((a.marketplace as any)?.stats?.purchases) || 0), 0);
+        const totalRevenue   = purchases.reduce((s, p) => s + (p.amount || 0), 0);
+
+        // Chart data: last 30 days
+        const now = new Date();
+        const chartData: { date: string; views: number; purchases: number; revenue: number }[] = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().slice(0, 10);
+            const dayPurchases = purchases.filter(p => p.createdAt.toISOString().slice(0, 10) === dateStr);
+            chartData.push({
+                date: dateStr,
+                views: 0,       // per-day view tracking not yet implemented
+                purchases: dayPurchases.length,
+                revenue: dayPurchases.reduce((s, p) => s + (p.amount || 0), 0),
+            });
+        }
+
+        // Per-agent breakdown for listing
+        const agentBreakdown = agents.map(a => {
+            const mkt = (a.marketplace as any) || {};
+            const agentPurchases = purchases.filter(p => String((p.agentId as any)?._id || p.agentId) === String(a._id));
+            return {
+                _id: a._id,
+                name: a.name,
+                description: a.description,
+                agentType: a.agentType,
+                isDraft: a.isDraft,
+                published: mkt.published || false,
+                category: mkt.category,
+                views: Number(mkt.stats?.views) || 0,
+                purchases: Number(mkt.stats?.purchases) || 0,
+                revenue: agentPurchases.reduce((s: number, p: any) => s + (p.amount || 0), 0),
+                pricing: mkt.pricing,
+            };
+        });
+
+        return { agents: agentBreakdown, totalViews, totalPurchases, totalRevenue, chartData };
+    });
+
+    // ── Plan enforcement helper (called before creating agents) ───────────────
+    fastify.get('/agents/plan-status', async (request, reply) => {
+        const token = (request.cookies as any)['auth_token'];
+        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
+        let decoded: any;
+        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+
+        const user = await User.findById(decoded.id).select('tokens plan planExpiry');
+        if (!user) return reply.code(404).send({ error: 'User not found' });
+
+        const workspace = await Workspace.findOne({ ownerId: decoded.id });
+        const agentCount = workspace ? await AgentDefinition.countDocuments({ workspaceId: workspace._id }) : 0;
+
+        const plan = PLANS[user.plan || 'free'];
+        const atLimit = plan.agentLimit !== -1 && agentCount >= plan.agentLimit;
+
+        return {
+            plan: user.plan,
+            tokens: user.tokens,
+            agentCount,
+            agentLimit: plan.agentLimit,
+            atLimit,
+            canDelete: plan.canDelete,
+            canReEdit: plan.canReEdit,
+        };
+    });
 };

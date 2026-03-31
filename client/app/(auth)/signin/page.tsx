@@ -3,87 +3,142 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api-client';
+import { AuthUI, ForgotPasswordForm, OtpVerifyForm, ResetPasswordForm } from '@/components/ui/auth-fuse';
+
+type Step = 'form' | 'forgot' | 'reset-otp' | 'reset-pw';
 
 export default function SigninPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [step, setStep] = useState<Step>('form');
+    const [pendingEmail, setPendingEmail] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [resetCode, setResetCode] = useState('');
     const router = useRouter();
 
-    const handleSignin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
+    const clearError = () => setError('');
 
+    const handleSignIn = async ({ username, password }: { username: string; password: string }) => {
+        clearError();
+        setLoading(true);
         try {
             await apiFetch('/auth/login', {
                 method: 'POST',
                 body: JSON.stringify({ username, password }),
             });
-
             router.push('/dashboard');
         } catch (err: any) {
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
-            <div className="w-full max-w-md space-y-8 rounded-xl border border-border bg-card p-8 shadow-lg">
-                <div className="text-center">
-                    <h2 className="text-3xl font-bold tracking-tight">Sign In</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">Welcome back to FlawLess</p>
-                </div>
+    const handleSignUp = async ({ username, email, password }: { username: string; email: string; password: string }) => {
+        clearError();
+        setLoading(true);
+        try {
+            await apiFetch('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify({ username, email, password }),
+            });
+            router.push('/dashboard');
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                {error && (
-                    <div className="rounded-md bg-destructive/10 p-3 text-center text-sm text-destructive border border-destructive/20">
-                        {error}
-                    </div>
-                )}
+    const handleForgotPassword = async (email: string) => {
+        clearError();
+        setLoading(true);
+        try {
+            await apiFetch('/auth/forgot-password', {
+                method: 'POST',
+                body: JSON.stringify({ email }),
+            });
+            setPendingEmail(email);
+            setStep('reset-otp');
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                <form onSubmit={handleSignin} className="space-y-6">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-foreground">
-                            Username or Email
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
-                            placeholder="Enter your username or email"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
-                    </div>
+    const handleVerifyResetOtp = async (code: string) => {
+        clearError();
+        // Just store code and advance — actual reset happens in next step
+        setResetCode(code);
+        setStep('reset-pw');
+    };
 
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-foreground">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            required
-                            className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-foreground placeholder:focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all"
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
+    const handleResetPassword = async (newPassword: string) => {
+        clearError();
+        setLoading(true);
+        try {
+            await apiFetch('/auth/reset-password', {
+                method: 'POST',
+                body: JSON.stringify({ email: pendingEmail, code: resetCode, newPassword }),
+            });
+            setStep('form');
+            setError('');
+        } catch (err: any) {
+            setError(err.message);
+            setStep('reset-otp'); // send them back to re-enter code on failure
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                    <button
-                        type="submit"
-                        className="w-full rounded-md bg-primary px-4 py-2.5 text-primary-foreground font-semibold hover:opacity-90 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    >
-                        Sign In
-                    </button>
-                </form>
-
-                <div className="text-center text-sm text-muted-foreground">
-                    Don't have an account?{' '}
-                    <a href="/signup" className="text-primary font-medium hover:underline transition-colors">
-                        Sign up
-                    </a>
-                </div>
-            </div>
+    const wrapper = (children: React.ReactNode) => (
+        <div className="w-full min-h-screen flex items-center justify-center p-6 bg-background">
+            <div className="w-full max-w-[350px]">{children}</div>
         </div>
+    );
+
+    if (step === 'forgot') {
+        return wrapper(
+            <ForgotPasswordForm
+                onSubmit={handleForgotPassword}
+                onBack={() => { setStep('form'); clearError(); }}
+                error={error}
+                loading={loading}
+            />
+        );
+    }
+
+    if (step === 'reset-otp') {
+        return wrapper(
+            <OtpVerifyForm
+                email={pendingEmail}
+                purpose="forgot_password"
+                onSubmit={handleVerifyResetOtp}
+                onBack={() => { setStep('forgot'); clearError(); }}
+                error={error}
+                loading={loading}
+            />
+        );
+    }
+
+    if (step === 'reset-pw') {
+        return wrapper(
+            <ResetPasswordForm
+                onSubmit={handleResetPassword}
+                error={error}
+                loading={loading}
+            />
+        );
+    }
+
+    return (
+        <AuthUI
+            defaultSignIn={true}
+            onSignIn={handleSignIn}
+            onSignUp={handleSignUp}
+            onForgotPassword={() => { clearError(); setStep('forgot'); }}
+            error={error}
+            loading={loading}
+        />
     );
 }

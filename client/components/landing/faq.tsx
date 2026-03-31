@@ -1,4 +1,8 @@
+'use client';
+
 import React from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Plus, Minus } from 'lucide-react';
 import { FaqItem } from './types';
 
 interface FaqProps {
@@ -8,55 +12,83 @@ interface FaqProps {
 }
 
 export const Faq: React.FC<FaqProps> = ({ faqItems, openFaqItem, setOpenFaqItem }) => {
-    return (
-        <section id="faq" className="py-20 bg-background">
-            <div className="container mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">
-                        Frequently Asked Questions
-                    </h2>
-                    <p
-                        className="max-w-2xl mx-auto"
-                        data-aos="fade-up"
-                        data-aos-delay="100"
-                    >
-                        Find answers to the most common questions about AI Builder and our no-code platform.
-                    </p>
-                </div>
+    const shouldReduce = useReducedMotion();
 
-                <div className="max-w-3xl mx-auto">
-                    {faqItems.map((item, index) => (
-                        <div
-                            key={index}
-                            className="mb-6 bg-gray-50 dark:bg-foreground/50 rounded-xl overflow-hidden shadow-md dark:shadow-neon"
-                            data-aos="fade-up"
-                            data-aos-delay={200 + index * 100}
-                        >
-                            <button
-                                className="flex justify-between items-center w-full px-6 py-4 text-left focus:outline-none"
-                                onClick={() => setOpenFaqItem(openFaqItem === index ? null : index)}
-                            >
-                                <h3 className="text-lg font-semibold">{item.question}</h3>
-                                <svg
-                                    className={`w-5 h-5 text-black-500 dark:text-black-400 transition-transform duration-300 ${openFaqItem === index ? 'rotate-180' : ''}`}
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
+    return (
+        <section id="faq" className="py-28 bg-background">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+                <div className="flex flex-col lg:flex-row gap-16">
+                    {/* Left — sticky header */}
+                    <motion.div
+                        initial={{ opacity: 0, x: shouldReduce ? 0 : -24 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true, margin: '-60px' }}
+                        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        className="w-full lg:w-80 shrink-0 lg:sticky lg:top-28 lg:self-start"
+                    >
+                        <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+                            FAQ
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+                            Common questions
+                        </h2>
+                        <p className="text-muted-foreground leading-relaxed">
+                            Everything you need to know before getting started. Still have questions?{' '}
+                            <a href="#waitlist" className="text-primary hover:underline font-medium cursor-pointer">
+                                Contact us
+                            </a>
+                            .
+                        </p>
+                    </motion.div>
+
+                    {/* Right — accordion */}
+                    <div className="flex-1 flex flex-col gap-3">
+                        {faqItems.map((item, i) => {
+                            const isOpen = openFaqItem === i;
+                            return (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: shouldReduce ? 0 : 16 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: '-30px' }}
+                                    transition={{ duration: 0.5, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                                    className={`rounded-2xl border transition-colors duration-200 overflow-hidden ${
+                                        isOpen ? 'border-primary/40 bg-card/80' : 'border-border/60 bg-card/30 hover:border-border'
+                                    }`}
                                 >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-                            <div
-                                className={`accordion-content px-6 pb-4 ${openFaqItem === index ? 'open' : ''}`}
-                            >
-                                <p className="text-muted-foreground">{item.answer}</p>
-                            </div>
-                        </div>
-                    ))}
+                                    <button
+                                        className="flex justify-between items-center w-full px-6 py-5 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                                        onClick={() => setOpenFaqItem(isOpen ? null : i)}
+                                        aria-expanded={isOpen}
+                                    >
+                                        <span className="font-semibold text-[15px] pr-4">{item.question}</span>
+                                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-200 ${isOpen ? 'bg-primary/10 text-primary' : 'bg-accent/50 text-muted-foreground'}`}>
+                                            {isOpen
+                                                ? <Minus className="w-3.5 h-3.5" />
+                                                : <Plus className="w-3.5 h-3.5" />
+                                            }
+                                        </span>
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: shouldReduce ? 0 : 0.25, ease: 'easeOut' }}
+                                                className="overflow-hidden"
+                                            >
+                                                <p className="px-6 pb-6 text-muted-foreground leading-relaxed text-[15px]">
+                                                    {item.answer}
+                                                </p>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
         </section>

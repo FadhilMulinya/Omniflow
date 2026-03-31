@@ -1,98 +1,145 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, Check, Users } from 'lucide-react';
+
+const benefits = [
+    '25% lifetime discount',
+    'Exclusive beta features',
+    'Direct product team access',
+    'Shape the roadmap',
+];
 
 export const Waitlist: React.FC = () => {
+    const shouldReduce = useReducedMotion();
+    const [submitted, setSubmitted] = useState(false);
+
     return (
-        <section id="waitlist" className="py-20 bg-muted/20">
-            <div className="container mx-auto px-4">
-                <div className="max-w-4xl mx-auto bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
-                    <div className="flex flex-col md:flex-row">
-                        <div className="w-full md:w-1/2 p-10 md:p-12" data-aos="fade-right">
-                            <h2 className="text-3xl font-bold mb-4">Join Our Waitlist</h2>
-                            <p className="mb-8">
-                                Be among the first to experience the future of AI agent building. Our beta is
-                                launching soon.
-                            </p>
-                            <form className="space-y-4">
-                                <div>
-                                    <label
-                                        htmlFor="name"
-                                        className="block text-sm font-medium mb-1"
-                                    >
-                                        Full Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground transition-all focus:ring-2 focus:ring-primary focus:border-primary text-base"
-                                        placeholder="John Doe"
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-sm font-medium mb-1"
-                                    >
-                                        Email Address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground transition-all focus:ring-2 focus:ring-primary focus:border-primary text-base"
-                                        placeholder="john@example.com"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    className="w-full px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg text-lg font-medium transition-all duration-300 transform hover:scale-105 animate-glow"
-                                >
-                                    Secure Your Spot
-                                </button>
-                            </form>
-                        </div>
-                        <div
-                            className="relative w-full md:w-1/2 bg-primary p-10 md:p-12 flex items-center justify-center overflow-hidden"
-                            data-aos="fade-left"
+        <section id="waitlist" className="py-28 bg-muted/20 relative overflow-hidden">
+            {/* Background depth */}
+            <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] rounded-full bg-primary/6 blur-[100px]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+                        {/* Left — copy */}
+                        <motion.div
+                            initial={{ opacity: 0, x: shouldReduce ? 0 : -32 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: '-60px' }}
+                            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                         >
-                            <div className="relative text-center text-white">
-                                <h3 className="text-2xl font-bold mb-6">Early Access Benefits</h3>
-                                <ul className="space-y-4 text-left">
-                                    {[
-                                        '25% discount for life',
-                                        'Exclusive beta features',
-                                        'Direct access to our team',
-                                        'Shape the product roadmap',
-                                    ].map((item, i) => (
-                                        <li key={i} className="flex items-start">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-6 w-6 mr-2 flex-shrink-0"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M5 13l4 4L19 7"
-                                                />
-                                            </svg>
-                                            <span>{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="mt-8">
-                                    <p className="text-white/80 mb-2">Users already on the waitlist</p>
-                                    <div className="w-full h-4 bg-white/20 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-white rounded-full progress-fill"
-                                            style={{ width: '85%' }}
-                                        ></div>
-                                    </div>
-                                    <p className="text-white/80 mt-2 text-sm">5,287 of 6,000 spots filled</p>
+                            <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+                                Early Access
+                            </p>
+                            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+                                Join the waitlist
+                            </h2>
+                            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                                Be among the first to experience the future of AI agent building. Beta
+                                launches soon — spots are limited.
+                            </p>
+
+                            <ul className="space-y-3 mb-10">
+                                {benefits.map((b) => (
+                                    <li key={b} className="flex items-center gap-3 text-[15px]">
+                                        <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                            <Check className="w-3 h-3 text-primary" />
+                                        </span>
+                                        {b}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {/* Progress bar */}
+                            <div className="p-5 rounded-2xl border border-border/60 bg-card/40 backdrop-blur-sm">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Users className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-medium">5,287 of 6,000 spots filled</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-border/60 overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: '88%' }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: shouldReduce ? 0 : 1.2, ease: 'easeOut', delay: 0.3 }}
+                                        className="h-full rounded-full bg-primary"
+                                    />
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
+
+                        {/* Right — form */}
+                        <motion.div
+                            initial={{ opacity: 0, x: shouldReduce ? 0 : 32 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: '-60px' }}
+                            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            <div className="p-8 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm">
+                                {submitted ? (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="text-center py-8"
+                                    >
+                                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                                            <Check className="w-7 h-7 text-primary" />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">You're on the list!</h3>
+                                        <p className="text-muted-foreground text-sm">
+                                            We'll notify you the moment your spot is ready.
+                                        </p>
+                                    </motion.div>
+                                ) : (
+                                    <form
+                                        className="space-y-5"
+                                        onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
+                                    >
+                                        <div>
+                                            <label htmlFor="wl-name" className="block text-sm font-medium mb-2">
+                                                Full Name
+                                            </label>
+                                            <input
+                                                id="wl-name"
+                                                type="text"
+                                                required
+                                                className="w-full px-4 py-3 rounded-xl border border-border/60 bg-background/70 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all text-base"
+                                                placeholder="John Doe"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="wl-email" className="block text-sm font-medium mb-2">
+                                                Email Address
+                                            </label>
+                                            <input
+                                                id="wl-email"
+                                                type="email"
+                                                required
+                                                className="w-full px-4 py-3 rounded-xl border border-border/60 bg-background/70 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all text-base"
+                                                placeholder="john@example.com"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold text-base transition-all duration-200 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:-translate-y-0.5 cursor-pointer"
+                                        >
+                                            Secure Your Spot
+                                            <ArrowRight className="w-4 h-4" />
+                                        </button>
+                                        <p className="text-xs text-muted-foreground text-center">
+                                            No spam, unsubscribe at any time.
+                                        </p>
+                                    </form>
+                                )}
+                            </div>
+                        </motion.div>
+
                     </div>
                 </div>
             </div>

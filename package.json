@@ -2,9 +2,10 @@
   "name": "FlawLess-root",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter \"*\" dev",
+    "dev": "NODE_ENV=development pnpm --filter \"*\" dev",
     "build": "pnpm --filter \"*\" build",
-    "start": "pnpm --filter \"*\" start"
+    "start": "NODE_ENV=production pnpm --filter \"*\" start",
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "prettier": "^3.5.3"
