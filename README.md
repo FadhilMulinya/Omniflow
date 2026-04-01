@@ -35,13 +35,12 @@ FlawLess solves this by:
 ### Agent Flow
 ```
 [User Intent via Telegram/Webhook/Dashboard] 
-```markdown
   → [FlowEngine resolves Agent Graph & Execution Context] 
   → [Step-wise Execution via Tool Dispatcher] 
   → [External Integrations (AI / Blockchain / APIs)] 
   → [State Persistence & Real-time Event Streaming]
 ```
-```
+
 
 ### Key UI Components
 - **Dashboard** — Agent cards with AI-generated descriptions. Create / Edit modals with provider selection.
@@ -74,8 +73,8 @@ FlawLess solves this by:
 - **Flow Engine**: `FlowEngine.ts` — orchestrates sequential execution of agent node graphs.
 - **Provider Selection**: Users can override system API keys per-agent at creation time; keys are stored in browser `localStorage` per-provider slot.
 
-```
-### Environment Variables
+
+  ### Environment Variables
 ```
 GEMINI_API_KEY=
 MONGO_URI=
