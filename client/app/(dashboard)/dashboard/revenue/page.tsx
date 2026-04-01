@@ -173,7 +173,7 @@ export default function RevenuePage() {
           <div className="relative flex-1 w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input placeholder="Search agents…" value={search} onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-muted/30 border-border/50 text-sm" />
+              className="pl-9 bg-background border-border/60 text-sm text-foreground placeholder:text-muted-foreground" />
           </div>
           <div className="flex gap-0.5 bg-muted/30 p-1 rounded-xl border border-border/40 flex-wrap">
             {TABS.map(({ key, label }) => (

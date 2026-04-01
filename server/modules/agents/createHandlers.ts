@@ -7,6 +7,7 @@ import { User } from '../../models/User';
 import { AgentEnhancer } from '../../services/AgentEnhancer';
 import { validateCharacter } from '../../characters/validator';
 import { WalletService } from '../../services/WalletService';
+import { ENV } from '../../lib/environments';
 
 async function saveGraphData(agentId: any, graph: any, fallbackNode: any) {
     if (graph?.nodes && graph.nodes.length > 0) {
@@ -25,16 +26,44 @@ async function saveGraphData(agentId: any, graph: any, fallbackNode: any) {
     }
 }
 
+/** Resolve the best AI provider + key from user profile keys → system env fallback */
+function resolveProviderKeys(userApiKeys: any): { provider: string; apiKey?: string; model?: string } {
+    const k = userApiKeys || {};
+
+    if (k.gemini) return { provider: 'gemini', apiKey: k.gemini };
+    if (k.openai) return { provider: 'openai', apiKey: k.openai, model: k.openaiModel || undefined };
+    if (k.ollamaBaseUrl) return { provider: 'ollama', apiKey: k.ollamaBaseUrl, model: k.ollamaModel || 'qwen2.5:3b' };
+
+    // Fall back to system environment keys
+    if (ENV.GEMINI_API_KEY) return { provider: 'gemini', apiKey: ENV.GEMINI_API_KEY };
+    if (ENV.OPENAI_API_KEY) return { provider: 'openai', apiKey: ENV.OPENAI_API_KEY };
+
+    return { provider: 'ollama', model: ENV.OLLAMA_MODEL || 'qwen2.5:3b' };
+}
+
 export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Preview AI persona enhancement (no agent created)
-    fastify.post<{ Body: { name: string; persona: string; provider?: string; apiKey?: string; model?: string; agentType?: string } }>(
+    fastify.post<{ Body: { name: string; persona: string; agentType?: string; chains?: string[] } }>(
         '/agents/enhance',
         async (request, reply) => {
             try {
-                const { name, persona, provider, apiKey, model, agentType = 'operational_agent' } = request.body;
+                const { name, persona, agentType = 'operational_agent', chains = [] } = request.body;
                 if (!name || !persona) return reply.code(400).send({ error: 'Name and Persona are required' });
-                return await AgentEnhancer.enhancePersona(name, persona, provider, apiKey, model, agentType);
+
+                const token = request.cookies['auth_token'];
+                let providerKeys = resolveProviderKeys({});
+                if (token) {
+                    try {
+                        const decoded = fastify.jwt.verify(token) as any;
+                        const user = await User.findById(decoded.id).select('apiKeys').lean();
+                        providerKeys = resolveProviderKeys((user as any)?.apiKeys);
+                    } catch {}
+                }
+
+                return await AgentEnhancer.enhancePersona(
+                    name, persona, providerKeys.provider, providerKeys.apiKey, providerKeys.model, agentType, chains
+                );
             } catch (err: any) {
                 return reply.code(500).send({ error: err.message });
             }
@@ -42,7 +71,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
     );
 
     // Create a new agent
-    fastify.post<{ Body: { name: string; description?: string; persona?: string; graph?: any; identities?: any; character?: any; isDraft?: boolean; provider?: string; apiKey?: string; model?: string; agentType?: string; chain?: string } }>(
+    fastify.post<{ Body: { name: string; description?: string; persona?: string; graph?: any; identities?: any; character?: any; isDraft?: boolean; agentType?: string; chains?: string[] } }>(
         '/agents',
         async (request, reply) => {
             try {
@@ -50,16 +79,21 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                 if (!token) return reply.code(401).send({ error: 'Unauthorized' });
 
                 const decoded = fastify.jwt.verify(token) as any;
-                const { name, description, persona, graph, identities, character, isDraft, provider, apiKey, model, agentType = 'operational_agent', chain } = request.body;
+                const { name, description, persona, graph, identities, character, isDraft, agentType = 'operational_agent', chains } = request.body;
 
-                const workspace = await Workspace.findOne({ ownerId: decoded.id });
+                const [workspace, user] = await Promise.all([
+                    Workspace.findOne({ ownerId: decoded.id }),
+                    User.findById(decoded.id).select('apiKeys').lean(),
+                ]);
                 if (!workspace) return reply.code(404).send({ error: 'No workspace found' });
+
+                const { provider, apiKey, model } = resolveProviderKeys((user as any)?.apiKeys);
 
                 let finalCharacter = character || {};
 
                 if (persona && (!finalCharacter.character?.bio || Object.keys(finalCharacter).length <= 1)) {
                     try {
-                        const enhanced = await AgentEnhancer.enhancePersona(name, persona, provider, apiKey, model, agentType);
+                        const enhanced = await AgentEnhancer.enhancePersona(name, persona, provider, apiKey, model, agentType, chains);
                         if (!enhanced.character || !enhanced.identity) throw new Error('AI generated an incomplete character. Please try a more detailed persona summary.');
                         finalCharacter = enhanced;
                     } catch (error: any) {
@@ -75,12 +109,17 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     ownerId: decoded.id, workspaceId: workspace._id, name, persona,
                     description: description || finalCharacter.identity?.description || finalCharacter.character?.bio || '',
                     identities: identities || {}, character: finalCharacter,
-                    agentType: agentType as any, modelProvider: provider || 'ollama',
+                    agentType: agentType as any, modelProvider: provider as any,
                     modelConfig: { modelName: model || 'qwen2.5:3b' }, isDraft: isDraft ?? true
                 });
 
-                if (chain) {
-                    try { agent.blockchain = [await WalletService.generateWallet(chain) as any]; } catch {}
+                // Generate wallets for each requested chain
+                if (chains && chains.length > 0) {
+                    const wallets: any[] = [];
+                    for (const chain of chains) {
+                        try { wallets.push(await WalletService.generateWallet(chain) as any); } catch {}
+                    }
+                    if (wallets.length > 0) agent.blockchain = wallets;
                 }
 
                 await agent.save();
@@ -104,7 +143,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
     );
 
     // Create agent from template
-    fastify.post<{ Body: { templateId: string; name: string; modelProvider?: string; modelName?: string; apiKey?: string } }>(
+    fastify.post<{ Body: { templateId: string; name: string } }>(
         '/agents/from-template',
         async (request, reply) => {
             try {
@@ -112,13 +151,16 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                 if (!token) return reply.code(401).send({ error: 'Unauthorized' });
 
                 const decoded = fastify.jwt.verify(token) as any;
-                const { templateId, name, modelProvider = 'ollama', modelName = 'qwen2.5:3b' } = request.body;
+                const { templateId, name } = request.body;
 
                 let workspace = await Workspace.findOne({ ownerId: decoded.id });
                 if (!workspace) {
                     workspace = new Workspace({ name: 'Default Workspace', ownerId: decoded.id, members: [decoded.id] });
                     await workspace.save();
                 }
+
+                const user = await User.findById(decoded.id).select('apiKeys').lean();
+                const { provider, model } = resolveProviderKeys((user as any)?.apiKeys);
 
                 const { agentTemplates } = require('../../lib/templates');
                 const template = agentTemplates.find((t: any) => t.id === templateId);
@@ -128,7 +170,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     ownerId: decoded.id, workspaceId: workspace._id, name,
                     description: template.description, character: template.character || {},
                     agentType: template.agentType || 'operational_agent', persona: template.description,
-                    modelProvider, modelConfig: { modelName }, isDraft: true,
+                    modelProvider: provider as any, modelConfig: { modelName: model || 'qwen2.5:3b' }, isDraft: true,
                     graph: { nodes: template.nodes, edges: template.edges }
                 });
                 await agent.save();

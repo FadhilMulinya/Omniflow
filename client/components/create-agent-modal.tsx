@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Dialog,
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/buttons/button';
 import { Input } from '@/components/ui/forms/input';
 import { Textarea } from '@/components/ui/forms/textarea';
 import { Label } from '@/components/ui/forms/label';
-import { Cpu, Wand2, Loader2, Check, ChevronRight } from 'lucide-react';
+import { Cpu, Wand2, Loader2, Check, ChevronRight, ChevronDown, CheckSquare, Square } from 'lucide-react';
 import { agentApi } from '@/api/agent-api';
 import { useToast } from '@/components/ui/notifications/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/select';
@@ -24,43 +24,57 @@ interface CreateAgentModalProps {
     onComplete?: (agentId: string) => void;
 }
 
+const CHAINS = [
+    { id: 'ckb-testnet',  label: 'Nervos CKB',  sub: 'Testnet'  },
+    { id: 'ckb-mainnet',  label: 'Nervos CKB',  sub: 'Mainnet'  },
+    { id: 'ethereum',     label: 'Ethereum',     sub: 'Managed'  },
+    { id: 'polygon',      label: 'Polygon',      sub: 'Managed'  },
+    { id: 'bsc',          label: 'BNB Chain',    sub: 'Managed'  },
+];
+
 export default function CreateAgentModal({ isOpen, onClose, onComplete }: CreateAgentModalProps) {
     const [step, setStep] = useState(1);
     const [name, setName] = useState('');
     const [persona, setPersona] = useState('');
-    const [provider, setProvider] = useState<string>('ollama');
-    const [model, setModel] = useState<string>('qwen2.5:3b');
-    const [apiKey, setApiKey] = useState<string>('');
-    const [agentType, setAgentType] = useState<string>('operational_agent');
-    const [selectedChain, setSelectedChain] = useState<string>('ckb-testnet');
+    const [agentType, setAgentType] = useState('operational_agent');
+    const [selectedChains, setSelectedChains] = useState<string[]>(['ckb-testnet']);
+    const [chainDropOpen, setChainDropOpen] = useState(false);
     const [enhancedData, setEnhancedData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const chainDropRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (chainDropRef.current && !chainDropRef.current.contains(e.target as Node)) {
+                setChainDropOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
     const router = useRouter();
     const { toast } = useToast();
 
-    useEffect(() => {
-        if (provider === 'ollama') {
-            setApiKey(localStorage.getItem('ollama_base_url') || 'http://localhost:11434');
-            setModel(localStorage.getItem('ollama_model') || 'qwen2.5:3b');
-        } else {
-            setApiKey(localStorage.getItem(`${provider}_api_key`) || '');
-        }
-    }, [provider]);
+    const toggleChain = (id: string) => {
+        setSelectedChains(prev =>
+            prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+        );
+    };
+
+    const reset = () => {
+        setStep(1); setName(''); setPersona('');
+        setAgentType('operational_agent'); setSelectedChains(['ckb-testnet']);
+        setEnhancedData(null);
+    };
 
     const handleNext = async () => {
-        if (!name || !persona) {
+        if (!name.trim() || !persona.trim()) {
             toast({ title: 'Missing fields', description: 'Provide both a name and a persona.', variant: 'destructive' });
             return;
         }
         setIsLoading(true);
         try {
-            if (provider === 'ollama') {
-                localStorage.setItem('ollama_base_url', apiKey);
-                localStorage.setItem('ollama_model', model);
-            } else if (apiKey) {
-                localStorage.setItem(`${provider}_api_key`, apiKey);
-            }
-            const data = await agentApi.enhancePersona(name, persona, provider, apiKey, model, agentType);
+            const data = await agentApi.enhancePersona(name, persona, agentType, selectedChains);
             setEnhancedData(data);
             setStep(2);
         } catch (err: any) {
@@ -75,12 +89,12 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
         try {
             const agent = await agentApi.saveAgent(
                 name, undefined, persona, undefined, true,
-                provider, apiKey, enhancedData, agentType, selectedChain
+                enhancedData, agentType, selectedChains
             );
-            toast({ title: 'Agent created' });
+            toast({ title: 'Agent created', description: `${name} is ready in the sandbox.` });
             if (onComplete) onComplete(agent._id);
             onClose();
-            setStep(1); setEnhancedData(null); setName(''); setPersona('');
+            reset();
             router.push(`/sandbox?agentId=${agent._id}`);
         } catch (err: any) {
             toast({ title: 'Creation failed', description: err.message || 'Something went wrong.', variant: 'destructive' });
@@ -90,8 +104,8 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[560px] max-h-[90vh] flex flex-col bg-card border-border/60 shadow-xl p-0 overflow-hidden gap-0">
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); reset(); } }}>
+            <DialogContent className="sm:max-w-[540px] max-h-[90vh] flex flex-col bg-card border-border/60 shadow-xl p-0 overflow-hidden gap-0">
                 <div className="h-px w-full bg-gradient-to-r from-primary/70 to-primary/10" />
 
                 {/* Header */}
@@ -111,7 +125,6 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                         : 'Review the AI-generated character before finalizing.'}
                                 </DialogDescription>
                             </div>
-                            {/* Step indicator */}
                             <div className="flex items-center gap-1.5 shrink-0">
                                 {[1, 2].map((s) => (
                                     <div key={s} className={`h-1.5 rounded-full transition-all ${s === step ? 'w-6 bg-primary' : s < step ? 'w-3 bg-primary/40' : 'w-3 bg-border'}`} />
@@ -124,7 +137,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto px-6 py-5">
                     {step === 1 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                             <div className="space-y-1.5">
                                 <Label htmlFor="name" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Agent Name</Label>
                                 <Input
@@ -143,79 +156,78 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                     placeholder="e.g. A helpful assistant specialized in CKB transactions and Fiber network payments."
                                     value={persona}
                                     onChange={(e) => setPersona(e.target.value)}
-                                    className="min-h-[96px] rounded-xl bg-background border-border/60 focus-visible:ring-primary/30 text-sm resize-none"
+                                    className="min-h-[88px] rounded-xl bg-background border-border/60 focus-visible:ring-primary/30 text-sm resize-none"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5 col-span-2">
-                                    <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Blockchain Network</Label>
-                                    <Select value={selectedChain} onValueChange={setSelectedChain}>
-                                        <SelectTrigger className="h-10 rounded-xl bg-background border-border/60 text-sm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="ckb-testnet">Nervos CKB (Testnet)</SelectItem>
-                                            <SelectItem value="ethereum">Ethereum (Managed)</SelectItem>
-                                            <SelectItem value="polygon">Polygon (Managed)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Agent Class</Label>
+                                <Select value={agentType} onValueChange={setAgentType}>
+                                    <SelectTrigger className="h-10 rounded-xl bg-background border-border/60 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="operational_agent">Operational — Workflows & Default</SelectItem>
+                                        <SelectItem value="financial_agent">Financial — High Security & Balances</SelectItem>
+                                        <SelectItem value="social_agent">Social — Community & Platforms</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                                <div className="space-y-1.5 col-span-2">
-                                    <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Agent Class</Label>
-                                    <Select value={agentType} onValueChange={setAgentType}>
-                                        <SelectTrigger className="h-10 rounded-xl bg-background border-border/60 text-sm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="operational_agent">Operational — Workflows & Default</SelectItem>
-                                            <SelectItem value="financial_agent">Financial — High Security & Balances</SelectItem>
-                                            <SelectItem value="social_agent">Social — Community & Platforms</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            {/* Multi-chain dropdown */}
+                            <div className="space-y-1.5" ref={chainDropRef}>
+                                <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Blockchain Networks
+                                </Label>
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setChainDropOpen(o => !o)}
+                                        className="w-full h-10 px-3 rounded-xl border border-border/60 bg-background text-sm text-foreground flex items-center justify-between hover:border-border transition-colors"
+                                    >
+                                        <span className="truncate text-left">
+                                            {selectedChains.length === 0
+                                                ? 'Select networks…'
+                                                : selectedChains.map(id => CHAINS.find(c => c.id === id)?.label).join(', ')}
+                                        </span>
+                                        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                            {selectedChains.length > 0 && (
+                                                <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
+                                                    {selectedChains.length}
+                                                </span>
+                                            )}
+                                            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${chainDropOpen ? 'rotate-180' : ''}`} />
+                                        </div>
+                                    </button>
 
-                                <div className="space-y-1.5">
-                                    <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">AI Provider</Label>
-                                    <Select value={provider} onValueChange={setProvider}>
-                                        <SelectTrigger className="h-10 rounded-xl bg-background border-border/60 text-sm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="ollama">Ollama (Local)</SelectItem>
-                                            <SelectItem value="gemini">Google Gemini</SelectItem>
-                                            <SelectItem value="openai">OpenAI</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {chainDropOpen && (
+                                        <div className="absolute z-50 top-full mt-1.5 w-full rounded-xl border border-border/60 bg-card shadow-xl overflow-hidden">
+                                            {CHAINS.map((chain) => {
+                                                const active = selectedChains.includes(chain.id);
+                                                return (
+                                                    <button
+                                                        key={chain.id}
+                                                        type="button"
+                                                        onClick={() => toggleChain(chain.id)}
+                                                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/40 ${active ? 'bg-primary/5' : ''}`}
+                                                    >
+                                                        {active
+                                                            ? <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+                                                            : <Square className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium text-foreground">{chain.label}</div>
+                                                            <div className="text-[11px] text-muted-foreground">{chain.sub}</div>
+                                                        </div>
+                                                        {active && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
-
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="apiKey" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        {provider === 'ollama' ? 'Ollama URL' : 'API Key'}
-                                    </Label>
-                                    <Input
-                                        id="apiKey"
-                                        type={provider === 'ollama' ? 'text' : 'password'}
-                                        placeholder={provider === 'ollama' ? 'http://localhost:11434' : 'Optional'}
-                                        value={apiKey}
-                                        onChange={(e) => setApiKey(e.target.value)}
-                                        className="h-10 rounded-xl bg-background border-border/60 focus-visible:ring-primary/30 text-sm"
-                                    />
-                                </div>
-
-                                {provider === 'ollama' && (
-                                    <div className="space-y-1.5 col-span-2">
-                                        <Label htmlFor="model" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ollama Model</Label>
-                                        <Input
-                                            id="model"
-                                            placeholder="e.g. qwen2.5:3b, llama3"
-                                            value={model}
-                                            onChange={(e) => setModel(e.target.value)}
-                                            className="h-10 rounded-xl bg-background border-border/60 focus-visible:ring-primary/30 text-sm"
-                                        />
-                                    </div>
-                                )}
+                                <p className="text-[10px] text-muted-foreground/70">
+                                    A managed wallet is provisioned per network. The agent will only transact on selected chains.
+                                </p>
                             </div>
                         </div>
                     ) : (
@@ -242,7 +254,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                     { label: 'Personality', items: enhancedData?.traits?.personality, color: 'bg-primary/8 text-primary border-primary/15' },
                                     { label: 'Knowledge', items: enhancedData?.traits?.knowledge, color: 'bg-emerald-500/8 text-emerald-600 border-emerald-500/15' },
                                 ].map(({ label, items, color }) => (
-                                    <div key={label} className="space-y-2">
+                                    <div key={label} className="space-y-1.5">
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
                                         <div className="flex flex-wrap gap-1">
                                             {items?.map((t: string, i: number) => (
@@ -252,6 +264,22 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Selected chains summary */}
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Wallets to provision</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {selectedChains.map(id => {
+                                        const chain = CHAINS.find(c => c.id === id);
+                                        return (
+                                            <span key={id} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold bg-primary/8 text-primary border border-primary/15 rounded-lg">
+                                                <Check className="h-2.5 w-2.5" />
+                                                {chain?.label} ({chain?.sub})
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -260,7 +288,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                 <div className="px-6 py-4 border-t border-border/50 flex items-center justify-end gap-2">
                     {step === 1 ? (
                         <>
-                            <Button variant="ghost" onClick={onClose} className="h-9 px-4 rounded-xl text-sm">Cancel</Button>
+                            <Button variant="ghost" onClick={() => { onClose(); reset(); }} className="h-9 px-4 rounded-xl text-sm">Cancel</Button>
                             <Button
                                 onClick={handleNext}
                                 disabled={isLoading}
@@ -268,7 +296,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                             >
                                 {isLoading
                                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Expanding…</>
-                                    : <><Wand2 className="h-3.5 w-3.5 mr-1.5" />Expand Persona<ChevronRight className="h-3.5 w-3.5 ml-0.5" /></>}
+                                    : <><Wand2 className="h-3.5 w-3.5 mr-1.5" />Expand Persona<ChevronRight className="h-3.5 w-3.5 ml-0.5 opacity-60" /></>}
                             </Button>
                         </>
                     ) : (
