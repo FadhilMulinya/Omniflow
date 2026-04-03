@@ -40,7 +40,7 @@ export function SignInForm({ onSubmit, onForgotPassword, error, loading }: SignI
             </button>
           )}
         </div>
-        <Button type="submit" variant="outline" className="mt-2" disabled={loading}>
+        <Button type="submit" variant="default" className="mt-2" disabled={loading}>
           {loading ? "Signing in…" : "Sign In"}
         </Button>
       </div>

@@ -11,120 +11,125 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'oklch(var(--background))',
-        foreground: 'oklch(var(--foreground))',
-        neonblue: 'hsl(var(--neon-blue))',
-        card: {
-          DEFAULT: 'oklch(var(--card))',
-          foreground: 'oklch(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'oklch(var(--popover))',
-          foreground: 'oklch(var(--popover-foreground))',
-        },
-        primary: {
-          DEFAULT: 'oklch(var(--primary))',
-          foreground: 'oklch(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'oklch(var(--secondary))',
-          foreground: 'oklch(var(--secondary-foreground))',
-        },
-        muted: {
-          DEFAULT: 'oklch(var(--muted))',
-          foreground: 'oklch(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'oklch(var(--accent))',
-          foreground: 'oklch(var(--accent-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'oklch(var(--destructive))',
-          foreground: 'oklch(var(--destructive-foreground))',
-        },
-        border: 'oklch(var(--border))',
-        input: 'oklch(var(--input))',
-        ring: 'oklch(var(--ring))',
-        chart: {
-          '1': 'oklch(var(--chart-1))',
-          '2': 'oklch(var(--chart-2))',
-          '3': 'oklch(var(--chart-3))',
-          '4': 'oklch(var(--chart-4))',
-          '5': 'oklch(var(--chart-5))',
-        },
-        sidebar: {
-          DEFAULT: 'oklch(var(--sidebar-background))',
-          foreground: 'oklch(var(--sidebar-foreground))',
-          primary: 'oklch(var(--sidebar-primary))',
-          'primary-foreground': 'oklch(var(--sidebar-primary-foreground))',
-          accent: 'oklch(var(--sidebar-accent))',
-          'accent-foreground': 'oklch(var(--sidebar-accent-foreground))',
-          border: 'oklch(var(--sidebar-border))',
-          ring: 'oklch(var(--sidebar-ring))',
-        },
-      },
-      fontFamily: {
-        sans: ['var(--font-sans)'],
-        serif: ['var(--font-serif)'],
-        mono: ['var(--font-mono)'],
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      keyframes: {
-        'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-        },
-        'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+        /* ── Flawless named palette — use these in components ── */
+        fl: {
+          base:         'var(--fl-base)',         // #eeeeee — page bg
+          surface:      'var(--fl-surface)',       // #fafafa — card bg
+          'surface-2':  'var(--fl-surface-2)',     // #f4f4f4 — hover bg
+          dark:         'var(--fl-dark)',          // #101010 — dark panel
+          'dark-2':     'var(--fl-dark-2)',        // #1f1d1c
+          darker:       'var(--fl-darker)',        // #020202 — near-black
+          ink:          'var(--fl-ink)',           // #020202 — primary text
+          'ink-2':      'var(--fl-ink-2)',         // #3d3a39 — secondary text
+          'ink-3':      'var(--fl-ink-3)',         // #8a8380 — muted text
+          'ink-inv':    'var(--fl-ink-inv)',       // #eeeeee — text on dark
+          accent:       'var(--fl-accent)',        // #ef6f2e — orange
+          'accent-dark':'var(--fl-accent-dark)',   // #ee6018 — deeper orange
+          'accent-bg':  'var(--fl-accent-bg)',     // orange tint
+          line:         'var(--fl-line)',          // #ccc9c7 — default border
+          'line-2':     'var(--fl-line-2)',        // #b8b3b0 — stronger border
+          'line-strong':'var(--fl-line-strong)',   // #a49d9a — outlined btn
+          'line-dark':  'var(--fl-line-dark)',     // #2e2c2b — dark panel border
         },
 
-        'fade-in-down': {
-          '0%': { opacity: '0', transform: 'translateY(-20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+        /* ── shadcn / Radix semantic aliases ── */
+        background:  'var(--background)',
+        foreground:  'var(--foreground)',
+        card: {
+          DEFAULT:    'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
+        popover: {
+          DEFAULT:    'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
+        primary: {
+          DEFAULT:    'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+        },
+        secondary: {
+          DEFAULT:    'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+        },
+        muted: {
+          DEFAULT:    'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        accent: {
+          DEFAULT:    'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        destructive: {
+          DEFAULT:    'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
+        },
+        border:  'var(--border)',
+        input:   'var(--input)',
+        ring:    'var(--ring)',
+        sidebar: {
+          DEFAULT:            'var(--sidebar)',
+          foreground:         'var(--sidebar-foreground)',
+          primary:            'var(--sidebar-primary)',
+          'primary-foreground':'var(--sidebar-primary-foreground)',
+          accent:             'var(--sidebar-accent)',
+          'accent-foreground':'var(--sidebar-accent-foreground)',
+          border:             'var(--sidebar-border)',
+          ring:               'var(--sidebar-ring)',
+        },
+      },
+
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
+      },
+
+      borderRadius: {
+        lg:      'var(--radius)',
+        md:      'calc(var(--radius) - 2px)',
+        sm:      'calc(var(--radius) - 4px)',
+        factory: '4px',
+      },
+
+      letterSpacing: {
+        'factory-h1':  '-0.048em',
+        'factory-h2':  '-0.035em',
+        'factory-nav': '-0.02em',
+      },
+
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to:   { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to:   { height: '0' },
         },
         'fade-in-up': {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '0%':   { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'fade-in-left': {
-          '0%': { opacity: '0', transform: 'translateX(-20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
-        },
-        'fade-in-right': {
-          '0%': { opacity: '0', transform: 'translateX(20px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
+        'fade-in-down': {
+          '0%':   { opacity: '0', transform: 'translateY(-20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         blob: {
-          '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.1)' },
+          '0%':   { transform: 'scale(1)' },
+          '50%':  { transform: 'scale(1.1)' },
           '100%': { transform: 'scale(1)' },
         },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-        'fade-in-down': 'fade-in-down 0.7s ease-out',
-        'fade-in-up': 'fade-in-up 0.7s ease-out',
-        'fade-in-left': 'fade-in-left 0.7s ease-out',
-        'fade-in-right': 'fade-in-right 0.7s ease-out',
-        'fade-in': 'fade-in-up 0.7s ease-out',
-        blob: 'blob 10s infinite',
+        'accordion-up':   'accordion-up 0.2s ease-out',
+        'fade-in-up':     'fade-in-up 0.7s ease-out',
+        'fade-in-down':   'fade-in-down 0.7s ease-out',
+        'fade-in':        'fade-in-up 0.7s ease-out',
+        blob:             'blob 10s infinite',
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 };
+
 export default config;

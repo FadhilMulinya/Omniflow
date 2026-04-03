@@ -69,3 +69,4 @@ __pycache__/
 
 # node
 node_modules/
+.gstack/

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { agentApi } from '@/api/agent-api';
 import { Button } from '@/components/ui/buttons/button';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/feedback/badge';
 import { toast } from '@/components/ui';
 import { CreditCard, CheckCircle2, ExternalLink, Loader2, ShoppingBag, AlertCircle } from 'lucide-react';
 
-export default function PaymentSettingsPage() {
+function PaymentSettingsContent() {
     const searchParams = useSearchParams();
     const [stripeStatus, setStripeStatus] = useState<{ connected: boolean; stripeAccountId: string | null } | null>(null);
     const [isLoadingStatus, setIsLoadingStatus] = useState(true);
@@ -17,7 +17,6 @@ export default function PaymentSettingsPage() {
     const [isLoadingPurchases, setIsLoadingPurchases] = useState(true);
 
     useEffect(() => {
-        // Show toast on Stripe OAuth callback redirect
         if (searchParams.get('stripe') === 'connected') {
             toast({ title: 'Stripe account connected!', description: 'You can now receive payments on the marketplace.' });
         }
@@ -97,7 +96,6 @@ export default function PaymentSettingsPage() {
                     <div className="space-y-3">
                         <p className="text-sm text-muted-foreground">
                             Connect your Stripe account to receive payments when buyers purchase your agents.
-                            Stripe handles all payment processing and deposits directly to your bank.
                         </p>
                         <Button onClick={handleConnectStripe} disabled={isConnecting}
                             className="bg-[#635bff] hover:bg-[#5851e0] text-white">
@@ -124,11 +122,8 @@ export default function PaymentSettingsPage() {
                     </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Configure your wallet address and preferred asset when you publish an agent to the marketplace.
-                    Go to <strong>Sandbox → Export → Marketplace</strong> tab on any agent to set up crypto payment details.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                    Supported: Ethereum (ETH/USDT/USDC), CKB, Solana (SOL/USDC), Polygon (MATIC/USDT), BNB Chain (BNB/USDT)
+                    Configure your wallet address when you publish an agent to the marketplace.
+                    Go to <strong>Sandbox → Export → Marketplace</strong> on any agent to set up crypto payment details.
                 </p>
             </div>
 
@@ -178,5 +173,13 @@ export default function PaymentSettingsPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function PaymentSettingsPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+            <PaymentSettingsContent />
+        </Suspense>
     );
 }

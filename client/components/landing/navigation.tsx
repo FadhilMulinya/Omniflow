@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Zap, LayoutDashboard } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '') + '/api';
 
@@ -12,7 +11,20 @@ interface NavigationProps {
     handleAnchorClick?: (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => void;
 }
 
-const navLinks = ['Features', 'How It Works', 'Pricing', 'FAQ'];
+const navLinks = [
+    { label: 'Features',    href: '#features'    },
+    { label: 'How It Works',href: '#how-it-works' },
+    { label: 'Pricing',     href: '#pricing'      },
+    { label: 'Marketplace', href: '/marketplace'  },
+    { label: 'Community',   href: '/community'    },
+];
+
+const LogoMark: React.FC = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+);
 
 export const Navigation: React.FC<NavigationProps> = ({
     isMobileMenuOpen: externalOpen,
@@ -23,107 +35,72 @@ export const Navigation: React.FC<NavigationProps> = ({
     const isMobileMenuOpen = externalOpen ?? internalOpen;
     const setIsMobileMenuOpen = externalSetOpen ?? setInternalOpen;
 
-    const [scrolled, setScrolled] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [scrolled, setScrolled]       = useState(false);
+    const [isAuthenticated, setIsAuth]  = useState<boolean | null>(null);
 
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 30);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+        const fn = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', fn, { passive: true });
+        return () => window.removeEventListener('scroll', fn);
     }, []);
 
     useEffect(() => {
         fetch(`${API_BASE}/auth/me`, { credentials: 'include' })
-            .then((r) => setIsAuthenticated(r.ok))
-            .catch(() => setIsAuthenticated(false));
+            .then(r => setIsAuth(r.ok))
+            .catch(() => setIsAuth(false));
     }, []);
 
-    const onAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-        if (handleAnchorClick) {
-            handleAnchorClick(e, targetId);
-        }
-        // If no handler provided (standalone page), just let the href navigate normally
+    const onAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+        if (href.startsWith('#') && handleAnchorClick) handleAnchorClick(e, href);
     };
 
+    const navCls = scrolled
+        ? 'bg-fl-base/95 backdrop-blur-sm border-b border-fl-line'
+        : 'bg-transparent';
+
     return (
-        <motion.nav
-            initial={{ y: -80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className={`fixed top-4 left-4 right-4 z-50 rounded-2xl transition-all duration-300 ${
-                scrolled
-                    ? 'bg-background/80 backdrop-blur-xl border border-border/60 shadow-xl shadow-black/10'
-                    : 'bg-transparent border border-transparent'
-            }`}
-        >
-            <div className="max-w-7xl mx-auto px-5 py-3 flex justify-between items-center">
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-200 ${navCls}`}>
+            <div className="max-w-[1400px] mx-auto px-9 h-14 flex items-center justify-between">
+
                 {/* Logo */}
-                <a href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-primary/30 group-hover:shadow-lg group-hover:shadow-primary/40 transition-shadow duration-200">
-                        <Zap className="w-4 h-4 text-white fill-white" />
-                    </div>
-                    <span className="text-base font-bold tracking-tight">FlawLess</span>
+                <a href="/" className="flex items-center gap-2 text-fl-ink hover:opacity-65 transition-opacity">
+                    <LogoMark />
+                    <span className="text-[13px] font-medium tracking-tight">FLAWLESS</span>
                 </a>
 
                 {/* Desktop links */}
-                <div className="hidden md:flex items-center gap-0.5">
-                    {navLinks.map((item) => (
+                <div className="hidden md:flex items-center gap-7">
+                    {navLinks.map(link => (
                         <a
-                            key={item}
-                            href={`/#${item.toLowerCase().replace(/ /g, '-')}`}
-                            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent/40 transition-all duration-200 cursor-pointer"
-                            onClick={(e) => onAnchorClick(e, `#${item.toLowerCase().replace(/ /g, '-')}`)}
+                            key={link.label}
+                            href={link.href}
+                            className="text-[12px] uppercase tracking-factory-nav text-fl-ink-2 hover:text-fl-ink transition-colors duration-150"
+                            onClick={link.href.startsWith('#') ? e => onAnchorClick(e, link.href) : undefined}
                         >
-                            {item}
+                            {link.label}
                         </a>
                     ))}
-                    <a
-                        href="/marketplace"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent/40 transition-all duration-200 cursor-pointer"
-                    >
-                        Marketplace
-                    </a>
-                    <a
-                        href="/community"
-                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent/40 transition-all duration-200 cursor-pointer"
-                    >
-                        Community
-                    </a>
                 </div>
 
-                {/* CTA — swaps based on auth state */}
-                <div className="hidden md:flex items-center gap-3">
+                {/* Auth CTAs */}
+                <div className="hidden md:flex items-center gap-2">
                     {isAuthenticated === null ? (
                         <div className="w-32 h-9" />
                     ) : isAuthenticated ? (
-                        <a
-                            href="/dashboard"
-                            className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 cursor-pointer"
-                        >
-                            <LayoutDashboard className="w-4 h-4" />
-                            Dashboard
-                        </a>
+                        <a href="/dashboard" className="btn-fl-primary text-[13px]">Dashboard</a>
                     ) : (
                         <>
-                            <a
-                                href="/signin"
-                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 cursor-pointer"
-                            >
-                                Sign In
+                            <a href="/signin" className="text-[13px] text-fl-ink-2 hover:text-fl-ink transition-colors px-3 py-2">
+                                Log In
                             </a>
-                            <a
-                                href="/signup"
-                                className="px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl transition-all duration-200 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 cursor-pointer"
-                            >
-                                Get Started Free
-                            </a>
+                            <a href="/signup" className="btn-fl-primary text-[13px]">Get Started</a>
                         </>
                     )}
                 </div>
 
                 {/* Mobile burger */}
                 <button
-                    className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent/40 transition-colors cursor-pointer"
+                    className="md:hidden w-9 h-9 flex items-center justify-center text-fl-ink-2 hover:text-fl-ink transition-colors"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     aria-label="Toggle menu"
                 >
@@ -132,73 +109,33 @@ export const Navigation: React.FC<NavigationProps> = ({
             </div>
 
             {/* Mobile drawer */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="md:hidden overflow-hidden bg-background/95 backdrop-blur-xl border-t border-border/40 rounded-b-2xl"
-                    >
-                        <div className="px-4 py-4 flex flex-col gap-1">
-                            {navLinks.map((item) => (
-                                <a
-                                    key={item}
-                                    href={`/#${item.toLowerCase().replace(/ /g, '-')}`}
-                                    className="px-4 py-3 text-sm font-medium rounded-xl hover:bg-accent/40 transition-colors cursor-pointer"
-                                    onClick={(e) => {
-                                        onAnchorClick(e, `#${item.toLowerCase().replace(/ /g, '-')}`);
-                                        setIsMobileMenuOpen(false);
-                                    }}
-                                >
-                                    {item}
-                                </a>
-                            ))}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-fl-base border-t border-fl-line">
+                    <div className="max-w-[1400px] mx-auto px-9 py-4 flex flex-col">
+                        {navLinks.map(link => (
                             <a
-                                href="/marketplace"
-                                className="px-4 py-3 text-sm font-medium rounded-xl hover:bg-accent/40 transition-colors cursor-pointer"
-                                onClick={() => setIsMobileMenuOpen(false)}
+                                key={link.label}
+                                href={link.href}
+                                className="py-3 text-[12px] uppercase tracking-factory-nav text-fl-ink-2 hover:text-fl-ink border-b border-fl-line transition-colors"
+                                onClick={e => { if (link.href.startsWith('#')) onAnchorClick(e, link.href); setIsMobileMenuOpen(false); }}
                             >
-                                Marketplace
+                                {link.label}
                             </a>
-                            <a
-                                href="/community"
-                                className="px-4 py-3 text-sm font-medium rounded-xl hover:bg-accent/40 transition-colors cursor-pointer"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Community
-                            </a>
-
+                        ))}
+                        <div className="pt-4 flex flex-col gap-2">
                             {isAuthenticated ? (
-                                <a
-                                    href="/dashboard"
-                                    className="mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-xl text-center shadow-md shadow-primary/25"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                >
-                                    <LayoutDashboard className="w-4 h-4" />
-                                    Dashboard
-                                </a>
+                                <a href="/dashboard" className="btn-fl-primary text-center text-[13px]"
+                                   onClick={() => setIsMobileMenuOpen(false)}>Dashboard</a>
                             ) : (
                                 <>
-                                    <a
-                                        href="/signin"
-                                        className="px-4 py-3 text-sm font-medium rounded-xl hover:bg-accent/40 transition-colors"
-                                    >
-                                        Sign In
-                                    </a>
-                                    <a
-                                        href="/signup"
-                                        className="mt-2 px-4 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-xl text-center shadow-md shadow-primary/25"
-                                    >
-                                        Get Started Free
-                                    </a>
+                                    <a href="/signin" className="btn-fl-outline text-center text-[13px]">Log In</a>
+                                    <a href="/signup" className="btn-fl-primary text-center text-[13px]">Get Started</a>
                                 </>
                             )}
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.nav>
+                    </div>
+                </div>
+            )}
+        </nav>
     );
 };

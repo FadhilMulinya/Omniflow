@@ -47,30 +47,20 @@ export const Testimonials: React.FC<TestimonialsProps> = ({
     const t = testimonials[currentTestimonial];
 
     return (
-        <section id="testimonials" className="py-28 bg-background">
-            <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <section id="testimonials" className="py-24 bg-fl-surface">
+            <div className="max-w-[1400px] mx-auto px-9">
                 {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: shouldReduce ? 0 : 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-80px' }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="text-center mb-16 max-w-2xl mx-auto"
-                >
-                    <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
-                        Social Proof
-                    </p>
-                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+                <div className="mb-16">
+                    <div className="rule-factory mb-8" />
+                    <p className="label-factory mb-4">Case Studies</p>
+                    <h2 className="text-[40px] md:text-[52px] font-normal tracking-factory-h2 leading-none text-fl-ink">
                         Loved by builders worldwide
                     </h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                        Don't take our word for it. Here's what teams are saying.
-                    </p>
-                </motion.div>
+                </div>
 
                 {/* Carousel */}
-                <div className="max-w-3xl mx-auto">
-                    <div className="relative overflow-hidden min-h-[280px] flex items-center">
+                <div className="max-w-3xl">
+                    <div className="relative overflow-hidden min-h-[260px] flex items-center">
                         <AnimatePresence custom={direction} mode="wait">
                             <motion.div
                                 key={currentTestimonial}
@@ -81,27 +71,27 @@ export const Testimonials: React.FC<TestimonialsProps> = ({
                                 exit="exit"
                                 className="w-full"
                             >
-                                <div className="p-8 md:p-10 rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm shadow-sm">
+                                <div className="p-8 border border-fl-line rounded-lg bg-fl-base">
                                     {/* Stars */}
-                                    <div className="flex gap-1 mb-6">
+                                    <div className="flex gap-1 mb-5">
                                         {Array.from({ length: t.rating }).map((_, i) => (
-                                            <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                            <Star key={i} className="w-3.5 h-3.5 fill-fl-accent text-fl-accent" />
                                         ))}
                                     </div>
 
-                                    <blockquote className="text-lg md:text-xl leading-relaxed mb-8 text-foreground font-medium">
+                                    <blockquote className="text-[17px] leading-relaxed mb-7 text-fl-ink font-normal">
                                         "{t.quote}"
                                     </blockquote>
 
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-11 h-11 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                                            <span className="text-sm font-bold text-primary">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-full border border-fl-line flex items-center justify-center bg-fl-surface shrink-0">
+                                            <span className="text-[12px] font-medium text-fl-accent">
                                                 {t.author.initials}
                                             </span>
                                         </div>
                                         <div>
-                                            <div className="font-semibold text-[15px]">{t.author.name}</div>
-                                            <div className="text-sm text-muted-foreground">
+                                            <div className="text-[14px] font-normal text-fl-ink">{t.author.name}</div>
+                                            <div className="text-[12px] text-fl-ink-3">
                                                 {t.author.role} · {t.author.company}
                                             </div>
                                         </div>
@@ -112,31 +102,31 @@ export const Testimonials: React.FC<TestimonialsProps> = ({
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center justify-between mt-6">
+                    <div className="flex items-center justify-between mt-5">
                         <div className="flex gap-2">
                             <button
                                 onClick={() => go(-1)}
-                                className="w-10 h-10 rounded-xl border border-border/60 bg-card/50 flex items-center justify-center hover:border-primary/40 hover:bg-accent/30 transition-all duration-200 cursor-pointer"
+                                className="w-9 h-9 border border-fl-line rounded-[4px] flex items-center justify-center text-fl-ink-2 hover:border-fl-line-2 transition-colors cursor-pointer"
                                 aria-label="Previous testimonial"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={() => go(1)}
-                                className="w-10 h-10 rounded-xl border border-border/60 bg-card/50 flex items-center justify-center hover:border-primary/40 hover:bg-accent/30 transition-all duration-200 cursor-pointer"
+                                className="w-9 h-9 border border-fl-line rounded-[4px] flex items-center justify-center text-fl-ink-2 hover:border-fl-line-2 transition-colors cursor-pointer"
                                 aria-label="Next testimonial"
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                             {testimonials.map((_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => { setDirection(i > currentTestimonial ? 1 : -1); setCurrentTestimonial(i); }}
-                                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                        i === currentTestimonial ? 'w-8 bg-primary' : 'w-1.5 bg-border hover:bg-muted-foreground'
+                                    className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
+                                        i === currentTestimonial ? 'w-6 bg-fl-accent' : 'w-1 bg-fl-line hover:bg-fl-ink-3'
                                     }`}
                                     aria-label={`Go to testimonial ${i + 1}`}
                                 />
