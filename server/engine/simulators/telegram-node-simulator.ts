@@ -1,38 +1,56 @@
 import { telegramService } from '../../services/telegram-service';
+import { nodeSuccess, nodeError, NodeOutput } from '../types/base';
+import { TelegramInputSchema, TelegramResult } from '../types/node-contracts';
 import { timestamp } from './base';
 
-export async function simulateTelegramSendMessage(data: any, inputValues: Record<string, any>, consoleOutput: string[]) {
-    const outputs: Record<string, any> = {};
+export async function simulateTelegramSendMessage(
+  data: unknown,
+  inputValues: Record<string, unknown>,
+  consoleOutput: string[]
+): Promise<NodeOutput<TelegramResult>> {
+  const t0 = Date.now();
+  const d = data as any;
 
-    const chatId = inputValues['chatId'] || data.inputs?.find((input: any) => input.key === 'chatId')?.value;
-    const message = inputValues['message'] || data.inputs?.find((input: any) => input.key === 'message')?.value || 'Hello from FlawLess!';
+  const rawInput = {
+    chatId:
+      inputValues['chatId'] ?? d?.inputs?.find((i: any) => i.key === 'chatId')?.value,
+    message:
+      (inputValues['message'] as string) ??
+      d?.inputs?.find((i: any) => i.key === 'message')?.value ??
+      'Hello from Omniflow!',
+  };
 
-    if (!chatId) {
-        const errorMsg = 'No Chat ID provided for Telegram message';
-        consoleOutput.push(`${timestamp()} ❌ ${errorMsg}`);
-        throw new Error(errorMsg);
+  const validated = TelegramInputSchema.safeParse(rawInput);
+  if (!validated.success) {
+    const msg = `Telegram node input invalid: ${validated.error.message}`;
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
+
+  const { chatId, message } = validated.data;
+
+  consoleOutput.push(`${timestamp()} 📤 Sending Telegram message to chat ${chatId}...`);
+
+  try {
+    const response = await telegramService.sendMessage(String(chatId), message as string);
+
+    if (response.ok) {
+      consoleOutput.push(`${timestamp()} ✅ Telegram message sent successfully`);
+      return nodeSuccess<TelegramResult>(
+        {
+          messageId: response.result?.message_id ?? 0,
+          chatId,
+          sentAt: new Date().toISOString(),
+        },
+        { startedAt: t0, message: 'Message delivered' }
+      );
     }
 
-    consoleOutput.push(`${timestamp()} 📤 Sending Telegram message to ${chatId}...`);
-
-    try {
-        const response = await telegramService.sendMessage(chatId, message);
-
-        if (response.ok) {
-            consoleOutput.push(`${timestamp()} ✅ Message sent successfully to Telegram`);
-            outputs['result'] = response.result;
-            outputs['status'] = 'success';
-        } else {
-            consoleOutput.push(`${timestamp()} ❌ Telegram API Error: ${response.description}`);
-            outputs['error'] = response.description;
-            outputs['status'] = 'error';
-        }
-    } catch (error: any) {
-        consoleOutput.push(`${timestamp()} ❌ Error: ${error.message}`);
-        outputs['error'] = error.message;
-        outputs['status'] = 'error';
-        throw error;
-    }
-
-    return outputs;
+    const errMsg = response.description ?? 'Telegram API returned not-ok';
+    consoleOutput.push(`${timestamp()} ❌ Telegram API error: ${errMsg}`);
+    return nodeError(errMsg, {}, { executionMs: Date.now() - t0 });
+  } catch (err: any) {
+    consoleOutput.push(`${timestamp()} ❌ Telegram error: ${err.message}`);
+    throw err;
+  }
 }

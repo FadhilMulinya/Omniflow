@@ -6,10 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/naviga
 import { Button } from '@/components/ui/buttons/button';
 import { agentApi } from '@/api/agent-api';
 import { toast } from '@/components/ui';
-import { Download, ExternalLink, Loader2, Smartphone, Code2, Store } from 'lucide-react';
+import { Download, ExternalLink, Loader2, Smartphone, Code2 } from 'lucide-react';
 import { buildPwaZip } from './export-agent/pwa-builders';
 import { EmbedTab } from './export-agent/EmbedTab';
-import { MarketplaceTab } from './export-agent/MarketplaceTab';
 
 interface ExportAgentModalProps {
     isOpen: boolean;
@@ -43,22 +42,24 @@ export default function ExportAgentModal({ isOpen, onClose, agentId, agentName }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl">
+            <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto border-border/60 bg-card shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                        <ExternalLink className="h-5 w-5 text-primary" />
-                        Export Agent
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4 text-primary" /> Export Agent
                     </DialogTitle>
                     <DialogDescription>
-                        Share <strong>{agentName}</strong> as a widget, PWA, or list it on the marketplace.
+                        Share <strong>{agentName}</strong> as a widget or standalone PWA app.
                     </DialogDescription>
                 </DialogHeader>
 
                 <Tabs defaultValue="embed" className="mt-2">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="embed" className="flex items-center gap-1.5"><Code2 className="h-3.5 w-3.5" /> Embed</TabsTrigger>
-                        <TabsTrigger value="pwa" className="flex items-center gap-1.5"><Smartphone className="h-3.5 w-3.5" /> Download PWA</TabsTrigger>
-                        <TabsTrigger value="marketplace" className="flex items-center gap-1.5"><Store className="h-3.5 w-3.5" /> Marketplace</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/40">
+                        <TabsTrigger value="embed" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+                            <Code2 className="h-3.5 w-3.5" /> Embed
+                        </TabsTrigger>
+                        <TabsTrigger value="pwa" className="flex items-center gap-1.5 data-[state=active]:bg-background">
+                            <Smartphone className="h-3.5 w-3.5" /> Download PWA
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="embed" className="mt-4">
@@ -70,7 +71,7 @@ export default function ExportAgentModal({ isOpen, onClose, agentId, agentName }
                             Download a self-contained PWA that wraps this agent. Installs as a standalone app on any device.
                         </p>
                         <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2 text-sm">
-                            <p className="font-medium">Package contents</p>
+                            <p className="font-medium text-sm">Package contents</p>
                             <ul className="text-muted-foreground space-y-1 text-xs list-disc list-inside">
                                 <li><code>index.html</code> — standalone chat UI</li>
                                 <li><code>manifest.json</code> — app name, icon, display: standalone</li>
@@ -79,13 +80,11 @@ export default function ExportAgentModal({ isOpen, onClose, agentId, agentName }
                             </ul>
                         </div>
                         <Button onClick={handleDownloadPwa} disabled={isDownloadingPwa} className="w-full">
-                            {isDownloadingPwa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                            {isDownloadingPwa
+                                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                : <Download className="h-4 w-4 mr-2" />}
                             {isDownloadingPwa ? 'Packaging…' : `Download ${agentName} PWA`}
                         </Button>
-                    </TabsContent>
-
-                    <TabsContent value="marketplace" className="mt-4">
-                        <MarketplaceTab agentId={agentId} agentName={agentName} onClose={onClose} />
                     </TabsContent>
                 </Tabs>
             </DialogContent>

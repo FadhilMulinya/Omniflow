@@ -15,14 +15,16 @@ import { TradingAnalysisSection } from './sections/trading-analysis-section';
 import { TradeInfoSection } from './sections/trade-info-section';
 import { FieldRenderer } from './ui/field-renderer';
 import { ConditionSettingsSection } from './sections/condition-settings-section';
+import { SimulateNodeSection } from './sections/simulate-node-section';
 
 interface NodeSidebarProps {
     node: Node;
     onClose: () => void;
     updateNodeData: (nodeId: string, data: any) => void;
+    agentId?: string;
 }
 
-export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSidebarProps) {
+export default function NodeSidebar({ node, onClose, updateNodeData, agentId }: NodeSidebarProps) {
     const [nodeData, setNodeData] = useState<any>(node.data);
     const [fetchedTools, setFetchedTools] = useState<any>(null);
     const { handleDeleteNode, handleNodePlayPause } = useFlow();
@@ -224,6 +226,13 @@ export default function NodeSidebar({ node, onClose, updateNodeData }: NodeSideb
             {nodeData.name === 'Crypto Trade' && (
                 <TradeInfoSection outputData={nodeData.outputData} />
             )}
+
+            <SimulateNodeSection
+                nodeId={node.id}
+                nodeType={node.type ?? 'input'}
+                nodeData={nodeData as Record<string, unknown>}
+                agentId={agentId}
+            />
         </div>
     );
 }

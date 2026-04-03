@@ -168,7 +168,7 @@ function FlowBuilderContent() {
         <FlowConsole />
         <NodeLibrary isOpen={isLibraryOpen} setIsOpen={setIsLibraryOpen} onTapAdd={handleTapAdd} />
         {selectedNode && (
-          <NodeSidebar node={selectedNode} onClose={() => setSelectedNode(null)} updateNodeData={updateNodeData} />
+          <NodeSidebar node={selectedNode} onClose={() => setSelectedNode(null)} updateNodeData={updateNodeData} agentId={currentAgentId ?? undefined} />
         )}
         <NodeConsoleModal node={consoleNode} isOpen={!!consoleNode} onClose={() => setConsoleNode(null)} />
         <ApiKeyModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} onSave={handleSaveApiKey} />

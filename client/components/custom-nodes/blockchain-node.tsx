@@ -21,20 +21,57 @@ function parseTool(data: any) {
 
     let parentLabel = '';
     let isCkbNode = false;
+    let isFiberChannel = false;
     if (toolName.startsWith('blockchain.ckb.node.')) {
         parentLabel = 'CKB Node Instance';
         isCkbNode = true;
+    } else if (toolName.startsWith('blockchain.ckb_fiber.channel')) {
+        parentLabel = 'CKB Fiber';
+        isFiberChannel = true;
     } else if (toolName.startsWith('blockchain.ckb_fiber.')) {
         parentLabel = 'CKB Fiber';
     } else if (toolName.startsWith('blockchain.ckb.')) {
         parentLabel = 'CKB';
     }
 
-    return { toolName, shortName, parentLabel, isCkbNode };
+    return { toolName, shortName, parentLabel, isCkbNode, isFiberChannel };
+}
+
+function FiberNodeConfig({ data }: { data: any }) {
+    const nodeType = data.fiberNodeType || 'managed';
+    const nodeUrl  = data.fiberNodeUrl  || '';
+
+    const update = (field: string, value: string) => {
+        if (data.onFiberConfigChange) data.onFiberConfigChange(field, value);
+        else data[field] = value; // fallback direct mutation
+    };
+
+    return (
+        <div className="mt-2 p-2 rounded-lg bg-blue-950/40 border border-blue-800/40 space-y-1.5 nodrag">
+            <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">Fiber Node</p>
+            <select
+                value={nodeType}
+                onChange={e => update('fiberNodeType', e.target.value)}
+                className="w-full text-[10px] bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 focus:outline-none"
+            >
+                <option value="managed">Managed (platform node)</option>
+                <option value="custom">Custom (my own node)</option>
+            </select>
+            {nodeType === 'custom' && (
+                <input
+                    type="text"
+                    placeholder="http://my-fiber-node:8227 (required)"
+                    value={nodeUrl}
+                    onChange={e => update('fiberNodeUrl', e.target.value)}
+                    className="w-full text-[10px] bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                />
+            )}
+        </div>
+    );
 }
 
 const BlockchainNode: React.FC<BlockchainNodeProps> = ({ data, isConnectable, selected, id }) => {
-    const { toolName, shortName, parentLabel, isCkbNode } = parseTool(data);
+    const { toolName, shortName, parentLabel, isCkbNode, isFiberChannel } = parseTool(data);
 
     const shellClass = [
         'node-base',
@@ -68,6 +105,9 @@ const BlockchainNode: React.FC<BlockchainNodeProps> = ({ data, isConnectable, se
             {toolName && (
                 <div className="node-badge" title={toolName}>{toolName}</div>
             )}
+
+            {/* Fiber channel node — managed vs custom node config */}
+            {isFiberChannel && <FiberNodeConfig data={data} />}
 
             {/* Dynamic Inputs form */}
             {data.inputs?.length > 0 && (

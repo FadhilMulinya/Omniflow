@@ -2,6 +2,9 @@ import { FastifyPluginAsync } from 'fastify';
 import { AgentDefinition } from '../models/AgentDefinition';
 import { Workspace } from '../models/Workspace';
 import { Purchase } from '../models/Purchase';
+import { AgentCard } from '../models/AgentCard';
+import { AgentPayment } from '../models/AgentPayment';
+import { payAgent } from '../services/fiber/PaymentProtocol';
 
 export const MARKETPLACE_CATEGORIES = [
     'Trading Bot',
@@ -129,7 +132,7 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
         try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
 
         const { id } = request.params;
-        const { published = true, category = 'Custom', visibility = 'public', pricing, paymentMethods } = request.body;
+        const { published = true, category = 'Custom', visibility = 'public', pricing, paymentMethods, networkPricing } = request.body as any;
 
         // Input validation
         if (category && !(MARKETPLACE_CATEGORIES as readonly string[]).includes(category) && category !== 'Custom') {
@@ -159,6 +162,9 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
             category,
             visibility,
             pricing: pricing || existing.pricing || { type: 'free', price: 0, currency: 'USD' },
+            // networkPricing: per-network pricing for multi-chain marketplace
+            // e.g. [{ network: 'CKB', asset: 'CKB', price: '5000000000', decimals: 8 }]
+            networkPricing: networkPricing ?? existing.networkPricing ?? [],
             paymentMethods: {
                 stripe: {
                     enabled: paymentMethods?.stripe?.enabled ?? existing.paymentMethods?.stripe?.enabled ?? false,
@@ -252,6 +258,61 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
 
         return { message: 'Agent copy created successfully', proxyAgent: proxy };
     });
+
+    // ── Fiber / multi-chain purchase ──────────────────────────────────────────
+    // Buyer selects a network, pays via Fiber invoice (CKB) or submits txHash (other chains)
+    fastify.post<{ Params: { id: string }; Body: { network: string; fromAgentId?: string; txHash?: string } }>(
+        '/marketplace/:id/network-purchase',
+        async (request, reply) => {
+            const token = request.cookies['auth_token'];
+            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
+            let decoded: any;
+            try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+
+            const { id } = request.params;
+            const { network, fromAgentId, txHash } = request.body;
+
+            const source = await AgentDefinition.findOne({ _id: id, 'marketplace.published': true });
+            if (!source) return reply.code(404).send({ error: 'Agent not found in marketplace' });
+
+            const mkt = source.marketplace as any;
+            const netPrice = (mkt?.networkPricing || []).find((p: any) => p.network === network);
+            if (!netPrice) return reply.code(400).send({ error: `No pricing configured for network: ${network}` });
+
+            // Create pending purchase record
+            const purchase = await Purchase.create({
+                agentId: id, buyerId: decoded.id, sellerId: source.ownerId,
+                paymentMethod: 'crypto', amount: netPrice.price,
+                currency: netPrice.asset, status: 'pending',
+                cryptoTxHash: txHash, network,
+            });
+
+            // CKB/Fiber: initiate agent-to-agent payment if fromAgentId is provided
+            if (network === 'CKB' && fromAgentId) {
+                const sellerCard = await AgentCard.findOne({ agentId: source._id });
+                if (sellerCard) {
+                    try {
+                        await payAgent({
+                            fromAgentId, toAgentId: String(source._id),
+                            network, asset: netPrice.asset, amount: netPrice.price,
+                            memo: `Marketplace purchase of ${source.name}`,
+                            marketplacePurchaseId: purchase._id as any,
+                        } as any);
+                    } catch (e: any) {
+                        // Payment initiation failed — purchase stays pending for manual resolution
+                        console.warn('[Marketplace] Fiber payment failed:', e.message);
+                    }
+                }
+            }
+
+            return reply.code(201).send({
+                purchase,
+                message: txHash
+                    ? 'Transaction submitted — pending verification'
+                    : 'Purchase initiated — complete payment to confirm',
+            });
+        }
+    );
 
     // ── Purchase history for buyer ────────────────────────────────────────────
     fastify.get('/marketplace/purchases/mine', async (request, reply) => {

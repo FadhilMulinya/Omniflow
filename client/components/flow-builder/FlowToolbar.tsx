@@ -57,35 +57,35 @@ function DesktopToolbar(props: FlowToolbarProps) {
                 <div className="flex items-center gap-1.5 mr-1 pr-2 border-r border-border/60">
                     <StatusBadge currentAgent={currentAgent} />
                     {currentAgent?.isDraft && (
-                        <Button size="sm" variant="default" className="h-8 px-2" onClick={onPublish}>
+                        <Button size="sm" variant="default" className="h-8 px-3 font-semibold" onClick={onPublish}>
                             <Rocket className="h-3.5 w-3.5 mr-1" /> Publish
                         </Button>
                     )}
-                    <Button size="sm" variant="default" className="h-8 px-2" onClick={onChat}>
+                    <Button size="sm" variant="outline" className="h-8 px-3 border-border/60 hover:border-primary/40" onClick={onChat}>
                         <MessageSquare className="h-3.5 w-3.5 mr-1" /> Interact
                     </Button>
-                    <Button size="sm" variant="default" className="h-8 px-2" onClick={onExport}>
+                    <Button size="sm" variant="outline" className="h-8 px-3 border-border/60 hover:border-primary/40" onClick={onExport}>
                         <Share2 className="h-3.5 w-3.5 mr-1" /> Export
                     </Button>
                 </div>
             )}
 
-            <Button variant="default" size="sm" onClick={onApiKeys}>
+            <Button variant="outline" size="sm" className="border-border/60 hover:border-primary/40" onClick={onApiKeys}>
                 <Key className="h-4 w-4 mr-2" /> API Keys
                 <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
             </Button>
-            <Button variant="default" size="sm" onClick={onAddNode}>
+            <Button variant="outline" size="sm" className="border-border/60 hover:border-primary/40" onClick={onAddNode}>
                 <Plus className="h-4 w-4 mr-2" /> Add Node
             </Button>
             <Button variant="default" size="sm" onClick={onSave}>
                 <Save className="h-4 w-4 mr-2" />
                 {currentAgentId ? 'Save Flow' : 'Create Agent'}
             </Button>
-            <div className="flex rounded-md overflow-hidden shadow-sm">
-                <Button variant="default" size="sm" className="rounded-none border-r border-primary-foreground/20 h-9 px-3" onClick={onLoad}>
+            <div className="flex rounded-md overflow-hidden border border-border/60">
+                <Button variant="outline" size="sm" className="rounded-none border-0 border-r border-border/60 h-9 px-3" onClick={onLoad}>
                     <Upload className="h-4 w-4 mr-2" /> Load Agent
                 </Button>
-                <Button variant="default" size="sm" className="rounded-none h-9 px-3 font-semibold" onClick={onTemplates}>
+                <Button variant="outline" size="sm" className="rounded-none border-0 h-9 px-3 font-semibold" onClick={onTemplates}>
                     Templates
                 </Button>
             </div>

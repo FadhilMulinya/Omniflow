@@ -26,6 +26,9 @@ export const ENV = {
     STRIPE_CLIENT_ID: process.env.STRIPE_CLIENT_ID || '',
     STRIPE_REDIRECT_URI:
         process.env.STRIPE_REDIRECT_URI || 'http://localhost:3001/api/payments/stripe/callback',
+    // Fiber — platform managed node (optional; agents can supply their own)
+    FIBER_NODE_URL:   process.env.FIBER_NODE_URL   || 'http://localhost:8227',
+    FIBER_AUTH_TOKEN: process.env.FIBER_AUTH_TOKEN || '',
 };
 
 const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'GEMINI_API_KEY', 'OPENAI_API_KEY'];

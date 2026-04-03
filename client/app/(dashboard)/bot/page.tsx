@@ -1,214 +1,54 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Bot, Zap, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/api-client';
+import { useState } from 'react';
+import { Bot, MessageSquare } from 'lucide-react';
+import { AssistantChat } from './components/AssistantChat';
+import { AgentChats }    from './components/AgentChats';
 
-type Message = {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant';
-};
+const TABS = [
+    { id: 'assistant', label: 'Assistant',   icon: Bot           },
+    { id: 'agents',    label: 'Agent Chats', icon: MessageSquare },
+] as const;
 
-const SUGGESTED = [
-  'How do I create my first agent?',
-  'What are the pricing plans?',
-  'How does the token system work?',
-  'What blockchain features are available?',
-];
+type Tab = typeof TABS[number]['id'];
 
 export default function BotPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+    const [tab, setTab] = useState<Tab>('assistant');
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  const send = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || loading) return;
-
-    const userMsg: Message = { id: Date.now().toString(), content: trimmed, role: 'user' };
-    const history = messages.map((m) => ({ role: m.role, content: m.content }));
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInput('');
-    setLoading(true);
-
-    try {
-      const data = await apiFetch('/bot/chat', {
-        method: 'POST',
-        body: JSON.stringify({ message: trimmed, history }),
-      });
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        content: data.reply || 'Sorry, I could not generate a response.',
-        role: 'assistant',
-      };
-      setMessages((prev) => [...prev, botMsg]);
-    } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          content: err.message || 'Something went wrong. Please try again.',
-          role: 'assistant',
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    send(input);
-  };
-
-  const clear = () => setMessages([]);
-
-  const isEmpty = messages.length === 0;
-
-  return (
-    <div className="flex flex-col h-[calc(100vh-56px)] max-w-3xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="font-bold text-[15px] leading-tight">FlawLess Assistant</h1>
-            <p className="text-[11px] text-muted-foreground">Ask me anything about the platform</p>
-          </div>
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Online
-          </span>
-        </div>
-        {!isEmpty && (
-          <button
-            onClick={clear}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-1">
-        <AnimatePresence initial={false}>
-          {isEmpty && (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center h-full text-center gap-6 py-12"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-bold text-lg mb-1">Hi, I'm FlawLess Assistant</h2>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Ask me about features, pricing, how to build agents, or anything else about the platform.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
-                {SUGGESTED.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => send(s)}
-                    className="text-left text-xs px-3.5 py-2.5 rounded-xl border border-border/60 bg-card hover:border-primary/30 hover:bg-primary/5 transition-all text-muted-foreground hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center mr-2.5 flex-shrink-0 mt-0.5">
-                  <Zap className="w-3.5 h-3.5 text-primary" />
+    return (
+        <div className="flex flex-col h-[calc(100vh-56px)] max-w-3xl mx-auto px-4 py-6">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5 flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Bot className="w-5 h-5 text-primary" />
                 </div>
-              )}
-              <div
-                className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                    : 'bg-muted text-foreground rounded-bl-sm'
-                }`}
-                style={{ whiteSpace: 'pre-wrap' }}
-              >
-                {msg.content}
-              </div>
-            </motion.div>
-          ))}
+                <div>
+                    <h1 className="font-bold text-[15px] leading-tight">FlawLess Assistant</h1>
+                    <p className="text-[11px] text-muted-foreground">Platform help & inter-agent messages</p>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full ml-auto">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online
+                </span>
+            </div>
 
-          {loading && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center mr-2.5 flex-shrink-0 mt-0.5">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3.5 flex items-center gap-1.5">
-                {[0, 150, 300].map((delay) => (
-                  <span
-                    key={delay}
-                    className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
-                    style={{ animationDelay: `${delay}ms` }}
-                  />
+            {/* Tab bar */}
+            <div className="flex gap-1 bg-muted/40 rounded-xl p-1 mb-5 flex-shrink-0">
+                {TABS.map(({ id, label, icon: Icon }) => (
+                    <button key={id} onClick={() => setTab(id)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all ${
+                            tab === id
+                                ? 'bg-card text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}>
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                    </button>
                 ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <div ref={bottomRef} />
-      </div>
+            </div>
 
-      {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex-shrink-0 mt-4 flex gap-2 items-center bg-card border border-border/60 rounded-2xl px-4 py-2.5 focus-within:border-primary/40 transition-colors shadow-sm"
-      >
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask me anything about FlawLess…"
-          disabled={loading}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={!input.trim() || loading}
-          className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white disabled:opacity-30 hover:bg-primary/90 transition-all disabled:cursor-not-allowed flex-shrink-0"
-        >
-          <Send className="w-3.5 h-3.5" />
-        </button>
-      </form>
-    </div>
-  );
+            {/* Tab content */}
+            {tab === 'assistant' && <AssistantChat />}
+            {tab === 'agents'    && <AgentChats />}
+        </div>
+    );
 }

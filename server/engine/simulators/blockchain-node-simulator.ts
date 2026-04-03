@@ -1,81 +1,114 @@
-import { allBlockchainTools } from '../../packages/tooling/blockchain/src/index';
-import { executeTool } from '../../packages/tooling/blockchain/src/index';
+import { allBlockchainTools, executeTool } from '../../packages/tooling/blockchain/src/index';
+import { nodeSuccess, nodeError, NodeOutput, NodeMetadata } from '../types/base';
+import { BlockchainNodeInputSchema, BlockchainNodeResult } from '../types/node-contracts';
+import { timestamp } from './base';
 
-export async function simulateBlockchainNode(data: any, inputValues: Record<string, any>, consoleOutput: string[]) {
-    const outputs: Record<string, any> = {};
+export async function simulateBlockchainNode(
+  data: unknown,
+  inputValues: Record<string, unknown>,
+  consoleOutput: string[]
+): Promise<NodeOutput<BlockchainNodeResult>> {
+  const t0 = Date.now();
+  const d = data as any;
 
-    try {
-        const toolName = data.tool || inputValues['tool'] || data.inputs?.find((input: any) => input.key === 'tool_lookup')?.value;
+  const validated = BlockchainNodeInputSchema.safeParse(inputValues);
+  if (!validated.success) {
+    const msg = `Blockchain node input invalid: ${validated.error.message}`;
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
 
-        if (!toolName) {
-            throw new Error(`No tool selected for blockchain node. Please select a tool in node settings.`);
-        }
+  const toolName: string =
+    d?.tool ??
+    (inputValues['tool'] as string) ??
+    d?.inputs?.find((i: any) => i.key === 'tool_lookup')?.value;
 
-        const tool = allBlockchainTools.find(t => t.name === toolName);
+  if (!toolName) {
+    const msg = 'No tool selected for blockchain node. Please select a tool in node settings.';
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
 
-        if (!tool) {
-            throw new Error(`Blockchain tool not found: ${toolName}. This node may be disconnected from the provider chain.`);
-        }
+  const tool = allBlockchainTools.find(t => t.name === toolName);
+  if (!tool) {
+    const msg = `Blockchain tool not found: ${toolName}`;
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
 
-        consoleOutput.push(`[Blockchain Tool] Executing tool: ${toolName}`);
+  consoleOutput.push(`${timestamp()} ⛓  Executing blockchain tool: ${toolName}`);
 
-        // Construct payload from inputValues (prioritized) and data.inputs
-        const parsedPayload: Record<string, any> = { ...data.params };
+  // Build payload — priority: params > UI inputs > upstream inputValues
+  const payload: Record<string, unknown> = { ...(d?.params ?? {}) };
 
-        // Add variables from UI inputs if present
-        data.inputs?.forEach((inp: any) => {
-            if (inp.value && !parsedPayload[inp.key]) {
-                parsedPayload[inp.key] = inp.value;
-            }
-        });
-
-        // Add variables extracted upstream (e.g. from Text Processor AI)
-        for (const [k, v] of Object.entries(inputValues)) {
-            if (!['tool', 'tool_lookup', 'payload', 'walletData', 'walletInfo', 'outputData'].includes(k)) {
-                parsedPayload[k] = v;
-            }
-        }
-
-        // Forward wallet connection data intelligently
-        const wallet = inputValues['walletData'] || inputValues['walletInfo'] || inputValues;
-        if (wallet && wallet.address) {
-            if (!parsedPayload['from']) parsedPayload['from'] = wallet.address;
-            if (!parsedPayload['address']) parsedPayload['address'] = wallet.address;
-        }
-
-        // Validation for wallet existence at runtime
-        if (tool.name.includes('.get CKB balance') && !parsedPayload['address']) {
-            throw new Error(`Wallet address not found. Please connect a Crypto Wallet node upstream or provide an address.`);
-        }
-        if (tool.name.includes('.transfer ckb') && (!parsedPayload['from'] || !parsedPayload['privateKey'])) {
-            throw new Error(`Sender wallet or private key missing. Please connect a Crypto Wallet node upstream.`);
-        }
-
-
-        consoleOutput.push(`[Blockchain Tool] Constructed payload: ${JSON.stringify(parsedPayload)}`);
-
-        consoleOutput.push(`[Blockchain Tool] Executing tool: ${toolName}`);
-        const result = await tool.execute(parsedPayload);
-
-        if (tool.name.includes('.get CKB balance')) {
-            consoleOutput.push(`[Blockchain Tool] Balance retrieved: ${result.ckb} CKB (${result.shannons} shannons)`);
-        } else if (tool.name.includes('.transfer ckb')) {
-            consoleOutput.push(`[Blockchain Tool] Transfer successful. TxHash: ${result.hash}`);
-        }
-
-        consoleOutput.push(`[Blockchain Tool] Execution successful.`);
-        outputs['result'] = result;
-        outputs['status'] = 'success';
-
-    } catch (error: any) {
-        let displayError = error.message;
-        if (error.message.includes("validation failed")) {
-            displayError = `Missing required parameters. Ensure a wallet is connected and parameters are extracted correctly.`;
-        }
-        consoleOutput.push(`[Blockchain Tool] Error: ${displayError}`);
-        outputs['result'] = { error: displayError };
-        outputs['status'] = 'error';
+  d?.inputs?.forEach((inp: any) => {
+    if (inp.value !== undefined && inp.value !== '' && payload[inp.key] === undefined) {
+      payload[inp.key] = inp.value;
     }
+  });
 
-    return outputs;
+  const EXCLUDED_KEYS = new Set([
+    'tool', 'tool_lookup', 'payload', 'walletData', 'walletInfo', 'outputData',
+    'network', 'action_group',
+  ]);
+  for (const [k, v] of Object.entries(inputValues)) {
+    if (!EXCLUDED_KEYS.has(k) && payload[k] === undefined) {
+      payload[k] = v;
+    }
+  }
+
+  // Forward wallet address from upstream wallet node
+  const walletSource = (inputValues['walletData'] ?? inputValues['walletInfo'] ?? inputValues) as any;
+  if (walletSource?.address) {
+    if (payload['from'] === undefined) payload['from'] = walletSource.address;
+    if (payload['address'] === undefined) payload['address'] = walletSource.address;
+  }
+
+  // Guard required params for known operations
+  if (toolName.includes('get CKB balance') && !payload['address']) {
+    const msg = 'Wallet address required. Connect a Crypto Wallet node upstream or provide an address.';
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
+  if (toolName.includes('transfer ckb') && (!payload['from'] || !payload['privateKey'])) {
+    const msg = 'Sender wallet or private key missing. Connect a Crypto Wallet node upstream.';
+    consoleOutput.push(`${timestamp()} ❌ ${msg}`);
+    return nodeError(msg);
+  }
+
+  consoleOutput.push(`${timestamp()} 📦 Payload: ${JSON.stringify(payload)}`);
+
+  try {
+    const rawResult = await tool.execute(payload);
+
+    if (toolName.includes('get CKB balance')) {
+      consoleOutput.push(`${timestamp()} ✅ Balance: ${rawResult.ckb} CKB (${rawResult.shannons} shannons)`);
+    } else if (toolName.includes('transfer ckb')) {
+      consoleOutput.push(`${timestamp()} ✅ Transfer successful. TxHash: ${rawResult.hash}`);
+    }
+    consoleOutput.push(`${timestamp()} ✅ Tool executed successfully.`);
+
+    const meta: NodeMetadata = {
+      executionMs: Date.now() - t0,
+      toolName,
+      network: (inputValues['network'] as string) ?? d?.chain ?? 'CKB',
+    };
+
+    return nodeSuccess<BlockchainNodeResult>(
+      {
+        data: rawResult,
+        network: meta.network!,
+        toolName,
+        txHash: rawResult?.hash ?? rawResult?.txHash,
+      },
+      { metadata: meta }
+    );
+  } catch (err: any) {
+    let display = err.message;
+    if (err.message.includes('validation failed')) {
+      display = 'Missing required parameters. Ensure a wallet is connected and parameters are extracted correctly.';
+    }
+    consoleOutput.push(`${timestamp()} ❌ ${display}`);
+    return nodeError(display, {}, { executionMs: Date.now() - t0, toolName, network: (inputValues['network'] as string) ?? 'CKB' });
+  }
 }
