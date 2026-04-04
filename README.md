@@ -65,7 +65,7 @@ FlawLess solves this by:
 | Backend | Fastify 4, Node.js, TypeScript, tsx (watch mode) |
 | Database | MongoDB Atlas (Mongoose ODM) |
 | Auth | JWT via `@fastify/jwt`, session cookies |
-| AI Providers | Google Gemini (`@google/generative-ai`), OpenAI SDK v6 |
+| AI Providers | Google Gemini (`@google/generative-ai`), Ollama (`qwen2.5:3B`), OpenAI SDK v6 |
 | Monorepo | pnpm workspaces (client, server, tooling packages) |
 
 ### AI / Agent Stack
