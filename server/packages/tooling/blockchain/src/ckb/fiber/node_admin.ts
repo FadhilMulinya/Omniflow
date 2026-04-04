@@ -26,11 +26,11 @@ export async function fiberRpcCall(method: string, params: any[]) {
  * blockchain.ckb_fiber.node_admin.node_info
  * Returns node pubkey, listen addresses, peer count, etc.
  */
-export const GetNodeInfoTool: BlockchainTool<void, any> = {
+export const GetNodeInfoTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.node_info",
     description: "Fetches info about the connected Fiber node: pubkey, listen addresses, peer count, and network alias.",
-    schema: z.void(),
-    async execute() {
+    schema: z.object({}),
+    async execute(_input) {
         return await fiberRpcCall("node_info", []);
     },
 };
@@ -96,11 +96,11 @@ export const DisconnectPeerTool: BlockchainTool<z.infer<typeof DisconnectPeerSch
  * blockchain.ckb_fiber.node_admin.list_peers
  * Use this after connect_peer to get the remote peer's pubkey (needed for open_channel).
  */
-export const ListPeersTool: BlockchainTool<void, any> = {
+export const ListPeersTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.list_peers",
     description: "List all connected Fiber peers. Use this after connect_peer to retrieve the remote peer's pubkey for open_channel.",
-    schema: z.void(),
-    async execute() {
+    schema: z.object({}),
+    async execute(_input) {
         return await fiberRpcCall("list_peers", []);
     },
 };
@@ -108,11 +108,11 @@ export const ListPeersTool: BlockchainTool<void, any> = {
 /**
  * blockchain.ckb_fiber.node_admin.network_status
  */
-export const NetworkStatusTool: BlockchainTool<void, any> = {
+export const NetworkStatusTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.network_status",
     description: "Checks the Fiber network graph — how many nodes and channels are visible.",
-    schema: z.void(),
-    async execute() {
+    schema: z.object({}),
+    async execute(_input) {
         return await fiberRpcCall("graph_nodes", [{ limit: "0x10" }]);
     },
 };
