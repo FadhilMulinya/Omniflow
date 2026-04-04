@@ -9,8 +9,8 @@ export const agentApi = {
 
     getPlanStatus: async () => apiFetch('/agents/plan-status'),
 
-    enhancePersona: async (name: string, persona: string, agentType?: string, chains?: string[]) =>
-        apiFetch('/agents/enhance', { method: 'POST', body: JSON.stringify({ name, persona, agentType, chains }) }),
+    enhancePersona: async (name: string, persona: string, agentType?: string, chains?: string[], signal?: AbortSignal) =>
+        apiFetch('/agents/enhance', { method: 'POST', body: JSON.stringify({ name, persona, agentType, chains }), signal }),
 
     saveAgent: async (name: string, graph?: { nodes: any[]; edges: any[] }, persona?: string, description?: string, isDraft = true, character?: any, agentType?: string, chains?: string[]) =>
         apiFetch('/agents', { method: 'POST', body: JSON.stringify({ name, persona, description, graph, isDraft, character, agentType, chains }) }),

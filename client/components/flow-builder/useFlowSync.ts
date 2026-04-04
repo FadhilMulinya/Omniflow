@@ -47,19 +47,21 @@ export function useExecutionStream({ isSimulating, executionId, stopSimulation, 
                 if (data.type === 'connected') return;
                 if (data.state) syncExecutionState(data.state);
                 if (data.status === 'completed' && !data.nodeId) {
-                    stopSimulation();
-                    toast({ title: 'Flow completed', description: 'Execution finished successfully.' });
+                    // Flow run finished — close stream but keep simulation alive for continued chat
+                    toast({ title: 'Flow completed', description: 'Agent is ready. Simulation still active.' });
                     es.close();
                 } else if (data.status === 'failed') {
+                    // Only stop simulation on fatal execution failure
                     stopSimulation();
-                    toast({ title: 'Flow failed', description: data.error || 'Execution interrupted.', variant: 'destructive' });
+                    toast({ title: 'Execution failed', description: data.error || 'Execution interrupted.', variant: 'destructive' });
                     es.close();
                 }
             } catch (err) {
                 console.error('SSE Parsing error:', err);
             }
         };
-        es.onerror = () => { stopSimulation(); es.close(); };
+        // SSE connection error — close stream but don't kill simulation (may reconnect on next run)
+        es.onerror = () => { es.close(); };
         return () => es.close();
     }, [isSimulating, executionId, stopSimulation, syncExecutionState]);
 }

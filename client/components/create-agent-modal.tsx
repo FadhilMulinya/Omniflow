@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Dialog,
@@ -13,7 +13,10 @@ import { Button } from '@/components/ui/buttons/button';
 import { Input } from '@/components/ui/forms/input';
 import { Textarea } from '@/components/ui/forms/textarea';
 import { Label } from '@/components/ui/forms/label';
-import { Cpu, Wand2, Loader2, Check, ChevronRight, ChevronDown, CheckSquare, Square } from 'lucide-react';
+import {
+    IconCpu, IconWand, IconLoader2, IconCheck, IconChevronRight,
+    IconChevronDown, IconSquareCheck, IconSquare,
+} from '@tabler/icons-react';
 import { agentApi } from '@/api/agent-api';
 import { useToast } from '@/components/ui/notifications/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/select';
@@ -42,6 +45,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
     const [enhancedData, setEnhancedData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const chainDropRef = useRef<HTMLDivElement>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -67,19 +71,32 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
         setEnhancedData(null);
     };
 
+    const handleCancel = useCallback(() => {
+        // Abort any in-flight enhancement request
+        if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
+        setIsLoading(false);
+        onClose();
+        reset();
+    }, [onClose]);
+
     const handleNext = async () => {
         if (!name.trim() || !persona.trim()) {
             toast({ title: 'Missing fields', description: 'Provide both a name and a persona.', variant: 'destructive' });
             return;
         }
+        const controller = new AbortController();
+        abortRef.current = controller;
         setIsLoading(true);
         try {
-            const data = await agentApi.enhancePersona(name, persona, agentType, selectedChains);
+            const data = await agentApi.enhancePersona(name, persona, agentType, selectedChains, controller.signal);
+            if (controller.signal.aborted) return;
             setEnhancedData(data);
             setStep(2);
         } catch (err: any) {
+            if (err.name === 'AbortError') return; // user cancelled — stay silent
             toast({ title: 'Expansion failed', description: err.message || 'AI failed to expand persona.', variant: 'destructive' });
         } finally {
+            abortRef.current = null;
             setIsLoading(false);
         }
     };
@@ -104,7 +121,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { onClose(); reset(); } }}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCancel(); }}>
             <DialogContent className="sm:max-w-[540px] max-h-[90vh] flex flex-col bg-card border-border/60 shadow-xl p-0 overflow-hidden gap-0">
                 <div className="h-px w-full bg-gradient-to-r from-primary/70 to-primary/10" />
 
@@ -113,7 +130,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                     <DialogHeader>
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center shrink-0">
-                                <Cpu className="h-4 w-4 text-primary" />
+                                <IconCpu className="h-4 w-4 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <DialogTitle className="text-base font-bold leading-snug">
@@ -196,7 +213,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                                     {selectedChains.length}
                                                 </span>
                                             )}
-                                            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${chainDropOpen ? 'rotate-180' : ''}`} />
+                                            <IconChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${chainDropOpen ? 'rotate-180' : ''}`} />
                                         </div>
                                     </button>
 
@@ -212,13 +229,13 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/40 ${active ? 'bg-primary/5' : ''}`}
                                                     >
                                                         {active
-                                                            ? <CheckSquare className="h-4 w-4 text-primary shrink-0" />
-                                                            : <Square className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                                            ? <IconSquareCheck className="h-4 w-4 text-primary shrink-0" />
+                                                            : <IconSquare className="h-4 w-4 text-muted-foreground shrink-0" />}
                                                         <div className="flex-1 min-w-0">
                                                             <div className="text-sm font-medium text-foreground">{chain.label}</div>
                                                             <div className="text-[11px] text-muted-foreground">{chain.sub}</div>
                                                         </div>
-                                                        {active && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                                                        {active && <IconCheck className="h-3.5 w-3.5 text-primary shrink-0" />}
                                                     </button>
                                                 );
                                             })}
@@ -273,7 +290,7 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                         const chain = CHAINS.find(c => c.id === id);
                                         return (
                                             <span key={id} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold bg-primary/8 text-primary border border-primary/15 rounded-lg">
-                                                <Check className="h-2.5 w-2.5" />
+                                                <IconCheck className="h-2.5 w-2.5" />
                                                 {chain?.label} ({chain?.sub})
                                             </span>
                                         );
@@ -288,15 +305,15 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                 <div className="px-6 py-4 border-t border-border/50 flex items-center justify-end gap-2">
                     {step === 1 ? (
                         <>
-                            <Button variant="ghost" onClick={() => { onClose(); reset(); }} className="h-9 px-4 rounded-xl text-sm">Cancel</Button>
+                            <Button variant="ghost" onClick={handleCancel} className="h-9 px-4 rounded-xl text-sm">Cancel</Button>
                             <Button
                                 onClick={handleNext}
                                 disabled={isLoading}
                                 className="h-9 px-5 rounded-xl text-sm bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
                             >
                                 {isLoading
-                                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Expanding…</>
-                                    : <><Wand2 className="h-3.5 w-3.5 mr-1.5" />Expand Persona<ChevronRight className="h-3.5 w-3.5 ml-0.5 opacity-60" /></>}
+                                    ? <><IconLoader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Expanding…</>
+                                    : <><IconWand className="h-3.5 w-3.5 mr-1.5" />Expand Persona<IconChevronRight className="h-3.5 w-3.5 ml-0.5 opacity-60" /></>}
                             </Button>
                         </>
                     ) : (
@@ -308,8 +325,8 @@ export default function CreateAgentModal({ isOpen, onClose, onComplete }: Create
                                 className="h-9 px-5 rounded-xl text-sm bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
                             >
                                 {isLoading
-                                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Creating…</>
-                                    : <><Check className="h-3.5 w-3.5 mr-1.5" />Finalize & Create</>}
+                                    ? <><IconLoader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Creating…</>
+                                    : <><IconCheck className="h-3.5 w-3.5 mr-1.5" />Finalize & Create</>}
                             </Button>
                         </>
                     )}

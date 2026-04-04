@@ -24,6 +24,7 @@ export interface IAgentDefinition extends Document {
         publicKey?: string;
         privateKey?: string;
         walletType?: 'managed' | 'externally_owned';
+        peerId?: string;
     }[];
     graph: { nodes: any[]; edges: any[] };
     exportSettings?: {
@@ -72,6 +73,7 @@ const AgentDefinitionSchema: Schema = new Schema(
                 publicKey:   { type: String },
                 privateKey:  { type: String },
                 walletType:  { type: String, enum: ['managed', 'externally_owned'] },
+                peerId:      { type: String }, // Fiber/CKB peer ID for discovery
             },
         ],
         graph:      { type: Schema.Types.Mixed, default: { nodes: [], edges: [] } },

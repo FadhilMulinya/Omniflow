@@ -188,14 +188,14 @@ export function ChatBody({
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
                     <button onClick={onToggleFullscreen}
-                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
                         title={isFullscreen ? 'Collapse' : 'Expand'}>
-                        {isFullscreen ? <IconMinimize className="h-4 w-4" /> : <IconMaximize className="h-4 w-4" />}
+                        {isFullscreen ? <IconMinimize className="h-5 w-5 sm:h-4 sm:w-4" /> : <IconMaximize className="h-5 w-5 sm:h-4 sm:w-4" />}
                     </button>
                     <button onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-2.5 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
                         title="Close">
-                        <IconX className="h-4 w-4" />
+                        <IconX className="h-5 w-5 sm:h-4 sm:w-4" />
                     </button>
                 </div>
             </div>
@@ -204,7 +204,7 @@ export function ChatBody({
             <div className="flex border-b border-border shrink-0">
                 {(['chat', 'details'] as Tab[]).map(t => (
                     <button key={t} onClick={() => setTab(t)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-3 sm:py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors min-h-[44px] sm:min-h-0 ${
                             tab === t
                                 ? 'border-b-2 border-primary text-primary'
                                 : 'text-muted-foreground hover:text-foreground'
@@ -271,12 +271,12 @@ export function ChatBody({
 
                     {/* ── Simulation gate / CTA ── */}
                     {!isSimulating && (
-                        <div className="mx-4 mb-3 rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-between gap-3 shrink-0">
+                        <div className="mx-4 mb-3 rounded-xl border border-primary/20 bg-primary/5 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shrink-0">
                             <div>
                                 <p className="text-xs font-semibold text-foreground">Simulation not active</p>
                                 <p className="text-[11px] text-muted-foreground mt-0.5">Start simulation to send messages.</p>
                             </div>
-                            <Button size="sm" className="h-8 px-3 gap-1.5 shrink-0 text-xs" onClick={onStartSimulation}>
+                            <Button size="sm" className="h-10 sm:h-8 px-3 gap-1.5 shrink-0 text-xs w-full sm:w-auto" onClick={onStartSimulation}>
                                 <IconPlayerPlay className="h-3.5 w-3.5" />
                                 Start Simulation
                             </Button>
@@ -284,7 +284,7 @@ export function ChatBody({
                     )}
 
                     {/* ── Input ── */}
-                    <div className={`px-4 pb-4 pt-2 border-t border-border bg-background shrink-0 ${isFullscreen ? 'w-full' : ''}`}>
+                    <div className={`px-4 pt-2 border-t border-border bg-background shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] ${isFullscreen ? 'w-full' : ''}`}>
                         <div className={isFullscreen ? 'max-w-4xl mx-auto' : ''}>
                             <form onSubmit={e => { e.preventDefault(); if (isSimulating) onSend(); }}
                                 className="flex gap-2">
@@ -293,11 +293,11 @@ export function ChatBody({
                                     value={input}
                                     onChange={e => onInputChange(e.target.value)}
                                     disabled={!isSimulating}
-                                    className="h-11 bg-card border-border focus-visible:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-12 sm:h-11 bg-card border-border focus-visible:ring-primary/40 disabled:opacity-50 disabled:cursor-not-allowed text-base sm:text-sm"
                                 />
                                 <Button type="submit" size="icon"
                                     disabled={isTyping || !input.trim() || !isSimulating}
-                                    className="h-11 w-11 shrink-0">
+                                    className="h-12 w-12 sm:h-11 sm:w-11 shrink-0">
                                     {isTyping
                                         ? <IconLoader2 className="h-4 w-4 animate-spin" />
                                         : <IconSend className="h-4 w-4" />}

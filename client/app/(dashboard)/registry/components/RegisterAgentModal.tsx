@@ -6,7 +6,9 @@ import { registryApi, AgentNetwork } from '@/api/registry-api';
 import { apiFetch } from '@/api/api-client';
 import { Button } from '@/components/ui/buttons/button';
 import { toast } from '@/components/ui';
-import { X, Plus, Trash2, Copy, Check, Globe, Pencil } from 'lucide-react';
+import {
+    IconX, IconPlus, IconTrash, IconCopy, IconCheck, IconGlobe, IconPencil,
+} from '@tabler/icons-react';
 import { MarketplaceSection } from './MarketplaceSection';
 
 const NETWORKS = ['CKB', 'Ethereum', 'Solana', 'Polygon', 'BNB Chain'];
@@ -48,7 +50,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
         }).catch(() => {});
     }, []);
 
-    // When agent selected: auto-fill capabilities from existing card or agent type defaults
+    // When agent selected: auto-fill capabilities + peer IDs from agent's blockchain data
     useEffect(() => {
         if (!agentId) return;
         const agent = agents.find(a => a._id === agentId);
@@ -57,10 +59,28 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
         // Auto-generate endpoint
         setEndpoint(`${API_BASE}/api/registry/well-known/${agentId}`);
 
+        // Pre-populate networks from agent's blockchain wallets, injecting peer IDs where available
+        const agentBlockchains: any[] = agent.blockchain || [];
+        if (agentBlockchains.length > 0) {
+            const prefilled = agentBlockchains.map((bc: any) => ({
+                network: bc.network || 'CKB',
+                chainType: CHAIN_TYPES[bc.network] || 'ckb',
+                walletAddress: bc.walletAddress || '',
+                fiberNodeType: 'managed' as const,
+                isPaymentEnabled: false,
+                // Auto-fill discovered peer ID from agent's CKB network config
+                fiberPeerId: bc.peerId || bc.peer_id || '',
+                fiberNodeUrl: bc.rpcUrl || '',
+            }));
+            setNetworks(prefilled);
+        }
+
         // Try to load existing AgentCard capabilities first
         registryApi.get(agentId).then((card: any) => {
             if (card?.capabilities?.length) setCapabilities(card.capabilities);
             else setCapabilities(TYPE_CAPABILITIES[agent.agentType] || []);
+            // If the card already has networks with peer IDs, prefer those
+            if (card?.networks?.length) setNetworks(card.networks);
         }).catch(() => {
             setCapabilities(TYPE_CAPABILITIES[agent.agentType] || []);
         });
@@ -111,7 +131,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                     <div className="flex items-center gap-2 bg-muted/40 rounded-xl p-3 font-mono text-xs break-all">
                         <span className="flex-1">{rawKey}</span>
                         <button onClick={copyKey} className="flex-shrink-0 text-muted-foreground hover:text-primary transition-colors">
-                            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                            {copied ? <IconCheck className="w-4 h-4 text-emerald-500" /> : <IconCopy className="w-4 h-4" />}
                         </button>
                     </div>
                     {agentId && (
@@ -128,7 +148,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
             <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-lg space-y-5 my-4">
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold">Register Agent</h2>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors"><X className="w-5 h-5" /></button>
+                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors"><IconX className="w-5 h-5" /></button>
                 </div>
 
                 {/* Agent selector — published only */}
@@ -154,7 +174,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                         {capabilities.map(cap => (
                             <span key={cap} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                                 {cap}
-                                <button onClick={() => removeCapability(cap)} className="hover:text-destructive transition-colors"><X className="w-2.5 h-2.5" /></button>
+                                <button onClick={() => removeCapability(cap)} className="hover:text-destructive transition-colors"><IconX className="w-2.5 h-2.5" /></button>
                             </span>
                         ))}
                     </div>
@@ -164,7 +184,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                             placeholder="Add capability and press Enter…"
                             className="flex-1 px-3 py-1.5 rounded-xl border border-border/60 bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         <Button size="sm" variant="outline" onClick={addCapability} className="h-8 gap-1">
-                            <Plus className="w-3 h-3" />
+                            <IconPlus className="w-3 h-3" />
                         </Button>
                     </div>
                 </div>
@@ -172,7 +192,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                 {/* Public endpoint — auto-generated */}
                 <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <Globe className="w-3 h-3" /> Public Discovery Endpoint
+                        <IconGlobe className="w-3 h-3" /> Public Discovery Endpoint
                     </label>
                     <div className="flex items-center gap-2">
                         <input value={endpoint} onChange={e => setEndpoint(e.target.value)}
@@ -181,7 +201,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                         {endpoint && (
                             <button onClick={() => { navigator.clipboard.writeText(endpoint); toast({ title: 'Copied!' }); }}
                                 className="p-2 rounded-lg border border-border/60 hover:bg-muted/40 transition-colors">
-                                <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                                <IconCopy className="w-3.5 h-3.5 text-muted-foreground" />
                             </button>
                         )}
                     </div>
@@ -194,7 +214,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                         <label className="text-xs font-medium text-muted-foreground">Networks</label>
                         <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs"
                             onClick={() => setNetworks(p => [...p, emptyNetwork()])}>
-                            <Plus className="w-3 h-3" /> Add
+                            <IconPlus className="w-3 h-3" /> Add
                         </Button>
                     </div>
                     {networks.map((net, i) => (
@@ -206,7 +226,7 @@ export default function RegisterAgentModal({ onClose, onSuccess }: {
                                 </select>
                                 {networks.length > 1 && (
                                     <button onClick={() => setNetworks(p => p.filter((_, idx) => idx !== i))}
-                                        className="text-destructive hover:opacity-70 transition-opacity"><Trash2 className="w-3.5 h-3.5" /></button>
+                                        className="text-destructive hover:opacity-70 transition-opacity"><IconTrash className="w-3.5 h-3.5" /></button>
                                 )}
                             </div>
                             <input value={net.walletAddress} onChange={e => updateNetwork(i, 'walletAddress', e.target.value)}
