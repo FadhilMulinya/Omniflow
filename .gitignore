@@ -64,6 +64,16 @@ __pycache__/
 .claude/
 .marscode/
 
+# Playwright browser automation (AI dev tooling — never commit)
+**/.playwright-cli/
+*.playwright-cli/
+
+# AI-generated screenshots and debug images dumped at repo root / client root (dev-only)
+/client/*.png
+/client/*.jpg
+/*.png
+/*.jpg
+
 # env
 .env
 
