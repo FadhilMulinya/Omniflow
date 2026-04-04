@@ -31,7 +31,16 @@ export default function ChatSidebar({
     const [agent, setAgent]             = useState<any>(null);
     const [sessionId, setSessionId]     = useState<string>('');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isMobile, setIsMobile]       = useState(false);
     const { loadAgentById, chatWithAgentStream } = useAgentManager();
+
+    // Detect mobile — use fullscreen mode automatically on small screens
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 640);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -155,10 +164,11 @@ export default function ChatSidebar({
 
     if (!isOpen) return null;
 
-    if (isFullscreen) {
+    // On mobile or when user expanded: render as full-screen portal
+    if (isMobile || isFullscreen) {
         return createPortal(
             <div
-                className="fixed inset-0 z-[9999] bg-background flex flex-col items-stretch animate-in fade-in zoom-in duration-200"
+                className="fixed inset-0 z-[9999] bg-background flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-right-4 duration-200"
                 onClick={e => e.stopPropagation()}
             >
                 <ChatBody {...bodyProps} />
@@ -167,12 +177,13 @@ export default function ChatSidebar({
         );
     }
 
+    // Desktop: slide-in sidebar panel
     return (
         <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
             <SheetContent
                 side="right"
                 hideClose
-                className="p-0 flex flex-col bg-background border-border w-[440px] sm:w-[560px] overflow-hidden"
+                className="p-0 flex flex-col bg-background border-border overflow-hidden w-[440px]"
             >
                 <SheetHeader className="sr-only">
                     <SheetTitle>Chat with {agent?.name || 'Agent'}</SheetTitle>
