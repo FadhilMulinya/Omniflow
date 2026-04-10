@@ -23,7 +23,7 @@ WORKDIR /app
 COPY server ./server
 RUN pnpm --filter server build
 # pnpm deploy creates a self-contained dir with non-symlinked node_modules
-RUN pnpm deploy --filter server --prod /deploy
+RUN pnpm deploy --filter server --prod --legacy /deploy
 
 # ── production — lean, non-root ───────────────────────────────────────────────
 FROM node:20-alpine AS production
