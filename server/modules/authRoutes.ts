@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import { sendOtpEmail } from '../services/emailService';
 import crypto from 'crypto';
 import { WELCOME_TOKENS } from '../lib/tokens';
+import { ENV } from '../lib/environments';
 
 function generateOtp(): string {
     return String(crypto.randomInt(100000, 999999));
@@ -36,13 +37,20 @@ async function issueOtp(
 
 function setAuthCookie(fastify: any, reply: any, userId: string, username: string) {
     const token = fastify.jwt.sign({ id: userId, username });
-    return reply.setCookie('auth_token', token, {
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOptions: Record<string, any> = {
         path: '/',
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProd,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    };
+    // In production, scope the cookie to .onhandl.com so both onhandl.com
+    // (Next.js frontend) and api.onhandl.com (Fastify) can read it.
+    if (isProd && ENV.COOKIE_DOMAIN) {
+        cookieOptions.domain = ENV.COOKIE_DOMAIN;
+    }
+    return reply.setCookie('auth_token', token, cookieOptions);
 }
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {

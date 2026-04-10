@@ -67,6 +67,7 @@ pnpm dev
 | Frontend | http://localhost:3000 |
 | Backend | http://localhost:3001 |
 
+
 ---
 
 ## Docker
@@ -98,9 +99,11 @@ docker compose down -v               # stop + delete MongoDB volume
 
 ## Production (Contabo)
 
-Domains: <br>
-https://onhandl.com / https://www.onhandl.com → frontend <br>
-https://api.onhandl.com → backend
+| Service | URL |
+|---------|-----|
+| Frontend | http://onhandl.com / https://www.onhandl.com |
+| Backend | http://api.onhandl.com |
+
 
 #### 1. Fill in secrets
 

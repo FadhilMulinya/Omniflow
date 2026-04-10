@@ -21,6 +21,10 @@ export const ENV = {
     DEFAULT_AI_PROVIDER: (process.env.DEFAULT_AI_PROVIDER || 'ollama') as 'ollama' | 'gemini' | 'openai',
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
     API_URL: process.env.API_URL || 'http://localhost:3001/api',
+    // Cookie domain — set to .onhandl.com in production so the cookie is shared
+    // between onhandl.com (frontend) and api.onhandl.com (backend).
+    // Leave blank for local dev (cookie scopes to localhost automatically).
+    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || '',
     // Stripe (optional — only required for paid marketplace features)
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',

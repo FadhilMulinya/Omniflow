@@ -27,6 +27,7 @@ services:
       APP_URL: https://onhandl.com
       API_URL: https://api.onhandl.com/api
       STRIPE_REDIRECT_URI: https://api.onhandl.com/api/payments/stripe/callback
+      COOKIE_DOMAIN: .onhandl.com
 
   client:
     build:
