@@ -18,7 +18,7 @@ services:
       target: production
     restart: unless-stopped
     expose:
-      - "3001"
+      - '3001'
     env_file:
       - server/.env
     environment:
@@ -28,6 +28,12 @@ services:
       API_URL: https://api.onhandl.com/api
       STRIPE_REDIRECT_URI: https://api.onhandl.com/api/payments/stripe/callback
       COOKIE_DOMAIN: .onhandl.com
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3001/api/health >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
 
   client:
     build:
@@ -38,19 +44,28 @@ services:
         NEXT_PUBLIC_API_URL: https://api.onhandl.com
     restart: unless-stopped
     expose:
-      - "3000"
+      - '3000'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000 >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
-      - server
-      - client
+      server:
+        condition: service_healthy
+      client:
+        condition: service_healthy
