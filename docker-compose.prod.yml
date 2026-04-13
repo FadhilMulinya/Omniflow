@@ -4,8 +4,8 @@
 # Prerequisites:
 #   1. Populate server/.env with MONGO_URI, JWT_SECRET, API keys.
 #   2. Place SSL certificates at nginx/ssl/cert.pem and nginx/ssl/key.pem
-#      (or use Certbot — see README for instructions).
-#   3. Point DNS records:
+#      (or use Certbot for free SSL certificates).
+#   3. DNS records must point to the VPS IP:
 #        onhandl.com      → VPS IP
 #        www.onhandl.com  → VPS IP
 #        api.onhandl.com  → VPS IP
@@ -29,11 +29,11 @@ services:
       STRIPE_REDIRECT_URI: https://api.onhandl.com/api/payments/stripe/callback
       COOKIE_DOMAIN: .onhandl.com
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3001/api/health >/dev/null || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3001/ >/dev/null || exit 1']
       interval: 15s
-      timeout: 5s
-      retries: 8
-      start_period: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   client:
     build:
@@ -46,11 +46,11 @@ services:
     expose:
       - '3000'
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000 >/dev/null || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1']
       interval: 15s
-      timeout: 5s
+      timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 60s
     depends_on:
       server:
         condition: service_healthy
