@@ -10,7 +10,6 @@ import { simulateWhatsAppSendMessage } from '../../engine/simulators/whatsapp-no
 import { simulateCryptoWallet } from '../../engine/simulators/crypto/wallet-simulator';
 import { simulateCryptoTrade } from '../../engine/simulators/crypto/trade-simulator';
 import { simulateBlockchainNode } from '../../engine/simulators/blockchain-node-simulator';
-import { simulateA2ANode } from '../../engine/simulators/a2a-node-simulator';
 import { nodeError } from '../../engine/types/base';
 import { timestamp } from '../../engine/simulators/base';
 
@@ -71,9 +70,6 @@ export async function handleSimulateNode(req: FastifyRequest, reply: FastifyRepl
         break;
       case 'blockchain_tool':
         output = await simulateBlockchainNode(nodeData, inputValues, consoleOutput);
-        break;
-      case 'agent_call':
-        output = await simulateA2ANode(nodeData, inputValues, consoleOutput, agent);
         break;
       default:
         output = nodeError(`No simulator registered for node type: "${nodeType}"`);

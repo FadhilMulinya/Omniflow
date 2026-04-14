@@ -8,7 +8,6 @@ import CryptoTradeNode from '@/components/custom-nodes/crypto-trade-node';
 import TradingBotNode from '@/components/custom-nodes/trading-bot-node';
 import TelegramNode from '@/components/custom-nodes/telegram-node';
 import BlockchainNode from '@/components/custom-nodes/blockchain-node';
-import AgentCallNode from '@/components/custom-nodes/agent-call-node';
 import UnknownNode from '@/components/custom-nodes/unknown-node';
 
 export const nodeTypes = {
@@ -22,7 +21,6 @@ export const nodeTypes = {
   trading_bot: TradingBotNode,
   telegram: TelegramNode,
   blockchain_tool: BlockchainNode,
-  agent_call: AgentCallNode,
   // Fallback for any unrecognised node types loaded from saved agents
   unknown: UnknownNode,
 };

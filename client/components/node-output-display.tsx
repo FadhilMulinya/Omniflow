@@ -75,8 +75,8 @@ function NodeResultDisplay({
       return <WalletResultDisplay result={result} />;
     case 'crypto_trade':
       return <TradeResultDisplay result={result} />;
-    case 'agent_call':
-      return <A2AResultDisplay result={result} />;
+    case 'crypto_trade':
+      return <TradeResultDisplay result={result} />;
     default:
       return <GenericResultDisplay result={result} />;
   }
@@ -223,20 +223,6 @@ function TradeResultDisplay({ result }: { result: Record<string, unknown> }) {
   );
 }
 
-function A2AResultDisplay({ result }: { result: Record<string, unknown> }) {
-  const delivered = result.delivered as boolean;
-  return (
-    <div className="p-2 bg-violet-50 border border-violet-100 rounded-md space-y-0.5">
-      <div className={`text-[10px] font-medium ${delivered ? 'text-green-600' : 'text-red-500'}`}>
-        {delivered ? '✓ Message Delivered' : '✗ Delivery Failed'}
-      </div>
-      <div className="text-[10px] text-violet-600 capitalize">{String(result.performative ?? '')}</div>
-      {!!result.messageId && (
-        <div className="text-[10px] text-gray-400 truncate">ID: {String(result.messageId)}</div>
-      )}
-    </div>
-  );
-}
 
 function GenericResultDisplay({ result }: { result: Record<string, unknown> }) {
   return (

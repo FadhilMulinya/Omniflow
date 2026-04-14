@@ -12,7 +12,6 @@ import { simulateWhatsAppSendMessage } from './simulators/whatsapp-node-simulato
 import { simulateCryptoWallet } from './simulators/crypto/wallet-simulator';
 import { simulateCryptoTrade } from './simulators/crypto/trade-simulator';
 import { simulateBlockchainNode } from './simulators/blockchain-node-simulator';
-import { simulateA2ANode } from './simulators/a2a-node-simulator';
 import { enhancedLog, timestamp } from './simulators/base';
 import { executionEmitter } from '../services/ExecutionEmitter';
 import { User } from '../models/User';
@@ -179,9 +178,6 @@ export class FlowEngine {
               break;
             case 'blockchain_tool':
               output = await simulateBlockchainNode(node.data, inputValues, consoleOutput);
-              break;
-            case 'agent_call':
-              output = await simulateA2ANode(node.data, inputValues, consoleOutput, agent);
               break;
             default:
               console.log(`[FlowEngine] ⚠️ Unsupported node type: ${node.type}`);
