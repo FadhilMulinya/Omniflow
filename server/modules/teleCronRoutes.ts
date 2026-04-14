@@ -1,6 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
 import { telegramService } from '../services/telegram-service';
-import { backgroundService } from '../services/background-service';
 
 export const teleCronRoutes: FastifyPluginAsync = async (fastify) => {
     // Telegram Webhook
@@ -32,22 +31,6 @@ export const teleCronRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get('/telegram/webhook', async (request, reply) => {
         // Basic verification placeholder (similar to original logic)
         return reply.send('Verification endpoint operational');
-    });
-
-    // Cron Run
-    fastify.get('/cron', async (request, reply) => {
-        const apiKey = request.headers['x-api-key'];
-        if (apiKey !== process.env.CRON_API_KEY) {
-            return reply.code(401).send({ error: 'Unauthorized' });
-        }
-
-        try {
-            await backgroundService.processJobs();
-            return reply.send({ status: 'ok' });
-        } catch (err) {
-            console.error(err);
-            return reply.code(500).send({ error: 'Internal server error' });
-        }
     });
 
     // Telegram Test Connection
