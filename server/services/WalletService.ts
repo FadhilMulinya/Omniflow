@@ -1,7 +1,7 @@
 
 import { generatePrivateKey, getAddressFromPrivateKey , getTestnet} from "../packages/tooling/blockchain/src/ckb/wallet";
 
-export interface GeneratedWallet {
+interface GeneratedWallet {
     network: string;
     walletAddress: string;
     walletType: 'managed' | 'externally_owned';

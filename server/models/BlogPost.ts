@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IBlogPost extends Document {
+interface IBlogPost extends Document {
     title: string;
     body: string;
     tags: string[];

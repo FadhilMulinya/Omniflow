@@ -2,15 +2,15 @@ import { z } from "zod";
 import { BlockchainTool } from "../../index";
 import { fiberRpcCall } from "./node_admin";
 
-export const PayInvoiceSchema = z.object({
+const PayInvoiceSchema = z.object({
     invoice: z.string(),
     fee_limit: z.string().optional().describe("Maximum routing fee willing to pay. E.g. maximum shannons."),
     timeout: z.number().optional().describe("Defaults to 60 seconds"),
 });
 
-export type PayInvoiceInput = z.infer<typeof PayInvoiceSchema>;
+type PayInvoiceInput = z.infer<typeof PayInvoiceSchema>;
 
-export const PayInvoiceTool: BlockchainTool<PayInvoiceInput, any> = {
+const PayInvoiceTool: BlockchainTool<PayInvoiceInput, any> = {
     name: "blockchain.ckb_fiber.payment.pay_invoice",
     description: "Initiates a multi-hop payment to fulfill a Fiber invoice. Routes the payment through HTLCs across the network graph.",
     schema: PayInvoiceSchema,
@@ -28,13 +28,13 @@ export const PayInvoiceTool: BlockchainTool<PayInvoiceInput, any> = {
     },
 };
 
-export const GetPaymentSchema = z.object({
+const GetPaymentSchema = z.object({
     payment_hash: z.string(),
 });
 
-export type GetPaymentInput = z.infer<typeof GetPaymentSchema>;
+type GetPaymentInput = z.infer<typeof GetPaymentSchema>;
 
-export const GetPaymentTool: BlockchainTool<GetPaymentInput, any> = {
+const GetPaymentTool: BlockchainTool<GetPaymentInput, any> = {
     name: "blockchain.ckb_fiber.payment.status",
     description: "Checks the status of an outgoing payment by its payment hash (inflight, success, or failed).",
     schema: GetPaymentSchema,

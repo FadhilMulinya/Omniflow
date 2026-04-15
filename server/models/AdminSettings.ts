@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IAdminSettings extends Document {
+interface IAdminSettings extends Document {
     cmsFrozen: boolean;
     cmsFrozenReason?: string;
     updatedAt: Date;

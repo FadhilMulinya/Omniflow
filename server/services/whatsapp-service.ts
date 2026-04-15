@@ -53,7 +53,7 @@ interface WhatsAppMessageResponse {
   }>;
 }
 
-export class WhatsAppService {
+class WhatsAppService {
   private accessToken: string | null = null;
   private baseUrl = 'https://graph.facebook.com';
   private apiVersion = 'v17.0';

@@ -1,4 +1,4 @@
-import { BlockchainTool } from "../index";
+import { BlockchainTool } from "../types";
 import { rpcTools } from "./rpc";
 import { indexerTools } from "./indexer";
 import { txBuilderTools } from "./tx_builder";
@@ -27,7 +27,7 @@ export const ckbFiberTools: BlockchainTool<any, any>[] = [
     ...paymentTools
 ];
 
-export const allCkbEcosystemTools = [
+const allCkbEcosystemTools = [
     ...ckbTools,
     ...ckbFiberTools
 ];

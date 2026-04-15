@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { BlockchainTool } from "../index";
+import { BlockchainTool } from "../types";
 import { getCapacities } from "./balance";
 import { transferCKB } from "./transferCKB";
 
 // Tool 1: Get CKB Balance
-export const GetBalanceSchema = z.object({
+const GetBalanceSchema = z.object({
     address: z.string().describe("The CKB address to check the balance for"),
 });
 
-export const GetBalanceTool: BlockchainTool<z.infer<typeof GetBalanceSchema>, any> = {
+const GetBalanceTool: BlockchainTool<z.infer<typeof GetBalanceSchema>, any> = {
     name: "blockchain.ckb.node.get CKB balance",
     description: "Fetches the total capacity (balance) of a given CKB address in Shannons.",
     schema: GetBalanceSchema,
@@ -26,14 +26,14 @@ export const GetBalanceTool: BlockchainTool<z.infer<typeof GetBalanceSchema>, an
 };
 
 // Tool 2: Transfer CKB
-export const TransferSchema = z.object({
+const TransferSchema = z.object({
     from: z.string().describe("The sender's CKB address"),
     to: z.string().describe("The recipient's CKB address"),
     amount: z.number().describe("The amount of CKB to transfer (e.g. 100)"),
     privateKey: z.string().describe("The private key of the sender")
 });
 
-export const TransferTool: BlockchainTool<z.infer<typeof TransferSchema>, any> = {
+const TransferTool: BlockchainTool<z.infer<typeof TransferSchema>, any> = {
     name: "blockchain.ckb.node.transfer ckb",
     description: "Transfers CKB from one address to another using the sender's private key.",
     schema: TransferSchema,

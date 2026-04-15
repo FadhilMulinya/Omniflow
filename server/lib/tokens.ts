@@ -10,7 +10,7 @@
 export type PlanId = 'free' | 'starter' | 'pro' | 'max' | 'enterprise' | 'unlimited';
 export type BillingCycle = 'monthly' | 'quarterly' | 'yearly';
 
-export interface Plan {
+interface Plan {
     id: PlanId;
     name: string;
     monthlyPrice: number;       // USD base price (monthly)
@@ -141,7 +141,7 @@ export const PLANS: Record<PlanId, Plan> = {
 
 // ── Billing Discounts ─────────────────────────────────────────────────────────
 
-export const BILLING_DISCOUNTS: Record<BillingCycle, number> = {
+const BILLING_DISCOUNTS: Record<BillingCycle, number> = {
     monthly: 0,
     quarterly: 0.10, // 10% off
     yearly: 0.25,    // 25% off
@@ -150,7 +150,7 @@ export const BILLING_DISCOUNTS: Record<BillingCycle, number> = {
 /**
  * Calculate final price for a plan + billing cycle.
  */
-export function calculatePrice(planId: PlanId, cycle: BillingCycle): {
+function calculatePrice(planId: PlanId, cycle: BillingCycle): {
     unitPrice: number;
     totalCharged: number;
     discount: number;
@@ -167,7 +167,7 @@ export function calculatePrice(planId: PlanId, cycle: BillingCycle): {
 // ── Token Costs ───────────────────────────────────────────────────────────────
 
 /** Platform token costs per operation */
-export const TOKEN_COSTS: Record<string, number> = {
+const TOKEN_COSTS: Record<string, number> = {
     // Per connected node executed in a flow run
     node_execution: 50,
     // Character generation (one-off)
@@ -191,12 +191,12 @@ export function tokensForExecution(nodeCount: number): number {
 export const WELCOME_TOKENS = 1_000;
 
 /** Returns false if the user doesn't have enough tokens for an operation */
-export function canAfford(currentTokens: number, operation: keyof typeof TOKEN_COSTS): boolean {
+function canAfford(currentTokens: number, operation: keyof typeof TOKEN_COSTS): boolean {
     return currentTokens >= (TOKEN_COSTS[operation] ?? 0);
 }
 
 /** Returns false if the user can't afford to run N nodes */
-export function canAffordExecution(currentTokens: number, nodeCount: number): boolean {
+function canAffordExecution(currentTokens: number, nodeCount: number): boolean {
     return currentTokens >= tokensForExecution(nodeCount);
 }
 

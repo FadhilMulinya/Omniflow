@@ -10,7 +10,7 @@ function toHexAmount(value: string): string {
     throw new Error(`Amount must be a decimal integer (e.g. "100000000") or hex string (e.g. "0x5f5e100"). Got: "${value}"`);
 }
 
-export const GenerateInvoiceSchema = z.object({
+const GenerateInvoiceSchema = z.object({
     amount: z.string().optional().describe("Amount in shannons. E.g. '100000000' for 1 CKB. Omit for any-amount invoice."),
     currency: z.enum(["Fibb", "Fibt", "Fibd"]).optional()
         .describe("Fibt=Testnet, Fibb=Mainnet, Fibd=Devnet. Defaults to Fibt"),
@@ -19,9 +19,9 @@ export const GenerateInvoiceSchema = z.object({
     expiry: z.number().optional().describe("Defaults to 3600 seconds"),
 });
 
-export type GenerateInvoiceInput = z.infer<typeof GenerateInvoiceSchema>;
+type GenerateInvoiceInput = z.infer<typeof GenerateInvoiceSchema>;
 
-export const GenerateInvoiceTool: BlockchainTool<GenerateInvoiceInput, any> = {
+const GenerateInvoiceTool: BlockchainTool<GenerateInvoiceInput, any> = {
     name: "blockchain.ckb_fiber.invoice.generate",
     description: "Creates a new Fiber invoice (BOLT-11 style) to receive a payment over the Fiber network.",
     schema: GenerateInvoiceSchema,
@@ -51,14 +51,14 @@ export const GenerateInvoiceTool: BlockchainTool<GenerateInvoiceInput, any> = {
     },
 };
 
-export const DecodeInvoiceSchema = z.object({
+const DecodeInvoiceSchema = z.object({
     invoice: z.string().startsWith("fib", "Fiber invoice must start with fibb, fibt, or fibd"),
     timeout: z.number().optional().describe("Timeout in seconds for the invoice lookup. Defaults to 60 seconds."),
 });
 
-export type DecodeInvoiceInput = z.infer<typeof DecodeInvoiceSchema>;
+type DecodeInvoiceInput = z.infer<typeof DecodeInvoiceSchema>;
 
-export const DecodeInvoiceTool: BlockchainTool<DecodeInvoiceInput, any> = {
+const DecodeInvoiceTool: BlockchainTool<DecodeInvoiceInput, any> = {
     name: "blockchain.ckb_fiber.invoice.decode",
     description: "Decodes a Fiber invoice string to read its amount, payment hash, expiry, and payee public key.",
     schema: DecodeInvoiceSchema,

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IWorkspace extends Document {
+interface IWorkspace extends Document {
     name: string;
     ownerId: Types.ObjectId;
     members: Types.ObjectId[];

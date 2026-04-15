@@ -1,28 +1,27 @@
 import { FastifyPluginAsync } from 'fastify';
 import mongoose from 'mongoose';
-import { Review }           from '../models/Review';
-import { Purchase }         from '../models/Purchase';
-import { AgentDefinition }  from '../models/AgentDefinition';
-import { User }             from '../models/User';
+import { Review } from '../models/Review';
+import { Purchase } from '../models/Purchase';
+import { AgentDefinition } from '../models/AgentDefinition';
+import { User } from '../models/User';
+import { verifyAuthCookie } from '../lib/auth';
 
 export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Submit a review (verified buyers only) ────────────────────────────────
     fastify.post<{
         Params: { id: string };
-        Body:   { rating: number; comment?: string };
+        Body: { rating: number; comment?: string };
     }>('/agents/:id/reviews', async (request, reply) => {
-        const token = (request.cookies as any)['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { rating, comment = '' } = request.body;
         if (!rating || rating < 1 || rating > 5) {
             return reply.code(400).send({ error: 'Rating must be between 1 and 5' });
         }
 
-        const agentId    = request.params.id;
+        const agentId = request.params.id;
         const reviewerId = new mongoose.Types.ObjectId(decoded.id);
 
         // Must be a verified buyer
@@ -34,7 +33,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
         // Upsert: buyer can update their own review
         const existing = await Review.findOne({ agentId, reviewerId });
         if (existing) {
-            existing.rating  = rating;
+            existing.rating = rating;
             existing.comment = comment;
             await existing.save();
         } else {
@@ -46,7 +45,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
             { $match: { agentId: new mongoose.Types.ObjectId(agentId) } },
             { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
         ]);
-        const avg   = agg[0]?.avg   ?? rating;
+        const avg = agg[0]?.avg ?? rating;
         const count = agg[0]?.count ?? 1;
 
         await AgentDefinition.updateOne(
@@ -59,11 +58,11 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Get reviews for an agent (public) ─────────────────────────────────────
     fastify.get<{
-        Params:      { id: string };
+        Params: { id: string };
         Querystring: { page?: string; limit?: string };
     }>('/agents/:id/reviews', async (request) => {
         const { page = '1', limit = '10' } = request.query;
-        const skip  = (parseInt(page) - 1) * parseInt(limit);
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         const agentId = request.params.id;
 
         const [reviews, total] = await Promise.all([
@@ -80,18 +79,18 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
             ? (await Review.aggregate([
                 { $match: { agentId: new mongoose.Types.ObjectId(agentId) } },
                 { $group: { _id: null, avg: { $avg: '$rating' } } },
-              ]))[0]?.avg ?? 0
+            ]))[0]?.avg ?? 0
             : 0;
 
         return {
             reviews: reviews.map(r => ({
-                _id:      r._id,
-                rating:   r.rating,
-                comment:  r.comment,
+                _id: r._id,
+                rating: r.rating,
+                comment: r.comment,
                 createdAt: r.createdAt,
                 reviewer: {
-                    _id:       (r.reviewerId as any)?._id,
-                    name:      (r.reviewerId as any)?.name || (r.reviewerId as any)?.username || 'Anonymous',
+                    _id: (r.reviewerId as any)?._id,
+                    name: (r.reviewerId as any)?.name || (r.reviewerId as any)?.username || 'Anonymous',
                     avatarUrl: (r.reviewerId as any)?.avatarUrl || null,
                 },
             })),
@@ -103,25 +102,23 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Check if current user has already reviewed an agent ──────────────────
     fastify.get<{ Params: { id: string } }>('/agents/:id/reviews/mine', async (request, reply) => {
-        const token = (request.cookies as any)['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const review = await Review.findOne({
-            agentId:    request.params.id,
+            agentId: request.params.id,
             reviewerId: new mongoose.Types.ObjectId(decoded.id),
         }).lean();
 
         const purchase = await Purchase.findOne({
-            agentId:  request.params.id,
-            buyerId:  new mongoose.Types.ObjectId(decoded.id),
-            status:   'confirmed',
+            agentId: request.params.id,
+            buyerId: new mongoose.Types.ObjectId(decoded.id),
+            status: 'confirmed',
         }).lean();
 
         return {
-            canReview:    !!purchase,
-            hasReviewed:  !!review,
+            canReview: !!purchase,
+            hasReviewed: !!review,
             existingReview: review ? { rating: (review as any).rating, comment: (review as any).comment } : null,
         };
     });

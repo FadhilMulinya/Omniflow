@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockchainTool } from "../index";
+import { BlockchainTool } from "../types";
 import RPC from "@nervosnetwork/ckb-sdk-core";
 
 // Define a default node URL, ideally from ENV vars in the future
@@ -10,7 +10,7 @@ const rpc = new RPC(NODE_URL);
  * Tool: blockchain.ckb.rpc.get_tip_header
  * Description: Get the tip (latest) header of the CKB chain.
  */
-export const GetTipHeaderTool: BlockchainTool<Record<string, never>, any> = {
+const GetTipHeaderTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb.rpc.get_tip_header",
     description: "Fetches the highest block header in the CKB node's current chain.",
     schema: z.object({}),
@@ -22,17 +22,17 @@ export const GetTipHeaderTool: BlockchainTool<Record<string, never>, any> = {
 /**
  * Input Schema for GetTransaction
  */
-export const GetTransactionSchema = z.object({
+const GetTransactionSchema = z.object({
     tx_hash: z.string().startsWith("0x").length(66, "Transaction hash must be a 32-byte hex string starting with 0x"),
 });
 
-export type GetTransactionInput = z.infer<typeof GetTransactionSchema>;
+type GetTransactionInput = z.infer<typeof GetTransactionSchema>;
 
 /**
  * Tool: blockchain.ckb.rpc.get_transaction
  * Description: Get a transaction by its hash.
  */
-export const GetTransactionTool: BlockchainTool<GetTransactionInput, any> = {
+const GetTransactionTool: BlockchainTool<GetTransactionInput, any> = {
     name: "blockchain.ckb.rpc.get_transaction",
     description: "Fetches a transaction and its status given its 32-byte transaction hash.",
     schema: GetTransactionSchema,
@@ -47,17 +47,17 @@ export const GetTransactionTool: BlockchainTool<GetTransactionInput, any> = {
 /**
  * Input Schema for GetBlock
  */
-export const GetBlockSchema = z.object({
+const GetBlockSchema = z.object({
     block_hash: z.string().startsWith("0x").length(66, "Block hash must be a 32-byte hex string starting with 0x"),
 });
 
-export type GetBlockInput = z.infer<typeof GetBlockSchema>;
+type GetBlockInput = z.infer<typeof GetBlockSchema>;
 
 /**
  * Tool: blockchain.ckb.rpc.get_block
  * Description: Get a block by its hash.
  */
-export const GetBlockTool: BlockchainTool<GetBlockInput, any> = {
+const GetBlockTool: BlockchainTool<GetBlockInput, any> = {
     name: "blockchain.ckb.rpc.get_block",
     description: "Fetches a full block by its 32-byte block hash.",
     schema: GetBlockSchema,

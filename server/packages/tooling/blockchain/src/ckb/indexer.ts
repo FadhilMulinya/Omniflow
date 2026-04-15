@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BlockchainTool } from "../index";
+import { BlockchainTool } from "../types";
 import { Indexer } from "@ckb-lumos/lumos"; // or @nervosnetwork/ckb-sdk-core Indexer if supported, let's just use JSON RPC for now
 
 // We will use standard fetch to the CKB indexer for now to keep dependencies light, 
@@ -25,20 +25,20 @@ async function rpcCall(method: string, params: any[]) {
 /**
  * Input Schema for GetLiveCellsByLock
  */
-export const GetLiveCellsByLockSchema = z.object({
+const GetLiveCellsByLockSchema = z.object({
     code_hash: z.string().startsWith("0x"),
     hash_type: z.enum(["type", "data", "data1", "data2"]),
     args: z.string().startsWith("0x"),
     limit: z.number().optional().describe("Defaults to 10"),
 });
 
-export type GetLiveCellsByLockInput = z.infer<typeof GetLiveCellsByLockSchema>;
+type GetLiveCellsByLockInput = z.infer<typeof GetLiveCellsByLockSchema>;
 
 /**
  * Tool: blockchain.ckb.indexer.get_live_cells_by_lock
  * Description: Get live cells for a specific lock script.
  */
-export const GetLiveCellsByLockTool: BlockchainTool<GetLiveCellsByLockInput, any> = {
+const GetLiveCellsByLockTool: BlockchainTool<GetLiveCellsByLockInput, any> = {
     name: "blockchain.ckb.indexer.get_live_cells_by_lock",
     description: "Queries the CKB Indexer for live cells belonging to a specific lock script. Useful for fetching UTXOs to spend.",
     schema: GetLiveCellsByLockSchema,
@@ -65,19 +65,19 @@ export const GetLiveCellsByLockTool: BlockchainTool<GetLiveCellsByLockInput, any
 /**
  * Input Schema for GetCapacityByLock
  */
-export const GetCapacityByLockSchema = z.object({
+const GetCapacityByLockSchema = z.object({
     code_hash: z.string().startsWith("0x"),
     hash_type: z.enum(["type", "data", "data1", "data2"]),
     args: z.string().startsWith("0x"),
 });
 
-export type GetCapacityByLockInput = z.infer<typeof GetCapacityByLockSchema>;
+type GetCapacityByLockInput = z.infer<typeof GetCapacityByLockSchema>;
 
 /**
  * Tool: blockchain.ckb.indexer.get_capacity_by_lock
  * Description: Get total capacity for a lock script.
  */
-export const GetCapacityByLockTool: BlockchainTool<GetCapacityByLockInput, any> = {
+const GetCapacityByLockTool: BlockchainTool<GetCapacityByLockInput, any> = {
     name: "blockchain.ckb.indexer.get_capacity_by_lock",
     description: "Queries the CKB Indexer for the total CKB capacity belonging to a specific lock script.",
     schema: GetCapacityByLockSchema,

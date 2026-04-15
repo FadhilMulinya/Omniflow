@@ -18,7 +18,7 @@ export function generatePrivateKey(): string {
     return "0x" + crypto.randomBytes(32).toString("hex");
 }
 
-export function generatePublicKey(privateKey: string): string {
+function generatePublicKey(privateKey: string): string {
     // Blake160 hash of the compressed public key → used as lock args
     const args = hd.key.privateKeyToBlake160(privateKey);
     return args;

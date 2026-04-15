@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IPurchase extends Document {
+interface IPurchase extends Document {
     agentId: Types.ObjectId;
     buyerId: Types.ObjectId;
     sellerId: Types.ObjectId;

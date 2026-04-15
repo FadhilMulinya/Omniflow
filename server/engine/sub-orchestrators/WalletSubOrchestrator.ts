@@ -15,9 +15,9 @@ export interface WalletContext {
     walletType?: 'managed' | 'externally_owned';
 }
 
-export type WalletIntent = 'balance' | 'address' | 'transfer' | 'unknown';
+type WalletIntent = 'balance' | 'address' | 'transfer' | 'unknown';
 
-export interface ParsedWalletIntent {
+interface ParsedWalletIntent {
     intent: WalletIntent;
     targetAddress?: string; // address to check / send to
     amount?: number;        // ckb amount for transfer
@@ -26,15 +26,15 @@ export interface ParsedWalletIntent {
 // In-memory pending transfer store per session (for approval flow)
 const pendingTransfers: Map<string, { from: string; to: string; amount: number }> = new Map();
 
-export function setPendingTransfer(sessionId: string, data: { from: string; to: string; amount: number }) {
+function setPendingTransfer(sessionId: string, data: { from: string; to: string; amount: number }) {
     pendingTransfers.set(sessionId, data);
 }
 
-export function getPendingTransfer(sessionId: string) {
+function getPendingTransfer(sessionId: string) {
     return pendingTransfers.get(sessionId);
 }
 
-export function clearPendingTransfer(sessionId: string) {
+function clearPendingTransfer(sessionId: string) {
     pendingTransfers.delete(sessionId);
 }
 
@@ -70,7 +70,7 @@ export function parseWalletIntent(prompt: string): ParsedWalletIntent {
 /**
  * Execute balance check for a given address
  */
-export async function executeBalanceCheck(address: string): Promise<{ address: string; balance: string }> {
+async function executeBalanceCheck(address: string): Promise<{ address: string; balance: string }> {
     const capacities = await getCapacities(address);
     return {
         address,
@@ -81,7 +81,7 @@ export async function executeBalanceCheck(address: string): Promise<{ address: s
 /**
  * Execute CKB transfer -- requires explicit user approval first
  */
-export async function executeTransfer(
+async function executeTransfer(
     from: string,
     to: string,
     amount: number,

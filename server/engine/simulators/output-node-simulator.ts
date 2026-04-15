@@ -10,7 +10,7 @@ export function simulateOutputNode(
     (d?.inputs?.find((i: any) => i.key === 'format')?.value as OutputNodeResult['format']) ??
     'Plain';
 
-  const result = inputValues['result'] as any;
+  const result = inputValues['result'] as Record<string, unknown> | null;
   let displayText = '';
 
   if (typeof result === 'object' && result !== null) {

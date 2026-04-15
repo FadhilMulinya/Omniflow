@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IToolRegistry extends Document {
+interface IToolRegistry extends Document {
     name: string;
     description: string;
     network: string; // E.g., CKB, Solana, Base

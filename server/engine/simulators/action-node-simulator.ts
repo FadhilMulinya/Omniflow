@@ -12,15 +12,15 @@ export async function simulateActionNode(
   inputValues: Record<string, unknown>
 ): Promise<NodeOutput<object>> {
   const t0 = Date.now();
-  const d = data as any;
+  const d = data as { name?: string; inputs?: Array<{ key: string; value: unknown }> };
 
   // ── API Call ───────────────────────────────────────────────────────────────
   if (d?.name === 'API Call') {
     const rawInput = {
-      url: inputValues['url'] ?? d.inputs?.find((i: any) => i.key === 'url')?.value ?? 'https://api.example.com',
-      method: inputValues['method'] ?? d.inputs?.find((i: any) => i.key === 'method')?.value ?? 'GET',
-      headers: inputValues['headers'] ?? d.inputs?.find((i: any) => i.key === 'headers')?.value ?? {},
-      body: inputValues['body'] ?? d.inputs?.find((i: any) => i.key === 'body')?.value ?? {},
+      url: inputValues['url'] ?? d.inputs?.find(i => i.key === 'url')?.value ?? 'https://api.example.com',
+      method: inputValues['method'] ?? d.inputs?.find(i => i.key === 'method')?.value ?? 'GET',
+      headers: inputValues['headers'] ?? d.inputs?.find(i => i.key === 'headers')?.value ?? {},
+      body: inputValues['body'] ?? d.inputs?.find(i => i.key === 'body')?.value ?? {},
     };
 
     const validated = ApiCallInputSchema.safeParse(rawInput);
@@ -68,10 +68,11 @@ export async function simulateActionNode(
         },
         { metadata: meta }
       );
-    } catch (err: any) {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       return nodeError(
-        `API call failed: ${err.message}`,
-        { response: { error: err.message }, statusCode: 500, headers: {} },
+        `API call failed: ${msg}`,
+        { response: { error: msg }, statusCode: 500, headers: {} },
         { executionMs: Date.now() - t0 }
       );
     }
@@ -80,8 +81,8 @@ export async function simulateActionNode(
   // ── AI Processor ───────────────────────────────────────────────────────────
   if (d?.name === 'AI Processor') {
     const rawInput = {
-      prompt: inputValues['prompt'] ?? d.inputs?.find((i: any) => i.key === 'prompt')?.value ?? '',
-      model: inputValues['model'] ?? d.inputs?.find((i: any) => i.key === 'model')?.value ?? 'gemini-1.5-flash',
+      prompt: inputValues['prompt'] ?? d.inputs?.find(i => i.key === 'prompt')?.value ?? '',
+      model: inputValues['model'] ?? d.inputs?.find(i => i.key === 'model')?.value ?? 'gemini-1.5-flash',
     };
 
     const validated = AiProcessorInputSchema.safeParse(rawInput);
@@ -95,7 +96,7 @@ export async function simulateActionNode(
     try {
       const aiProvider = AIFactory.getProvider(provider);
       const response = await aiProvider.generateCompletion({
-        provider: provider as any,
+        provider: provider as 'openai' | 'gemini',
         model: model as string,
         messages: [{ role: 'user', content: prompt as string }],
         temperature: 0.7,
@@ -106,14 +107,15 @@ export async function simulateActionNode(
         { response: response.content, model: model as string },
         { confidence: 0.9, metadata: meta }
       );
-    } catch (err: any) {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       return nodeError(
-        `AI Processor failed: ${err.message}`,
+        `AI Processor failed: ${msg}`,
         { response: '', model: model as string },
         { executionMs: Date.now() - t0, modelUsed: model as string }
       );
     }
   }
 
-  return nodeError(`Unsupported action node: ${(data as any)?.name}`);
+  return nodeError(`Unsupported action node: ${d?.name}`);
 }

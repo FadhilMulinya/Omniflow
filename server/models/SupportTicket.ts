@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface ISupportTicket extends Document {
+interface ISupportTicket extends Document {
     userId: mongoose.Types.ObjectId;
     userEmail: string;
     userName: string;

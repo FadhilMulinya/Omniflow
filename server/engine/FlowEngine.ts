@@ -96,7 +96,7 @@ export class FlowEngine {
     const nodes = nodeDocs.map((n: IAgentNode) => ({
       id: n.nodeId,
       type: n.type,
-      data: { ...(n.data as any), chain: n.chain, tool: n.tool, params: n.params },
+      data: { ...(n.data as Record<string, unknown>), chain: n.chain, tool: n.tool, params: n.params } as Record<string, unknown>,
     }));
 
     const edges = edgeDocs.map((e: IAgentEdge) => ({
@@ -112,7 +112,7 @@ export class FlowEngine {
 
     try {
       while (currentNodes.length > 0) {
-        const nextNodes: any[] = [];
+        const nextNodes: typeof currentNodes = [];
 
         for (const node of currentNodes) {
           if (executedNodeIds.has(node.id)) continue;
@@ -141,7 +141,7 @@ export class FlowEngine {
             return res;
           };
 
-          const nodeName = node.data?.name || node.type;
+          const nodeName = (node.data as { name?: string })?.name || node.type;
           console.log(`[FlowEngine] 📍 Executing node: ${nodeName} (${node.id})`);
           consoleOutput.push(`${timestamp()} 🚀 Starting: ${nodeName}`);
 
@@ -236,7 +236,7 @@ export class FlowEngine {
             const downstream = edges
               .filter(e => e.source === node.id)
               .map(e => nodes.find(n => n.id === e.target))
-              .filter(n => n && !executedNodeIds.has(n.id));
+              .filter(n => n && !executedNodeIds.has(n.id)) as Array<{ id: string; type: string; data: Record<string, unknown> }>;
             nextNodes.push(...downstream);
           }
         }
@@ -250,13 +250,14 @@ export class FlowEngine {
       console.log(`[FlowEngine] ✨ Execution finished: ${executionId}\n`);
       executionEmitter.emit(`execution-${executionId}`, { status: 'completed', state: execution.state });
 
-    } catch (error: any) {
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
       console.error(`[FlowEngine] ❌ Execution failed:`, error);
-      enhancedLog('Flow execution failed', { executionId, error: error.message });
+      enhancedLog('Flow execution failed', { executionId, error: msg });
       execution.status = 'failed';
-      execution.error = error.message;
+      execution.error = msg;
       await execution.save();
-      executionEmitter.emit(`execution-${executionId}`, { status: 'failed', error: error.message });
+      executionEmitter.emit(`execution-${executionId}`, { status: 'failed', error: msg });
     }
   }
 
@@ -273,9 +274,9 @@ export class FlowEngine {
    */
   private static getInputValues(
     nodeId: string,
-    nodes: any[],
-    edges: any[],
-    state: any
+    nodes: Array<{ id: string; type: string; data: Record<string, unknown> }>,
+    edges: Array<{ id: string; source: string; target: string; sourceHandle?: string; targetHandle?: string }>,
+    state: Record<string, any>
   ): Record<string, unknown> {
     const inputValues: Record<string, unknown> = {};
     const incomingEdges = edges.filter(e => e.target === nodeId);

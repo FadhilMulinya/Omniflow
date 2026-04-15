@@ -16,7 +16,7 @@ const rpc = new RPC(CKB_RPC_URL);
 const indexer = new Indexer(CKB_INDEXER_URL, CKB_RPC_URL);
 
 // ─── Derive address from private key ───────────────────────────────────────────
-export function getAddressFromPrivateKey(privateKey: string): string {
+function getAddressFromPrivateKey(privateKey: string): string {
     const args = hd.key.privateKeyToBlake160(privateKey);
     const template = TESTNET.SCRIPTS["SECP256K1_BLAKE160"]!;
     const lockScript = {

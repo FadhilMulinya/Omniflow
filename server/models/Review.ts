@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface IReview extends Document {
+interface IReview extends Document {
     agentId:    Types.ObjectId;
     reviewerId: Types.ObjectId;
     rating:     number;          // 1–5

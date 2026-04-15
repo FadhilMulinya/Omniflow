@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import type { PlanId, BillingCycle } from '../lib/tokens';
 
-export interface IUser extends Document {
+interface IUser extends Document {
     walletAddress?: string;
     email?: string;
     username?: string;

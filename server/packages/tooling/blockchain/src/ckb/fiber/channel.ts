@@ -34,9 +34,9 @@ const OpenChannelSchema = z.object({
     public: z.boolean().optional(),
 });
 
-export type OpenChannelInput = z.infer<typeof OpenChannelSchema>;
+type OpenChannelInput = z.infer<typeof OpenChannelSchema>;
 
-export const OpenChannelTool: BlockchainTool<OpenChannelInput, any> = {
+const OpenChannelTool: BlockchainTool<OpenChannelInput, any> = {
     name: "blockchain.ckb_fiber.channel.open_channel",
     description: "Open a Fiber payment channel. Run connect_peer then list_peers first — use the 'pubkey' field from list_peers (hex). funding_amount: CKB decimal ('500') or hex shannons ('0xba43b7400'). Min ~62 CKB.",
     schema: OpenChannelSchema,
@@ -75,7 +75,7 @@ const ListChannelsSchema = z.object({
     include_closed: z.boolean().optional().describe("Include closed channels"),
 }).optional();
 
-export const ListChannelsTool: BlockchainTool<z.infer<typeof ListChannelsSchema>, any> = {
+const ListChannelsTool: BlockchainTool<z.infer<typeof ListChannelsSchema>, any> = {
     name: "blockchain.ckb_fiber.channel.list_channels",
     description: "List Fiber payment channels. Poll this after open_channel — wait for state_name = 'CHANNEL_READY' before sending payments. Optionally filter by peer_id or pubkey.",
     schema: ListChannelsSchema,
@@ -109,9 +109,9 @@ const ShutdownChannelSchema = z.object({
     fee_rate: z.string().optional().describe("Shannons per KB, hex. Default 0x3FC = 1020 s/KB"),
 });
 
-export type ShutdownChannelInput = z.infer<typeof ShutdownChannelSchema>;
+type ShutdownChannelInput = z.infer<typeof ShutdownChannelSchema>;
 
-export const ShutdownChannelTool: BlockchainTool<ShutdownChannelInput, any> = {
+const ShutdownChannelTool: BlockchainTool<ShutdownChannelInput, any> = {
     name: "blockchain.ckb_fiber.channel.shutdown_channel",
     description: "Cooperatively close a Fiber channel. Sends shutdown_channel RPC with a secp256k1 close_script. The channel must be in CHANNEL_READY state.",
     schema: ShutdownChannelSchema,
@@ -152,7 +152,7 @@ const AbandonChannelSchema = z.object({
     channel_id: z.string().describe("32-byte hex channel ID to abandon"),
 });
 
-export const AbandonChannelTool: BlockchainTool<z.infer<typeof AbandonChannelSchema>, any> = {
+const AbandonChannelTool: BlockchainTool<z.infer<typeof AbandonChannelSchema>, any> = {
     name: "blockchain.ckb_fiber.channel.abandon_channel",
     description: "Emergency: remove a channel stuck in a non-Ready, non-Closed state. Does NOT settle funds on-chain — only use if cooperative close is impossible.",
     schema: AbandonChannelSchema,

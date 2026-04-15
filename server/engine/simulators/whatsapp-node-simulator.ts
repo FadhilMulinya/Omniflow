@@ -1,5 +1,5 @@
 import { whatsAppService } from '../../services/whatsapp-service';
-import { nodeSuccess, nodeError, NodeOutput } from '../types/base';
+import { nodeSuccess, nodeError, NodeOutput, NodeMetadata } from '../types/base';
 import { z } from 'zod';
 import { timestamp } from './base';
 
@@ -20,15 +20,16 @@ export async function simulateWhatsAppSendMessage(
   consoleOutput: string[]
 ): Promise<NodeOutput<WhatsAppResult>> {
   const t0 = Date.now();
-  const d = data as any;
+  const d = data as { inputs?: Array<{ key: string; value: unknown }> };
 
   const rawInput = {
     phoneNumber:
-      inputValues['phoneNumber'] ?? d?.inputs?.find((i: any) => i.key === 'phoneNumber')?.value,
+      inputValues['phoneNumber'] ?? d?.inputs?.find(i => i.key === 'phoneNumber')?.value,
     message:
-      (inputValues['message'] as string) ??
-      d?.inputs?.find((i: any) => i.key === 'message')?.value ??
-      'Hello from Onhandl!',
+      inputValues['message'] ??
+      d?.inputs?.find(i => i.key === 'message')?.value ??
+      inputValues['text'] ??
+      inputValues['result'],
   };
 
   const validated = WhatsAppInputSchema.safeParse(rawInput);
@@ -54,8 +55,9 @@ export async function simulateWhatsAppSendMessage(
       },
       { startedAt: t0, message: 'Message delivered via WhatsApp Cloud API' }
     );
-  } catch (err: any) {
-    consoleOutput.push(`${timestamp()} ❌ WhatsApp API error: ${err.message}`);
-    throw err;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const meta: NodeMetadata = { executionMs: Date.now() - t0 };
+    return nodeError(`WhatsApp error: ${msg}`, undefined, meta);
   }
 }

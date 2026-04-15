@@ -2,8 +2,9 @@ import { FastifyPluginAsync } from 'fastify';
 import { AgentDefinition } from '../models/AgentDefinition';
 import { Workspace } from '../models/Workspace';
 import { Purchase } from '../models/Purchase';
+import { verifyAuthCookie } from '../lib/auth';
 
-export const MARKETPLACE_CATEGORIES = [
+const MARKETPLACE_CATEGORIES = [
     'Trading Bot',
     'Analytics',
     'DeFi Assistant',
@@ -12,7 +13,7 @@ export const MARKETPLACE_CATEGORIES = [
     'Custom',
 ] as const;
 
-export const MARKETPLACE_NETWORKS = ['Ethereum', 'CKB', 'Solana', 'Polygon', 'All'] as const;
+const MARKETPLACE_NETWORKS = ['Ethereum', 'CKB', 'Solana', 'Polygon', 'All'] as const;
 
 export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
     // ── List published agents ─────────────────────────────────────────────────
@@ -122,11 +123,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
             };
         };
     }>('/marketplace/:id/publish', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { id } = request.params;
         const { published = true, category = 'Custom', visibility = 'public', pricing, paymentMethods, networkPricing } = request.body as any;
@@ -196,10 +194,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Use a free marketplace agent → creates a proxy agent for the buyer ───
     fastify.post<{ Params: { id: string } }>('/marketplace/:id/use', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const source = await AgentDefinition.findOne({
             _id: request.params.id,
@@ -261,10 +257,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.post<{ Params: { id: string }; Body: { network: string; fromAgentId?: string; txHash?: string } }>(
         '/marketplace/:id/network-purchase',
         async (request, reply) => {
-            const token = request.cookies['auth_token'];
-            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-            let decoded: any;
-            try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+            if (!decoded) return;
 
             const { id } = request.params;
             const { network, fromAgentId, txHash } = request.body;
@@ -295,10 +289,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Purchase history for buyer ────────────────────────────────────────────
     fastify.get('/marketplace/purchases/mine', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const purchases = await Purchase.find({ buyerId: decoded.id })
             .populate('agentId', 'name description marketplace')

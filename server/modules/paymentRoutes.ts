@@ -4,6 +4,7 @@ import { AgentDefinition } from '../models/AgentDefinition';
 import { Purchase } from '../models/Purchase';
 import { User } from '../models/User';
 import { ENV } from '../lib/environments';
+import { verifyAuthCookie } from '../lib/auth';
 
 // Lazily initialise Stripe so the server starts even if key is missing
 function getStripe(): Stripe {
@@ -12,7 +13,7 @@ function getStripe(): Stripe {
 }
 
 // Supported blockchains / assets for crypto payments
-export const CRYPTO_NETWORKS: Record<string, string[]> = {
+const CRYPTO_NETWORKS: Record<string, string[]> = {
     Ethereum: ['ETH', 'USDT', 'USDC'],
     CKB: ['CKB'],
     Solana: ['SOL', 'USDC'],
@@ -26,10 +27,8 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
 
     /** Return the Stripe Connect OAuth URL so users can connect their account. */
     fastify.get('/stripe/connect-url', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         if (!ENV.STRIPE_CLIENT_ID) {
             return reply.code(503).send({ error: 'Stripe Connect is not configured on this server' });
@@ -66,10 +65,8 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
 
     /** Get current Stripe Connect status for the logged-in user. */
     fastify.get('/stripe/status', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const user = await User.findById(decoded.id).select('stripeAccountId');
         return { connected: !!user?.stripeAccountId, stripeAccountId: user?.stripeAccountId || null };
@@ -81,10 +78,8 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.post<{ Params: { agentId: string } }>(
         '/stripe/checkout/:agentId',
         async (request, reply) => {
-            const token = request.cookies['auth_token'];
-            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-            let decoded: any;
-            try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+            if (!decoded) return;
 
             const { agentId } = request.params;
             const agent = await AgentDefinition.findById(agentId);
@@ -179,10 +174,8 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
         Params: { agentId: string };
         Body: { txHash: string; network: string };
     }>('/crypto/purchase/:agentId', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { agentId } = request.params;
         const { txHash, network } = request.body;
@@ -215,9 +208,8 @@ export const paymentRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.post<{
         Params: { purchaseId: string };
     }>('/crypto/verify/:purchaseId', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        try { fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const purchase = await Purchase.findById(request.params.purchaseId);
         if (!purchase) return reply.code(404).send({ error: 'Purchase not found' });

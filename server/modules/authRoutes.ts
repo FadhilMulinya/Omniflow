@@ -7,6 +7,7 @@ import { sendOtpEmail } from '../services/emailService';
 import crypto from 'crypto';
 import { WELCOME_TOKENS } from '../lib/tokens';
 import { ENV } from '../lib/environments';
+import { verifyAuthCookie } from '../lib/auth';
 
 function generateOtp(): string {
     return String(crypto.randomInt(100000, 999999));
@@ -150,10 +151,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ─── Current user ────────────────────────────────────────────────────────
     fastify.get('/me', async (request, reply) => {
-        const token = (request.cookies as any)['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
         const user = await User.findById(decoded.id)
             .select('username email name whatsapp telegramUsername avatarUrl bio tokens plan planExpiry notifications savedPaymentMethods apiKeys profileViews isAdmin createdAt updatedAt')
             .lean();
@@ -163,15 +162,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ─── Get avatar URL (lightweight) ────────────────────────────────────────
     fastify.get('/me/avatar', async (request, reply) => {
-        const token = (request.cookies as any)['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        let decoded: any;
-        try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
         const user = await User.findById(decoded.id).select('avatarUrl name username').lean();
         if (!user) return reply.code(404).send({ error: 'User not found' });
         return reply.send({
-            avatarUrl: (user as any).avatarUrl || null,
-            name:      (user as any).name      || (user as any).username || null,
+            avatarUrl: user.avatarUrl || null,
+            name: user.name || user.username || null,
         });
     });
 
@@ -179,18 +176,16 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.post<{ Body: { username?: string; email?: string; whatsapp?: string; telegramUsername?: string; avatarUrl?: string } }>(
         '/me',
         async (request, reply) => {
-            const token = (request.cookies as any)['auth_token'];
-            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-            let decoded: any;
-            try { decoded = fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+            if (!decoded) return;
 
             const { username, email, whatsapp, telegramUsername, avatarUrl } = request.body;
-            const $set: Record<string, any> = {};
-            if (username)              $set.username        = username;
-            if (email)                 $set.email           = email;
-            if (whatsapp !== undefined)          $set.whatsapp        = whatsapp;
-            if (telegramUsername !== undefined)  $set.telegramUsername = telegramUsername;
-            if (avatarUrl !== undefined)         $set.avatarUrl        = avatarUrl;
+            const $set: Record<string, string> = {};
+            if (username) $set.username = username;
+            if (email) $set.email = email;
+            if (whatsapp !== undefined) $set.whatsapp = whatsapp;
+            if (telegramUsername !== undefined) $set.telegramUsername = telegramUsername;
+            if (avatarUrl !== undefined) $set.avatarUrl = avatarUrl;
 
             const user = await User.findByIdAndUpdate(decoded.id, { $set }, { new: true })
                 .select('username email name whatsapp telegramUsername avatarUrl bio tokens plan profileViews')

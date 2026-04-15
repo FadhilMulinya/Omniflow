@@ -5,6 +5,7 @@ import { AgentNode } from '../models/AgentNode';
 import { AgentEdge } from '../models/AgentEdge';
 import { Orchestrator } from '../engine/orchestrator';
 import { ENV } from '../lib/environments';
+import { verifyAuthCookie } from '../lib/auth';
 
 export const exportRoutes: FastifyPluginAsync = async (fastify) => {
     // ── Enable embed ──────────────────────────────────────────────────────────
@@ -12,9 +13,8 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
         Params: { id: string };
         Body: { allowedDomains?: string[]; allowedIPs?: string[]; theme?: string };
     }>('/agents/:id/export/embed', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        try { fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { id } = request.params;
         const { allowedDomains = [], allowedIPs = [], theme = 'dark' } = request.body || {};
@@ -43,9 +43,8 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── PWA config export ─────────────────────────────────────────────────────
     fastify.post<{ Params: { id: string } }>('/agents/:id/export/pwa', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        try { fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { id } = request.params;
         const agent = await AgentDefinition.findById(id);
@@ -95,9 +94,8 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
 
     // ── Enable MCP server ─────────────────────────────────────────────────────
     fastify.post<{ Params: { id: string } }>('/agents/:id/export/mcp', async (request, reply) => {
-        const token = request.cookies['auth_token'];
-        if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-        try { fastify.jwt.verify(token); } catch { return reply.code(401).send({ error: 'Invalid token' }); }
+        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+        if (!decoded) return;
 
         const { id } = request.params;
         const agent = await AgentDefinition.findById(id);
@@ -177,7 +175,7 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
             }
         }
 
-        const readable = new Readable({ read() {} });
+        const readable = new Readable({ read() { } });
 
         Orchestrator.handleQuery(prompt, id, 'embed_user', sessionId, readable)
             .then(() => {

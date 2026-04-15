@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { WaitlistEntry } from '../models/WaitlistEntry';
 import { User } from '../models/User';
+import { verifyAuthCookie } from '../lib/auth';
 
 export const waitlistRoutes: FastifyPluginAsync = async (fastify) => {
 
@@ -36,24 +37,17 @@ export const waitlistRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get<{ Querystring: { page?: string; limit?: string; search?: string } }>(
         '/waitlist',
         async (request, reply) => {
-            const token = request.cookies['auth_token'];
-            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
+            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+            if (!decoded) return;
 
-            let decoded: any;
-            try { decoded = fastify.jwt.verify(token); } catch {
-                return reply.code(401).send({ error: 'Invalid token' });
-            }
-
-            // Only admin users (isAdmin flag checked via User model)
-            // User imported at top
             const user = await User.findById(decoded.id).select('isAdmin');
             if (!user?.isAdmin) return reply.code(403).send({ error: 'Admin access required' });
 
             const { page = '1', limit = '50', search } = request.query;
-            const filter: any = {};
+            const filter: Record<string, unknown> = {};
             if (search) {
                 filter.$or = [
-                    { name:  { $regex: search, $options: 'i' } },
+                    { name: { $regex: search, $options: 'i' } },
                     { email: { $regex: search, $options: 'i' } },
                 ];
             }
@@ -72,13 +66,9 @@ export const waitlistRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.delete<{ Params: { id: string } }>(
         '/waitlist/:id',
         async (request, reply) => {
-            const token = request.cookies['auth_token'];
-            if (!token) return reply.code(401).send({ error: 'Unauthorized' });
-            let decoded: any;
-            try { decoded = fastify.jwt.verify(token); } catch {
-                return reply.code(401).send({ error: 'Invalid token' });
-            }
-            // User imported at top
+            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
+            if (!decoded) return;
+
             const user = await User.findById(decoded.id).select('isAdmin');
             if (!user?.isAdmin) return reply.code(403).send({ error: 'Admin access required' });
 

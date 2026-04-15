@@ -1,5 +1,5 @@
 import { telegramService } from '../../services/telegram-service';
-import { nodeSuccess, nodeError, NodeOutput } from '../types/base';
+import { nodeSuccess, nodeError, NodeOutput, NodeMetadata } from '../types/base';
 import { TelegramInputSchema, TelegramResult } from '../types/node-contracts';
 import { timestamp } from './base';
 
@@ -49,8 +49,9 @@ export async function simulateTelegramSendMessage(
     const errMsg = response.description ?? 'Telegram API returned not-ok';
     consoleOutput.push(`${timestamp()} ❌ Telegram API error: ${errMsg}`);
     return nodeError(errMsg, {}, { executionMs: Date.now() - t0 });
-  } catch (err: any) {
-    consoleOutput.push(`${timestamp()} ❌ Telegram error: ${err.message}`);
-    throw err;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const meta: NodeMetadata = { executionMs: Date.now() - t0 };
+    return nodeError(`Telegram send failed: ${msg}`, undefined, meta);
   }
 }

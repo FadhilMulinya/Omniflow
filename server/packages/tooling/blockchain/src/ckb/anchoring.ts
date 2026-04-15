@@ -1,18 +1,18 @@
 import { z } from "zod";
-import { BlockchainTool } from "../index";
+import { BlockchainTool } from "../types";
 
-export const AnchorDataSchema = z.object({
+const AnchorDataSchema = z.object({
     state_blob: z.string().describe("Hex data blob to anchor"),
     private_key: z.string().startsWith("0x"),
 });
 
-export type AnchorDataInput = z.infer<typeof AnchorDataSchema>;
+type AnchorDataInput = z.infer<typeof AnchorDataSchema>;
 
 /**
  * Tool: blockchain.ckb.anchoring.anchor_data
  * Description: Generates an output cell containing the provided data to anchor state on-chain.
  */
-export const AnchorDataTool: BlockchainTool<AnchorDataInput, any> = {
+const AnchorDataTool: BlockchainTool<AnchorDataInput, any> = {
     name: "blockchain.ckb.anchoring.anchor_data",
     description: "Formats an output cell to anchor a specific hex data blob on the CKB blockchain. Used for saving Onhandl states/run receipts.",
     schema: AnchorDataSchema,

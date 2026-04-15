@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed';
+type ExecutionStatus = 'pending' | 'running' | 'completed' | 'failed';
 
-export interface IExecutionRun extends Document {
+interface IExecutionRun extends Document {
     agentDefinitionId: Types.ObjectId;
     triggeredBy?: Types.ObjectId;
     status: ExecutionStatus;

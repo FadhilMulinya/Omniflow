@@ -15,6 +15,14 @@ import {
  */
 export class Orchestrator {
 
+    /** Helper to handle SSE or raw chunk streaming to Fastify reply */
+    private static sendEvent(res: unknown, data: string) {
+        if (!res) return;
+        const out = res as any;
+        if (typeof out.push === 'function') out.push(data);
+        else if (typeof out.write === 'function') out.write(data);
+    }
+
     /**
      * Entry point for unified /api/agent/query
      */
@@ -78,14 +86,9 @@ export class Orchestrator {
 
                 if (result.message) {
                     await MemoryService.addMessage(sessionId, 'assistant', result.message);
-                    const sendEvent = (data: string) => {
-                        if (!res) return;
-                        if (typeof res.push === 'function') res.push(data);
-                        else if (typeof res.write === 'function') res.write(data);
-                    };
                     const words = result.message.split(' ');
                     for (const word of words) {
-                        sendEvent(`data: ${JSON.stringify({ content: word + ' ' })}\n\n`);
+                        this.sendEvent(res, `data: ${JSON.stringify({ content: word + ' ' })}\n\n`);
                         await new Promise(r => setTimeout(r, 12));
                     }
                     return;
@@ -97,22 +100,15 @@ export class Orchestrator {
                 // Save to memory
                 await MemoryService.addMessage(sessionId, 'assistant', result.message);
 
-                // Stream the result directly
-                const sendEvent = (data: string) => {
-                    if (!res) return;
-                    if (typeof res.push === 'function') res.push(data);
-                    else if (typeof res.write === 'function') res.write(data);
-                };
-
                 // Stream word-by-word for a natural feel
                 const words = result.message.split(' ');
                 for (const word of words) {
-                    sendEvent(`data: ${JSON.stringify({ content: word + ' ' })}\n\n`);
+                    this.sendEvent(res, `data: ${JSON.stringify({ content: word + ' ' })}\n\n`);
                     await new Promise(r => setTimeout(r, 12));
                 }
 
                 if (result.requiresApproval) {
-                    sendEvent(`data: ${JSON.stringify({ type: 'control', status: 'approval_required' })}\n\n`);
+                    this.sendEvent(res, `data: ${JSON.stringify({ type: 'control', status: 'approval_required' })}\n\n`);
                 }
                 return;
             }
@@ -174,7 +170,7 @@ export class Orchestrator {
                 let fullResponse = '';
                 for await (const chunk of stream) {
                     fullResponse += chunk;
-                    sendEvent(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+                    this.sendEvent(res, `data: ${JSON.stringify({ content: chunk })}\n\n`);
                 }
                 await MemoryService.addMessage(sessionId, 'assistant', fullResponse);
                 console.log(`[Orchestrator] Stream closed in ${Date.now() - startTime}ms`);
@@ -186,9 +182,10 @@ export class Orchestrator {
                 await MemoryService.addMessage(sessionId, 'assistant', result.content);
                 return result;
             }
-        } catch (error: any) {
-            console.error('[Orchestrator] Error:', error.message);
-            throw new Error(`Orchestration Failed: ${error.message}`);
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error('[Orchestrator] Error:', msg);
+            throw new Error(`Orchestration Failed: ${msg}`);
         }
     }
 }

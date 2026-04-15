@@ -26,7 +26,7 @@ export async function fiberRpcCall(method: string, params: any[]) {
  * blockchain.ckb_fiber.node_admin.node_info
  * Returns node pubkey, listen addresses, peer count, etc.
  */
-export const GetNodeInfoTool: BlockchainTool<Record<string, never>, any> = {
+const GetNodeInfoTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.node_info",
     description: "Fetches info about the connected Fiber node: pubkey, listen addresses, peer count, and network alias.",
     schema: z.object({}),
@@ -46,7 +46,7 @@ const ConnectPeerSchema = z.object({
     save: z.boolean().optional(),
 });
 
-export const ConnectPeerTool: BlockchainTool<z.infer<typeof ConnectPeerSchema>, any> = {
+const ConnectPeerTool: BlockchainTool<z.infer<typeof ConnectPeerSchema>, any> = {
     name: "blockchain.ckb_fiber.node_admin.connect_peer",
     description: "Connect to a remote Fiber peer. REQUIRED before open_channel. Address format: /ip4/{IP}/tcp/{PORT}/p2p/{PEER_ID}. Returns null on success.",
     schema: ConnectPeerSchema,
@@ -79,7 +79,7 @@ const DisconnectPeerSchema = z.object({
     peer_id: z.string().min(1, "Peer ID required (Qm... format)"),
 });
 
-export const DisconnectPeerTool: BlockchainTool<z.infer<typeof DisconnectPeerSchema>, any> = {
+const DisconnectPeerTool: BlockchainTool<z.infer<typeof DisconnectPeerSchema>, any> = {
     name: "blockchain.ckb_fiber.node_admin.disconnect_peer",
     description: "Disconnect from a currently connected Fiber peer.",
     schema: DisconnectPeerSchema,
@@ -96,7 +96,7 @@ export const DisconnectPeerTool: BlockchainTool<z.infer<typeof DisconnectPeerSch
  * blockchain.ckb_fiber.node_admin.list_peers
  * Use this after connect_peer to get the remote peer's pubkey (needed for open_channel).
  */
-export const ListPeersTool: BlockchainTool<Record<string, never>, any> = {
+const ListPeersTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.list_peers",
     description: "List all connected Fiber peers. Use this after connect_peer to retrieve the remote peer's pubkey for open_channel.",
     schema: z.object({}),
@@ -108,7 +108,7 @@ export const ListPeersTool: BlockchainTool<Record<string, never>, any> = {
 /**
  * blockchain.ckb_fiber.node_admin.network_status
  */
-export const NetworkStatusTool: BlockchainTool<Record<string, never>, any> = {
+const NetworkStatusTool: BlockchainTool<Record<string, never>, any> = {
     name: "blockchain.ckb_fiber.node_admin.network_status",
     description: "Checks the Fiber network graph — how many nodes and channels are visible.",
     schema: z.object({}),

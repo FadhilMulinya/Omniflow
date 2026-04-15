@@ -28,7 +28,7 @@ export interface InputNodeResult {
 
 // ─── OUTPUT NODE ──────────────────────────────────────────────────────────────
 
-export const OutputNodeInputSchema = z.object({
+const OutputNodeInputSchema = z.object({
   text: z.string().optional(),
   format: z.enum(['Plain', 'Markdown', 'HTML']).optional(),
 }).passthrough();
@@ -194,7 +194,7 @@ export interface TelegramResult {
 
 // ─── A2A AGENT CALL NODE ──────────────────────────────────────────────────────
 
-export const A2ANodeInputSchema = z.object({
+const A2ANodeInputSchema = z.object({
   recipientAgentId: z.string().min(1, 'Recipient agent ID is required'),
   performative: z
     .enum(['request', 'inform', 'confirm', 'refuse', 'query', 'propose'])
@@ -203,7 +203,7 @@ export const A2ANodeInputSchema = z.object({
   conversationId: z.string().optional(),
 });
 
-export interface A2ANodeResult {
+interface A2ANodeResult {
   messageId: string;
   recipientAgentId: string;
   performative: string;

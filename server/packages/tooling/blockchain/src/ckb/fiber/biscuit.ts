@@ -3,18 +3,18 @@ import { BlockchainTool } from "../../index";
 // Placeholder for biscuit generation library
 // Actual implementation normally relies on standard biscuit-rust bindings or WASM like @biscuit-auth/biscuit-wasm
 
-export const GenerateBiscuitSchema = z.object({
+const GenerateBiscuitSchema = z.object({
     private_key_hex: z.string().startsWith("0x"),
     permissions: z.array(z.string()).optional().describe("Defaults to ['admin']"),
 });
 
-export type GenerateBiscuitInput = z.infer<typeof GenerateBiscuitSchema>;
+type GenerateBiscuitInput = z.infer<typeof GenerateBiscuitSchema>;
 
 /**
  * Tool: blockchain.ckb_fiber.biscuit.mint_token
  * Description: Generates a Biscuit token for Fiber RPC.
  */
-export const MintBiscuitTokenTool: BlockchainTool<GenerateBiscuitInput, any> = {
+const MintBiscuitTokenTool: BlockchainTool<GenerateBiscuitInput, any> = {
     name: "blockchain.ckb_fiber.biscuit.mint_token",
     description: "Generates a capability-based Biscuit token for authenticating against a Fiber node's RPC interface securely via its private key equivalent.",
     schema: GenerateBiscuitSchema,

@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type OtpPurpose = 'signup' | 'forgot_password';
+type OtpPurpose = 'signup' | 'forgot_password';
 
-export interface IOtp extends Document {
+interface IOtp extends Document {
     email: string;
     code: string; // bcrypt-hashed OTP
     purpose: OtpPurpose;

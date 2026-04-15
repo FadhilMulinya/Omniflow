@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IWaitlistEntry extends Document {
+interface IWaitlistEntry extends Document {
     name: string;
     email: string;
     source?: string;

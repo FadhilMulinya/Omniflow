@@ -14,7 +14,7 @@ import { InputNodeInputSchema, InputNodeResult } from '../types/node-contracts';
  */
 export function simulateInputNode(data: unknown, inputValues?: Record<string, unknown>): NodeOutput<InputNodeResult> {
   const t0 = Date.now();
-  const d = data as any;
+  const d = data as { name?: string; inputs?: Array<{ key: string; value: unknown }> };
   const nodeName: string = d?.name ?? 'Text Input';
 
   // Resolve the actual text value

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
-export interface ISessionMemory extends Document {
+interface ISessionMemory extends Document {
     sessionId: string;
     agentId: Types.ObjectId;
     userId: Types.ObjectId;

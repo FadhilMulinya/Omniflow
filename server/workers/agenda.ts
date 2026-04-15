@@ -1,7 +1,7 @@
 import { Agenda, Job } from 'agenda';
 import { ENV } from '../lib/environments';
 
-export const agenda = new Agenda({ db: { address: ENV.MONGO_URI, collection: 'agendaJobs' } });
+const agenda = new Agenda({ db: { address: ENV.MONGO_URI, collection: 'agendaJobs' } });
 
 agenda.define('execute-llm-call', async (job: Job) => {
     const { executionId, nodeId, prompt } = job.attrs.data;

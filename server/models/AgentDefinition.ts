@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 import { CharacterSchema } from '../characters/schema';
 
-export interface IAgentDefinition extends Document {
+interface IAgentDefinition extends Document {
     ownerId: Types.ObjectId;
     workspaceId: Types.ObjectId;
     name: string;
