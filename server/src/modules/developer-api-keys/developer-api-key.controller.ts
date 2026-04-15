@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify';
 import { DeveloperApiKeyService } from './developer-api-key.service';
-import { Workspace } from '../../infrastructure/database/models/Workspace';
 
 export async function developerApiKeyController(fastify: FastifyInstance) {
     // GET /api/developer/keys — list my keys
@@ -13,15 +12,15 @@ export async function developerApiKeyController(fastify: FastifyInstance) {
         '/keys',
         { onRequest: [fastify.authenticate] },
         async (request, reply) => {
-            const workspace = await Workspace.findOne({ ownerId: request.user.id });
-            if (!workspace) return reply.code(404).send({ error: 'Workspace not found' });
-
-            const result = await DeveloperApiKeyService.createApiKey(
-                request.user.id,
-                String(workspace._id),
-                request.body.name || 'Default Key'
-            );
-            return reply.code(201).send(result);
+            try {
+                const result = await DeveloperApiKeyService.createApiKeyForUser(
+                    request.user.id,
+                    request.body.name || 'Default Key'
+                );
+                return reply.code(201).send(result);
+            } catch (err: any) {
+                return reply.code(err.code || 500).send({ error: err.message });
+            }
         }
     );
 
@@ -29,9 +28,13 @@ export async function developerApiKeyController(fastify: FastifyInstance) {
     fastify.delete<{ Params: { id: string } }>(
         '/keys/:id',
         { onRequest: [fastify.authenticate] },
-        async (request) => {
-            await DeveloperApiKeyService.revokeKey(request.params.id, request.user.id);
-            return { success: true };
+        async (request, reply) => {
+            try {
+                await DeveloperApiKeyService.revokeKey(request.params.id, request.user.id);
+                return { success: true };
+            } catch (err: any) {
+                return reply.code(err.code || 500).send({ error: err.message });
+            }
         }
     );
 }

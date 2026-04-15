@@ -2,10 +2,6 @@ import '@fastify/jwt';
 
 /**
  * Authenticated user payload attached by request.jwtVerify()
- *
- * Keep this minimal and stable.
- * Only include fields that are actually present in your JWT payload
- * or returned by formatUser.
  */
 export interface AuthenticatedUser {
     id: string;
@@ -15,17 +11,26 @@ export interface AuthenticatedUser {
     role?: string;
 }
 
-export interface AuthContext {
+export interface ApiKeyAuthContext {
+    type: 'api_key';
+    userId: string;
+    workspaceId: string;
+    apiKeyId: string;
+    scopes: string[];
+}
+
+export interface JwtAuthContext {
+    type: 'user';
     userId: string;
     workspaceId?: string;
-    type: 'user' | 'api_key';
-    apiKeyId?: string;
-    scopes?: string[];
+    user?: AuthenticatedUser;
 }
+
+export type AuthContext = JwtAuthContext | ApiKeyAuthContext;
 
 declare module 'fastify' {
     interface FastifyRequest {
-        apiKeyAuth?: AuthContext;
+        apiKeyAuth?: ApiKeyAuthContext;
     }
 }
 

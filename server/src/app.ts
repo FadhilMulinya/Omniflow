@@ -7,6 +7,7 @@ import { ENV } from './shared/config/environments';
 import { registerRoutes } from './api/routes';
 import authPlugin from './api/plugins/auth.plugin';
 import apiKeyAuthPlugin from './api/plugins/api-key-auth.plugin';
+import rateLimitPlugin from './api/plugins/rate-limit.plugin';
 
 export const app = Fastify({ logger: true });
 
@@ -46,6 +47,7 @@ app.register(fastifyJwt, {
 // After jwtVerify, request.user: AuthenticatedUser is available in every handler.
 app.register(authPlugin);
 app.register(apiKeyAuthPlugin);
+app.register(rateLimitPlugin);
 
 // ── ROUTES ──────────────────────────────────────────────────────────────────
 app.register(registerRoutes, { prefix: '/api' });

@@ -1,8 +1,9 @@
+import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { DeveloperApiKeyService } from '../../modules/developer-api-keys/developer-api-key.service';
 
 export default fp(async (fastify) => {
-    fastify.decorate('authenticateApiKey', async (request, reply) => {
+    fastify.decorate('authenticateApiKey', async (request: FastifyRequest, reply: FastifyReply) => {
         const authHeader = request.headers.authorization;
         const apiKeyHeader = request.headers['x-api-key'];
 
@@ -30,6 +31,6 @@ export default fp(async (fastify) => {
 
 declare module 'fastify' {
     interface FastifyInstance {
-        authenticateApiKey: (request: any, reply: any) => Promise<void>;
+        authenticateApiKey: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     }
 }

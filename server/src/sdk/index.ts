@@ -1,1 +1,1 @@
-export { OnhandlSDK } from './onhandl-sdk';
+export { OnhandlSDK, OnhandlSDKError } from './onhandl-sdk';

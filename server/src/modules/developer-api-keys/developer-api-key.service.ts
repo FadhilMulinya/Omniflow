@@ -1,17 +1,21 @@
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { DeveloperApiKeyRepository } from './developer-api-key.repository';
-import { AuthContext } from '../../shared/contracts/auth';
+import { ApiKeyAuthContext } from '../../shared/contracts/auth';
+import { Workspace } from '../../infrastructure/database/models/Workspace';
 
 export const DeveloperApiKeyService = {
-    async createApiKey(userId: string, workspaceId: string, name: string, scopes: string[] = ['*']) {
+    async createApiKeyForUser(userId: string, name: string, scopes: string[] = ['*']) {
+        const workspace = await Workspace.findOne({ ownerId: userId });
+        if (!workspace) throw { code: 404, message: 'Workspace not found' };
+
         const rawKey = `onh_${crypto.randomBytes(24).toString('hex')}`;
-        const keyPrefix = rawKey.substring(0, 7); // sk_ + 4 chars
+        const keyPrefix = rawKey.substring(0, 7);
         const hashedKey = await bcrypt.hash(rawKey, 10);
 
         const apiKey = await DeveloperApiKeyRepository.create({
             userId,
-            workspaceId,
+            workspaceId: String(workspace._id),
             name,
             keyPrefix,
             hashedKey,
@@ -29,8 +33,8 @@ export const DeveloperApiKeyService = {
         };
     },
 
-    async authenticate(rawKey: string): Promise<AuthContext | null> {
-        if (!rawKey.startsWith('sk_')) return null;
+    async authenticate(rawKey: string): Promise<ApiKeyAuthContext | null> {
+        if (!rawKey.startsWith('onh_')) return null;
 
         const keyPrefix = rawKey.substring(0, 7);
         const keys = await DeveloperApiKeyRepository.findByPrefix(keyPrefix);
@@ -55,12 +59,24 @@ export const DeveloperApiKeyService = {
     },
 
     async listKeys(userId: string) {
-        return DeveloperApiKeyRepository.findByUserId(userId);
+        const keys = await DeveloperApiKeyRepository.findByUserId(userId);
+        return keys.map(key => ({
+            id: key._id,
+            name: key.name,
+            keyPrefix: key.keyPrefix,
+            scopes: key.scopes,
+            isActive: key.isActive,
+            lastUsedAt: key.lastUsedAt,
+            createdAt: key.createdAt,
+            expiresAt: key.expiresAt,
+        }));
     },
 
     async revokeKey(id: string, userId: string) {
         const key = await DeveloperApiKeyRepository.findById(id);
-        if (!key || String(key.userId) !== userId) throw new Error('Key not found or unauthorized');
+        if (!key || String(key.userId) !== userId) {
+            throw { code: 404, message: 'Key not found or unauthorized' };
+        }
 
         return DeveloperApiKeyRepository.update(id, { isActive: false } as any);
     }
