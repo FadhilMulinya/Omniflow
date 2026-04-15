@@ -1,13 +1,16 @@
 import { FastifyInstance } from 'fastify';
 import { Readable } from 'stream';
 import { executionEmitter } from './execution.events';
-import { ExecutionService } from './execution.service';
+import { OnhandlSDKInternal } from '../../sdk/onhandl-sdk-internal';
 
 export async function executionController(fastify: FastifyInstance) {
     // ── Get execution ──────────────────────────────────────────────────────────
-    fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
+    fastify.get<{ Params: { id: string } }>('/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            return await ExecutionService.getById(request.params.id);
+            return await OnhandlSDKInternal.getExecution(request.params.id, {
+                userId: request.user.id,
+                type: 'user',
+            });
         } catch (err: any) {
             return reply.code(err.code || 500).send({ error: err.message });
         }
@@ -44,17 +47,24 @@ export async function executionController(fastify: FastifyInstance) {
     });
 
     // ── List executions ────────────────────────────────────────────────────────
-    fastify.get<{ Querystring: { agentId: string } }>('/', async (request) => {
-        return ExecutionService.list(request.query.agentId);
+    fastify.get<{ Querystring: { agentId: string } }>('/', { onRequest: [fastify.authenticate] }, async (request) => {
+        return OnhandlSDKInternal.listExecutions(request.query.agentId, {
+            userId: request.user.id,
+            type: 'user',
+        });
     });
 
     // ── Start execution ────────────────────────────────────────────────────────
-    fastify.post<{ Body: { agentId: string; triggeredBy?: string; initialState?: any } }>(
+    fastify.post<{ Body: { agentId: string; initialState?: any } }>(
         '/',
+        { onRequest: [fastify.authenticate] },
         async (request, reply) => {
-            const { agentId, triggeredBy, initialState } = request.body;
+            const { agentId, initialState } = request.body;
             try {
-                const execution = await ExecutionService.start(agentId, triggeredBy, initialState);
+                const execution = await OnhandlSDKInternal.startExecution(agentId, {
+                    userId: request.user.id,
+                    type: 'user',
+                }, initialState);
                 return reply.code(201).send(execution);
             } catch (err: any) {
                 return reply.code(err.code || 500).send({ error: err.message });
@@ -65,12 +75,29 @@ export async function executionController(fastify: FastifyInstance) {
     // ── Node simulation ────────────────────────────────────────────────────────
     fastify.post<{ Body: any }>(
         '/simulate/node',
+        { onRequest: [fastify.authenticate] },
         async (request, reply) => {
             try {
-                return await ExecutionService.simulateNode(request.body as any);
+                return await OnhandlSDKInternal.simulateNode(request.body as any, {
+                    userId: request.user.id,
+                    type: 'user',
+                });
             } catch (err: any) {
                 return reply.code(err.code || 500).send({ error: err.message });
             }
         }
     );
+
+    // ── Run execution ────────────────────────────────────────────────────────
+    fastify.post<{ Params: { id: string } }>('/:id/run', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            await OnhandlSDKInternal.runExecution(request.params.id, {
+                userId: request.user.id,
+                type: 'user',
+            });
+            return { message: 'Execution started' };
+        } catch (e: any) {
+            return reply.code(e.code || 500).send({ error: e.message });
+        }
+    });
 }

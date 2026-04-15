@@ -8,16 +8,30 @@ import '@fastify/jwt';
  * or returned by formatUser.
  */
 export interface AuthenticatedUser {
-  id: string;
-  username?: string;
-  email?: string;
-  isAdmin?: boolean;
-  role?: string;
+    id: string;
+    username?: string;
+    email?: string;
+    isAdmin?: boolean;
+    role?: string;
+}
+
+export interface AuthContext {
+    userId: string;
+    workspaceId?: string;
+    type: 'user' | 'api_key';
+    apiKeyId?: string;
+    scopes?: string[];
+}
+
+declare module 'fastify' {
+    interface FastifyRequest {
+        apiKeyAuth?: AuthContext;
+    }
 }
 
 declare module '@fastify/jwt' {
-  interface FastifyJWT {
-    payload: AuthenticatedUser;
-    user: AuthenticatedUser;
-  }
+    interface FastifyJWT {
+        payload: AuthenticatedUser;
+        user: AuthenticatedUser;
+    }
 }

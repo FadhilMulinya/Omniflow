@@ -2,9 +2,10 @@ import { FastifyPluginAsync } from 'fastify';
 import { Readable } from 'stream';
 import { Orchestrator } from '../../core/engine/orchestrator';
 import {
-    listAgents, getAgentWithGraph, getRevenueDashboard, getPlanStatus, getAgentStats,
-    createAgent, createAgentFromTemplate, updateAgent, deleteAgent, previewEnhancePersona,
+    listAgents, getAgentWithGraph, getPlanStatus, updateAgent, deleteAgent,
 } from './agent.service';
+import { AgentCreationService } from './services/agent-creation.service';
+import { AgentAnalyticsService } from './services/agent-analytics.service';
 import { AgentRepository } from './agent.repository';
 
 // ── READ ─────────────────────────────────────────────────────────────────────
@@ -23,7 +24,7 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
         '/agents/revenue',
         { onRequest: [fastify.authenticate] },
         async (request, reply) => {
-            return getRevenueDashboard(request.user.id);
+            return AgentAnalyticsService.getRevenueDashboard(request.user.id);
         }
     );
 
@@ -40,7 +41,7 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
         '/agents/:id/stats',
         { onRequest: [fastify.authenticate] },
         async (request, reply) => {
-            try { return await getAgentStats(request.params.id); }
+            try { return await AgentAnalyticsService.getAgentStats(request.params.id); }
             catch (e: any) { return reply.code(e.code || 500).send({ error: e.message }); }
         }
     );
@@ -69,7 +70,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
             try {
                 const { name, persona, agentType = 'operational_agent', chains = [] } = request.body;
                 if (!name || !persona) return reply.code(400).send({ error: 'Name and Persona are required' });
-                return await previewEnhancePersona(name, persona, agentType, chains, request.user?.id);
+                return await AgentCreationService.previewEnhancePersona(name, persona, agentType, chains, request.user?.id);
             } catch (err: any) {
                 return reply.code(500).send({ error: err.message });
             }
@@ -81,7 +82,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
         { onRequest: [fastify.authenticate] },
         async (request, reply) => {
             try {
-                const agent = await createAgent({ userId: request.user.id, ...request.body, log: (msg) => request.log.error(msg) });
+                const agent = await AgentCreationService.createAgent({ userId: request.user.id, ...request.body, log: (msg) => request.log.error(msg) });
                 return reply.code(201).send(agent);
             } catch (err: any) {
                 return reply.code(err.code || 500).send({ error: err.message || 'Internal server error', details: err.details });
@@ -94,7 +95,7 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
         { onRequest: [fastify.authenticate] },
         async (request, reply) => {
             try {
-                return await createAgentFromTemplate(request.user.id, request.body.templateId, request.body.name);
+                return await AgentCreationService.createAgentFromTemplate(request.user.id, request.body.templateId, request.body.name);
             } catch (err: any) {
                 return reply.code(err.code || 500).send({ error: err.message || 'Failed to create agent from template' });
             }

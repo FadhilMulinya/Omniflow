@@ -1,7 +1,6 @@
-import { ExecutionRun } from '../../infrastructure/database/models/ExecutionRun';
-import { AgentDefinition } from '../../infrastructure/database/models/AgentDefinition';
-import { AgentNode, IAgentNode } from '../../infrastructure/database/models/AgentNode';
-import { AgentEdge, IAgentEdge } from '../../infrastructure/database/models/AgentEdge';
+import { ExecutionRepository } from '../../modules/executions/execution.repository';
+import { AgentRepository } from '../../modules/agents/agent.repository';
+import { UserRepository } from '../../modules/users/user.repository';
 import { simulateInputNode } from './simulators/input-node-simulator';
 import { simulateProcessingNode } from './simulators/processing-node-simulator';
 import { simulateActionNode } from './simulators/action-node-simulator';
@@ -14,7 +13,6 @@ import { simulateCryptoTrade } from './simulators/crypto/trade-simulator';
 import { simulateBlockchainNode } from './simulators/blockchain-node-simulator';
 import { enhancedLog, timestamp } from './simulators/base';
 import { executionEmitter } from '../../modules/executions/execution.events';
-import { User } from '../../infrastructure/database/models/User';
 import { tokensForExecution, getNodeLimit, PLANS, PlanId } from '../../shared/constants/tokens';
 import { NodeOutput } from '../contracts/base';
 
@@ -30,7 +28,8 @@ export class FlowEngine {
     const currentQueue = this.saveQueues[id] || Promise.resolve();
     this.saveQueues[id] = currentQueue.then(async () => {
       try {
-        await execution.save();
+        execution.markModified('state');
+        await ExecutionRepository.save(execution);
       } catch (err) {
         console.error(`[FlowEngine] SafeSave failed for ${id}:`, err);
       }
@@ -40,31 +39,30 @@ export class FlowEngine {
 
   static async runExecution(executionId: string) {
     console.log(`\n[FlowEngine] 🚀 Starting execution: ${executionId}`);
-    const execution = await ExecutionRun.findById(executionId);
+    const execution = await ExecutionRepository.findById(executionId);
     if (!execution) throw new Error('Execution not found');
 
-    const agent = await AgentDefinition.findById(execution.agentDefinitionId);
+    const agent = await AgentRepository.findById(String(execution.agentDefinitionId));
     if (!agent) {
       execution.status = 'failed';
       execution.error = 'Agent definition not found';
-      await execution.save();
+      await ExecutionRepository.save(execution);
       return;
     }
 
     console.log(`[FlowEngine] 🤖 Agent: ${agent.name} (${agent._id})`);
     execution.status = 'running';
     execution.startedAt = new Date();
-    await execution.save();
+    await ExecutionRepository.save(execution);
 
-    const nodeDocs = await AgentNode.find({ agentId: agent._id });
-    const edgeDocs = await AgentEdge.find({ agentId: agent._id });
+    const { nodes: nodeDocs, edges: edgeDocs } = await AgentRepository.getGraph(String(agent._id));
 
     // ── Token & node-limit enforcement ───────────────────────────────────────
     const connectedNodeIds = new Set<string>();
     edgeDocs.forEach((e: any) => { connectedNodeIds.add(e.source); connectedNodeIds.add(e.target); });
     const connectedCount = connectedNodeIds.size;
 
-    const user = execution.triggeredBy ? await User.findById(execution.triggeredBy) : null;
+    const user = execution.triggeredBy ? await UserRepository.findById(String(execution.triggeredBy)) : null;
     if (user) {
       const planId = (user.plan ?? 'free') as PlanId;
       const nodeLimit = getNodeLimit(planId);
@@ -73,7 +71,7 @@ export class FlowEngine {
         const msg = `Node limit exceeded: your ${PLANS[planId]?.name ?? planId} plan allows up to ${nodeLimit} connected nodes. This agent has ${connectedCount}. Upgrade to run larger flows.`;
         execution.status = 'failed';
         execution.error = msg;
-        await execution.save();
+        await ExecutionRepository.save(execution);
         executionEmitter.emit(`execution-${executionId}`, { status: 'failed', error: msg });
         return;
       }
@@ -83,23 +81,23 @@ export class FlowEngine {
         const msg = `Insufficient tokens: this execution requires ${cost} tokens (${connectedCount} nodes × 50) but you only have ${user.tokens}. Top up or upgrade your plan.`;
         execution.status = 'failed';
         execution.error = msg;
-        await execution.save();
+        await ExecutionRepository.save(execution);
         executionEmitter.emit(`execution-${executionId}`, { status: 'failed', error: msg });
         return;
       }
 
-      await User.findByIdAndUpdate(user._id, { $inc: { tokens: -cost } });
+      await UserRepository.findByIdAndUpdate(String(user._id), { $inc: { tokens: -cost } });
       console.log(`[FlowEngine] 🪙 Deducted ${cost} tokens from user ${user._id} (${connectedCount} nodes)`);
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    const nodes = nodeDocs.map((n: IAgentNode) => ({
+    const nodes = nodeDocs.map((n: any) => ({
       id: n.nodeId,
       type: n.type,
       data: { ...(n.data as Record<string, unknown>), chain: n.chain, tool: n.tool, params: n.params } as Record<string, unknown>,
     }));
 
-    const edges = edgeDocs.map((e: IAgentEdge) => ({
+    const edges = edgeDocs.map((e: any) => ({
       id: e.edgeId,
       source: e.source,
       target: e.target,
@@ -217,7 +215,7 @@ export class FlowEngine {
           };
 
           execution.markModified('state');
-          await execution.save();
+          await ExecutionRepository.save(execution);
 
           console.log(`[FlowEngine] ✅ Node completed: ${nodeName}`);
           executionEmitter.emit(`execution-${executionId}`, {
@@ -246,7 +244,7 @@ export class FlowEngine {
 
       execution.status = 'completed';
       execution.completedAt = new Date();
-      await execution.save();
+      await ExecutionRepository.save(execution);
       console.log(`[FlowEngine] ✨ Execution finished: ${executionId}\n`);
       executionEmitter.emit(`execution-${executionId}`, { status: 'completed', state: execution.state });
 
@@ -256,7 +254,7 @@ export class FlowEngine {
       enhancedLog('Flow execution failed', { executionId, error: msg });
       execution.status = 'failed';
       execution.error = msg;
-      await execution.save();
+      await ExecutionRepository.save(execution);
       executionEmitter.emit(`execution-${executionId}`, { status: 'failed', error: msg });
     }
   }

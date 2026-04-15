@@ -11,23 +11,42 @@ import { simulateWhatsAppSendMessage } from '../../core/engine/simulators/whatsa
 import { simulateCryptoWallet } from '../../core/engine/simulators/crypto/wallet-simulator';
 import { simulateCryptoTrade } from '../../core/engine/simulators/crypto/trade-simulator';
 import { simulateBlockchainNode } from '../../core/engine/simulators/blockchain-node-simulator';
+import { AuthContext } from '../../shared/contracts/auth';
+import { AgentRepository } from '../agents/agent.repository';
 
 export const ExecutionService = {
-    async getById(id: string) {
+    async getById(id: string, auth?: AuthContext) {
         const execution = await ExecutionRepository.findById(id);
         if (!execution) throw Object.assign(new Error('Execution not found'), { code: 404 });
+
+        if (auth && String(execution.triggeredBy) !== auth.userId) {
+            // We can also check workspaceId if needed
+            throw Object.assign(new Error('Unauthorized to access this execution'), { code: 403 });
+        }
+
         return execution;
     },
 
-    async list(agentId?: string) {
-        const filter = agentId ? { agentDefinitionId: agentId } : {};
+    async list(agentId?: string, auth?: AuthContext) {
+        const filter: any = {};
+        if (agentId) filter.agentDefinitionId = agentId;
+        if (auth) filter.triggeredBy = auth.userId;
+
         return ExecutionRepository.find(filter);
     },
 
-    async start(agentId: string, triggeredBy?: string, initialState?: any) {
+    async start(agentId: string, auth: AuthContext, initialState?: any) {
+        // Authorization: Verify agent belongs to the workspace
+        const agent = await AgentRepository.findById(agentId);
+        if (!agent) throw Object.assign(new Error('Agent not found'), { code: 404 });
+
+        if (auth.workspaceId && String(agent.workspaceId) !== auth.workspaceId) {
+            throw Object.assign(new Error('Agent does not belong to your workspace'), { code: 403 });
+        }
+
         const execution = await ExecutionRepository.create({
             agentDefinitionId: agentId,
-            triggeredBy,
+            triggeredBy: auth.userId,
             state: initialState || {},
             status: 'pending',
         });
@@ -42,7 +61,7 @@ export const ExecutionService = {
         nodeType?: string;
         inputValues?: Record<string, unknown>;
         agentId?: string;
-    }) {
+    }, auth?: AuthContext) {
         const { node, nodeData, nodeType, inputValues = {}, agentId } = data;
         const finalNode = node || { type: nodeType, data: nodeData };
 
@@ -50,7 +69,12 @@ export const ExecutionService = {
 
         const consoleOutput: string[] = [];
         let agent = null;
-        if (agentId) agent = await ExecutionRepository.findAgentById(agentId);
+        if (agentId) {
+            agent = await AgentRepository.findById(agentId);
+            if (auth && agent && auth.workspaceId && String(agent.workspaceId) !== auth.workspaceId) {
+                throw Object.assign(new Error('Agent does not belong to your workspace'), { code: 403 });
+            }
+        }
 
         let output;
         switch (finalNode.type) {

@@ -14,6 +14,8 @@ import { blogRoutes } from '../../modules/blog';
 import { reviewRoutes } from '../../modules/reviews';
 import { botRoutes } from '../../modules/bots';
 import { aiRoutes } from '../../modules/ai';
+import { developerApiKeyController } from '../../modules/developer-api-keys/developer-api-key.controller';
+import { sdkRoutes } from '../../modules/sdk/sdk.controller';
 
 export async function registerRoutes(app: FastifyInstance) {
     app.register(authRoutes, { prefix: '/auth' });
@@ -30,6 +32,8 @@ export async function registerRoutes(app: FastifyInstance) {
     app.register(reviewRoutes, { prefix: '/reviews' }); /* was on /agents/:id/reviews */
     app.register(botRoutes, { prefix: '/bots' }); /* replaces /bot and /telegram */
     app.register(aiRoutes, { prefix: '/ai' });
+    app.register(developerApiKeyController, { prefix: '/developer' });
+    app.register(sdkRoutes, { prefix: '/sdk' });
 
     // The server setup will prefix all these with /api except where bypassed.
 }

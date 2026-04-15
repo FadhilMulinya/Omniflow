@@ -6,6 +6,7 @@ import fastifyCookie from '@fastify/cookie';
 import { ENV } from './shared/config/environments';
 import { registerRoutes } from './api/routes';
 import authPlugin from './api/plugins/auth.plugin';
+import apiKeyAuthPlugin from './api/plugins/api-key-auth.plugin';
 
 export const app = Fastify({ logger: true });
 
@@ -24,7 +25,7 @@ app.register(cors, {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-ai-api-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 });
 
 // ── PLUGINS ─────────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ app.register(fastifyJwt, {
 // Decorates the app with fastify.authenticate (onRequest hook).
 // After jwtVerify, request.user: AuthenticatedUser is available in every handler.
 app.register(authPlugin);
+app.register(apiKeyAuthPlugin);
 
 // ── ROUTES ──────────────────────────────────────────────────────────────────
 app.register(registerRoutes, { prefix: '/api' });

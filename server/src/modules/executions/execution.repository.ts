@@ -17,4 +17,8 @@ export const ExecutionRepository = {
     async findAgentById(id: string) {
         return AgentDefinition.findById(id);
     },
+
+    async save(execution: any) {
+        return execution.save();
+    },
 };
