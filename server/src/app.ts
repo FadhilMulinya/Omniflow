@@ -5,6 +5,7 @@ import fastifyCookie from '@fastify/cookie';
 
 import { ENV } from './shared/config/environments';
 import { registerRoutes } from './api/routes';
+import authPlugin from './api/plugins/auth.plugin';
 
 export const app = Fastify({ logger: true });
 
@@ -27,8 +28,22 @@ app.register(cors, {
 });
 
 // ── PLUGINS ─────────────────────────────────────────────────────────────────
-app.register(fastifyJwt, { secret: ENV.JWT_SECRET });
+// cookie must be registered before jwt so jwtVerify can read from cookies
 app.register(fastifyCookie);
+app.register(fastifyJwt, {
+    secret: ENV.JWT_SECRET,
+    // Automatically extract token from the auth_token cookie.
+    // Falls back to Authorization: Bearer header if cookie is absent.
+    cookie: {
+        cookieName: 'auth_token',
+        signed: false,
+    },
+});
+
+// ── AUTH PLUGIN ───────────────────────────────────────────────────────────────
+// Decorates the app with fastify.authenticate (onRequest hook).
+// After jwtVerify, request.user: AuthenticatedUser is available in every handler.
+app.register(authPlugin);
 
 // ── ROUTES ──────────────────────────────────────────────────────────────────
 app.register(registerRoutes, { prefix: '/api' });

@@ -1,5 +1,5 @@
 /**
- * Omniflow SDK
+ * Onhandl SDK
  * Exposes core orchestration and feature logic for programmatic usage.
  * Never imports from or couples to `api/` or `app.ts`.
  */

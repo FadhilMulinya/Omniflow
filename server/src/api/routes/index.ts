@@ -31,6 +31,5 @@ export async function registerRoutes(app: FastifyInstance) {
     app.register(botRoutes, { prefix: '/bots' }); /* replaces /bot and /telegram */
     app.register(aiRoutes, { prefix: '/ai' });
 
-    // MCP typically gets mounted outside /api occasionally, but we'll register it here.
     // The server setup will prefix all these with /api except where bypassed.
 }

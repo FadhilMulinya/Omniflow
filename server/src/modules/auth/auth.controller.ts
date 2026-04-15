@@ -1,7 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { ENV } from '../../shared/config/environments';
-import { verifyAuthCookie } from '../../api/middlewares/auth';
-import { User } from '../../infrastructure/database/models/User';
+import { UserService } from '../users/user.service';
 import {
     registerUser,
     verifyEmailOtp,
@@ -9,11 +8,12 @@ import {
     sendForgotPasswordOtp,
     resetPassword,
 } from './auth.service';
+import type { AuthenticatedUser } from '../../shared/contracts/auth';
 
 function setAuthCookie(fastify: any, reply: any, userId: string, username: string) {
     const token = fastify.jwt.sign({ id: userId, username });
     const isProd = process.env.NODE_ENV === 'production';
-    const cookieOptions: Record<string, any> = {
+    const cookieOptions: Record<string, unknown> = {
         path: '/',
         httpOnly: true,
         secure: isProd,
@@ -94,15 +94,12 @@ export async function authController(fastify: FastifyInstance) {
             .send({ success: true, message: 'Logged out successfully' });
     });
 
-    fastify.post<{ Body: { email: string } }>(
-        '/forgot-password',
-        async (request, reply) => {
-            const { email } = request.body;
-            if (!email) return reply.code(400).send({ error: 'Email is required' });
-            await sendForgotPasswordOtp(email);
-            return reply.send({ message: 'If that email is registered, a reset code has been sent.' });
-        }
-    );
+    fastify.post<{ Body: { email: string } }>('/forgot-password', async (request, reply) => {
+        const { email } = request.body;
+        if (!email) return reply.code(400).send({ error: 'Email is required' });
+        await sendForgotPasswordOtp(email);
+        return reply.send({ message: 'If that email is registered, a reset code has been sent.' });
+    });
 
     fastify.post<{ Body: { email: string; code: string; newPassword: string } }>(
         '/reset-password',
@@ -120,42 +117,35 @@ export async function authController(fastify: FastifyInstance) {
         }
     );
 
-    // ── Profile read handled here (previously in authRoutes as /me) ──────────
-    fastify.get('/me', async (request, reply) => {
-        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
-        if (!decoded) return;
-        const user = await User.findById(decoded.id)
-            .select('username email name whatsapp telegramUsername avatarUrl bio tokens plan planExpiry notifications savedPaymentMethods apiKeys profileViews isAdmin createdAt updatedAt')
-            .lean();
-        if (!user) return reply.code(404).send({ error: 'User not found' });
-        return reply.send({ avatarUrl: '', ...user });
-    });
+    // ── Profile (/me) — requires auth ────────────────────────────────────────
+    fastify.get(
+        '/me',
+        { onRequest: [fastify.authenticate] },
+        async (request, reply) => {
+            const user = request.user as AuthenticatedUser;
+            try {
+                return reply.send(await UserService.getProfile(user.id, 'username email name whatsapp telegramUsername avatarUrl bio tokens plan planExpiry notifications savedPaymentMethods apiKeys profileViews isAdmin createdAt updatedAt'));
+            } catch (e: any) { return reply.code(e.code || 404).send({ error: e.message }); }
+        }
+    );
 
-    fastify.get('/me/avatar', async (request, reply) => {
-        const decoded = verifyAuthCookie(fastify, request.cookies, reply);
-        if (!decoded) return;
-        const user = await User.findById(decoded.id).select('avatarUrl name username').lean();
-        if (!user) return reply.code(404).send({ error: 'User not found' });
-        return reply.send({ avatarUrl: user.avatarUrl || null, name: user.name || user.username || null });
-    });
+    fastify.get(
+        '/me/avatar',
+        { onRequest: [fastify.authenticate] },
+        async (request, reply) => {
+            const user = request.user as AuthenticatedUser;
+            try { return reply.send(await UserService.getAvatar(user.id)); }
+            catch (e: any) { return reply.code(e.code || 404).send({ error: e.message }); }
+        }
+    );
 
     fastify.post<{ Body: { username?: string; email?: string; whatsapp?: string; telegramUsername?: string; avatarUrl?: string } }>(
         '/me',
+        { onRequest: [fastify.authenticate] },
         async (request, reply) => {
-            const decoded = verifyAuthCookie(fastify, request.cookies, reply);
-            if (!decoded) return;
-            const { username, email, whatsapp, telegramUsername, avatarUrl } = request.body;
-            const $set: Record<string, string> = {};
-            if (username) $set.username = username;
-            if (email) $set.email = email;
-            if (whatsapp !== undefined) $set.whatsapp = whatsapp;
-            if (telegramUsername !== undefined) $set.telegramUsername = telegramUsername;
-            if (avatarUrl !== undefined) $set.avatarUrl = avatarUrl;
-            const user = await User.findByIdAndUpdate(decoded.id, { $set }, { new: true })
-                .select('username email name whatsapp telegramUsername avatarUrl bio tokens plan profileViews')
-                .lean();
-            if (!user) return reply.code(404).send({ error: 'User not found' });
-            return reply.send(user);
+            const user = request.user as AuthenticatedUser;
+            try { return reply.send(await UserService.updateProfile(user.id, request.body)); }
+            catch (e: any) { return reply.code(e.code || 404).send({ error: e.message }); }
         }
     );
 }
