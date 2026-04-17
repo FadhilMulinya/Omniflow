@@ -9,6 +9,8 @@ export interface AuthenticatedUser {
     email?: string;
     isAdmin?: boolean;
     role?: string;
+    workspaceId?: string;
+    type?: string;
 }
 
 export interface ApiKeyAuthContext {
@@ -26,7 +28,13 @@ export interface JwtAuthContext {
     user?: AuthenticatedUser;
 }
 
-export type AuthContext = JwtAuthContext | ApiKeyAuthContext;
+export interface TerminalAuthContext {
+    type: 'terminal';
+    userId: string;
+    workspaceId?: string;
+}
+
+export type AuthContext = JwtAuthContext | ApiKeyAuthContext | TerminalAuthContext;
 
 declare module 'fastify' {
     interface FastifyRequest {

@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 
 import { authRoutes } from '../../modules/auth';
+import { terminalAuthRoutes } from '../../modules/terminal-auth';
+import { terminalOpsRoutes } from '../../modules/terminal-ops';
 import { userRoutes } from '../../modules/users';
 import { workspaceRoutes } from '../../modules/workspaces';
 import { agentRoutes } from '../../modules/agents';
@@ -19,6 +21,8 @@ import { sdkRoutes } from '../../modules/sdk/sdk.controller';
 
 export async function registerRoutes(app: FastifyInstance) {
     app.register(authRoutes, { prefix: '/auth' });
+    app.register(terminalAuthRoutes, { prefix: '/terminal/auth' });
+    app.register(terminalOpsRoutes, { prefix: '/terminal/ops' });
     app.register(userRoutes, { prefix: '/users' });
     app.register(workspaceRoutes, { prefix: '/workspaces' });
     app.register(agentRoutes, { prefix: '/agents' });

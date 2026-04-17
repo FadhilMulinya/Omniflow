@@ -1,6 +1,8 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import '../../shared/contracts/auth';
+import crypto from 'crypto';
+import { TerminalSession } from '../../infrastructure/database/models/TerminalSession';
 
 async function authPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.decorate(
@@ -34,6 +36,46 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
       }
     }
   );
+
+  fastify.decorate(
+    'authenticateTerminal',
+    async function authenticateTerminal(
+      request: FastifyRequest,
+      reply: FastifyReply
+    ): Promise<void> {
+      try {
+        const authHeader = request.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return reply.code(401).send({ error: 'Missing or invalid authentication token' });
+        }
+
+        const rawToken = authHeader.split(' ')[1];
+        if (!rawToken) throw new Error('No token found');
+
+        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+        // Look up terminal session by matching hash
+        const session = await TerminalSession.findOne({
+          hashedAccessToken: hashedToken,
+          status: 'approved',
+          revoked: false
+        }).lean();
+
+        if (!session) {
+          return reply.code(401).send({ error: 'Invalid, revoked, or expired terminal session' });
+        }
+
+        // Attach terminal session context
+        request.user = {
+          id: session.userId?.toString() || '',
+          workspaceId: session.workspaceId?.toString(),
+          type: 'terminal'
+        };
+      } catch (err) {
+        return reply.code(401).send({ error: 'Terminal authentication failed' });
+      }
+    }
+  );
 }
 
 export default fp(authPlugin, {
@@ -48,6 +90,11 @@ declare module 'fastify' {
     ) => Promise<void>;
 
     authorizeAdmin: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
+
+    authenticateTerminal: (
       request: FastifyRequest,
       reply: FastifyReply
     ) => Promise<void>;
