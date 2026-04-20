@@ -8,7 +8,6 @@ function getStripe(): Stripe {
 }
 
 export const CRYPTO_NETWORKS: Record<string, string[]> = {
-    Base: ['ETH', 'USDT', 'USDC'],
     CKB: ['CKB'],
     Stellar: ['XLM', 'USDC'],
 };

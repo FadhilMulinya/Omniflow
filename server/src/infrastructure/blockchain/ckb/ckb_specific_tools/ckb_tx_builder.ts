@@ -1,46 +1,12 @@
 import { z } from "zod";
-import { BlockchainTool } from "../types";
-
-// Simplified schemas for Transaction Building
-const OutPointSchema = z.object({
-    tx_hash: z.string(),
-    index: z.string(), // Hex string
-});
-
-const CellInputSchema = z.object({
-    since: z.string().optional(),
-    previous_output: OutPointSchema,
-});
-
-const ScriptSchema = z.object({
-    code_hash: z.string(),
-    hash_type: z.enum(["type", "data", "data1", "data2"]),
-    args: z.string(),
-});
-
-const CellOutputSchema = z.object({
-    capacity: z.string(), // Hex string shannons
-    lock: ScriptSchema,
-    type: ScriptSchema.optional(),
-});
-
-const BuildTransferTxSchema = z.object({
-    from_address: z.string().startsWith("ckt"),
-    to_address: z.string().startsWith("ckt"),
-    amount_shannons: z.string(),
-    private_key: z.string().startsWith("0x"),
-    inputs: z.array(CellInputSchema).optional(),
-    outputs: z.array(CellOutputSchema).optional(),
-    outputs_data: z.array(z.string().startsWith("0x")).optional(),
-});
-
-type BuildTransferTxInput = z.infer<typeof BuildTransferTxSchema>;
+import { BlockchainTool } from "../../types";
+import { BuildTransferTxSchema } from "./ckb_contracts_tool";
 
 /**
  * Tool: blockchain.ckb.tx_builder.build_transfer_tx
  * Description: Deterministically constructs a raw CKB transaction.
  */
-const BuildTransferTxTool: BlockchainTool<BuildTransferTxInput, any> = {
+export const BuildTransferTxTool: BlockchainTool<z.infer<typeof BuildTransferTxSchema>, any> = {
     name: "blockchain.ckb.tx_builder.build_transfer_tx",
     description: "Constructs a raw CKB transaction deterministically from inputs, outputs, and outputs_data. Does NOT broadcast.",
     schema: BuildTransferTxSchema,
@@ -64,7 +30,3 @@ const BuildTransferTxTool: BlockchainTool<BuildTransferTxInput, any> = {
         };
     },
 };
-
-export const txBuilderTools = [
-    BuildTransferTxTool,
-];
