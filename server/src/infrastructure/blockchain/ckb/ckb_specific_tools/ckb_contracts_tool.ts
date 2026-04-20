@@ -5,6 +5,8 @@ export type GetBlockInput = z.infer<typeof GetBlockSchema>;
 export type GetCapacityByLockInput = z.infer<typeof GetCapacityByLockSchema>;
 export type GetLiveCellsByLockInput = z.infer<typeof GetLiveCellsByLockSchema>;
 export type BuildTransferTxInput = z.infer<typeof BuildTransferTxSchema>;
+export type CreateSignatureInput = z.infer<typeof CreateSignatureSchema>;
+export type VerifySignatureInput = z.infer<typeof VerifySignatureSchema>;
 
 
 export const OutPointSchema = z.object({
@@ -73,6 +75,17 @@ export const GetTransactionSchema = z.object({
 
 export const GetBlockSchema = z.object({
     block_hash: z.string().startsWith("0x").length(66, "Block hash must be a 32-byte hex string starting with 0x"),
+});
+
+export const CreateSignatureSchema = z.object({
+    message: z.string().describe("The plain text message to sign"),
+    privateKey: z.string().describe("The hex private key to sign with (with 0x prefix)")
+});
+
+export const VerifySignatureSchema = z.object({
+    message: z.string().describe("The original plain text message"),
+    signatureJson: z.string().describe("The JSON-encoded signature"),
+    expectedAddress: z.string().describe("The CKB address expected to have signed the message")
 });
 
 export const ckbContractsTools = [];

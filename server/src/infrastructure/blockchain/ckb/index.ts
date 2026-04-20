@@ -8,6 +8,7 @@ import {
     txBuilderTools,
     rpcTools,
     indexerTools,
+    signatureTools,
 } from "./ckb_specific_tools";
 
 import {
@@ -28,7 +29,8 @@ export const ckbSpecificTools: BlockchainTool<any, any>[] = [
     ...getBalanceTools,
     ...transferTools,
     ...walletTools,
-    ...ckbContractsTools
+    ...ckbContractsTools,
+    ...signatureTools
 ];
 
 export const ckbFiberTools: BlockchainTool<any, any>[] = [
