@@ -7,6 +7,8 @@ export type GetLiveCellsByLockInput = z.infer<typeof GetLiveCellsByLockSchema>;
 export type BuildTransferTxInput = z.infer<typeof BuildTransferTxSchema>;
 export type CreateSignatureInput = z.infer<typeof CreateSignatureSchema>;
 export type VerifySignatureInput = z.infer<typeof VerifySignatureSchema>;
+export type GetAddressInput = z.infer<typeof GetAddressSchema>;
+export type GenerateWalletInput = z.infer<typeof GenerateWalletSchema>;
 
 
 export const OutPointSchema = z.object({
@@ -87,5 +89,11 @@ export const VerifySignatureSchema = z.object({
     signatureJson: z.string().describe("The JSON-encoded signature"),
     expectedAddress: z.string().describe("The CKB address expected to have signed the message")
 });
+
+export const GetAddressSchema = z.object({
+    privateKey: z.string().describe("The hex private key to derive the address from")
+});
+
+export const GenerateWalletSchema = z.object({}).describe("Generates a new CKB wallet (private key and address)");
 
 export const ckbContractsTools = [];

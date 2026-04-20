@@ -8,6 +8,8 @@ import { GetLiveCellsByLockTool } from "./ckb_indexer_live_cells";
 import { GetCapacityByLockTool } from "./ckb_indexer_capacity";
 import { CreateSignatureTool } from "./ckb_create_signature";
 import { VerifySignatureTool } from "./ckb_verify_signature";
+import { GenerateWalletTool } from "./ckb_generate_wallet";
+import { GetAddressTool } from "./ckb_get_address";
 
 export * from "./ckb_get_balance";
 export * from "./ckb_transfer";
@@ -19,6 +21,8 @@ export * from "./ckb_indexer_live_cells";
 export * from "./ckb_indexer_capacity";
 export * from "./ckb_create_signature";
 export * from "./ckb_verify_signature";
+export * from "./ckb_generate_wallet";
+export * from "./ckb_get_address";
 
 export const getBalanceTools = [GetBalanceTool];
 export const transferTools = [TransferTool];
@@ -36,5 +40,8 @@ export const signatureTools = [
     CreateSignatureTool,
     VerifySignatureTool
 ];
-export const walletTools = [];
+export const walletTools = [
+    GenerateWalletTool,
+    GetAddressTool
+];
 export const ckbContractsTools = [];
