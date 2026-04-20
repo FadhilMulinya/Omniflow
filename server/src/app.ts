@@ -53,6 +53,16 @@ export async function buildApp() {
 
   app.register(registerRoutes, { prefix: '/api' });
 
+  // Global terminal redirects (handle both /api prefix and root)
+  const terminalApproveRedirect = async (request: any, reply: any) => {
+    const { userCode } = request.query as { userCode: string };
+    const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/api$/, '');
+    const url = `${appUrl}/terminal/approve?userCode=${userCode}`;
+    return reply.redirect(url);
+  };
+  app.get('/api/terminal/approve', terminalApproveRedirect);
+  app.get('/terminal/approve', terminalApproveRedirect);
+
   app.get('/api/health', async () => ({ status: 'ok' }));
 
   return app;

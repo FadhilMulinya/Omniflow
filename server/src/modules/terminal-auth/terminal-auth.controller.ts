@@ -3,36 +3,56 @@ import { TerminalAuthService } from './terminal-auth.service';
 import { standardErrorResponses } from '../../shared/docs';
 
 export async function terminalAuthController(fastify: FastifyInstance) {
-    fastify.post(
-        '/start',
-        {
-            schema: {
-                tags: ['Terminal Auth'],
-                summary: 'Start terminal login',
-                description: 'Initializes a terminal login session. Returns polling codes and login URL.',
-                response: {
-                    200: {
-                        description: 'Session started successfully',
-                        type: 'object',
-                        properties: {
-                            loginUrl: { type: 'string' },
-                            deviceCode: { type: 'string' },
-                            userCode: { type: 'string' },
-                            expiresIn: { type: 'number' },
-                            pollInterval: { type: 'number' },
-                        },
-                    },
-                    ...standardErrorResponses([500]),
-                },
-            },
-        },
-        async (_request, reply) => {
-            try {
-                const session = await TerminalAuthService.startLoginSession();
-                return reply.send(session);
-            } catch (e: any) {
-                return reply.code(500).send({ error: e.message });
-            }
+    // POST /terminal/auth/start - classic start
+    fastify.post('/start', async (request, reply) => {
+        console.log('[TerminalAuth] POST /start hit - body:', request.body);
+        try {
+            const session = await TerminalAuthService.startLoginSession();
+            return reply.send(session);
+        } catch (e: any) {
+            console.error('[TerminalAuth] POST /start error:', e);
+            return reply.code(500).send({ error: e.message });
+        }
+    });
+
+    // GET /terminal/auth/start - for simple terminal clients or if body is an issue
+    fastify.get('/start', async (_request, reply) => {
+        console.log('[TerminalAuth] GET /start hit');
+        try {
+            const session = await TerminalAuthService.startLoginSession();
+            return reply.send(session);
+        } catch (e: any) {
+            console.error('[TerminalAuth] GET /start error:', e);
+            return reply.code(500).send({ error: e.message });
+        }
+    });
+
+    // GET /terminal/auth/approve?userCode=... - redirect browser to frontend
+    fastify.get<{ Querystring: { userCode: string } }>(
+        '/approve',
+        async (request, reply) => {
+            const { userCode } = request.query;
+            console.log('[TerminalAuth] GET /approve hit - userCode:', userCode);
+            const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/api$/, '');
+            const url = `${appUrl}/terminal/approve?userCode=${userCode}`;
+            console.log('[TerminalAuth] Redirecting to:', url);
+            return reply.redirect(url);
+        }
+    );
+
+    // GET version of /start for easy testing/fallback
+    fastify.get('/start', async (_request, reply) => {
+        const session = await TerminalAuthService.startLoginSession();
+        return reply.send(session);
+    });
+
+    // GET /approve?userCode=... redirects to frontend
+    fastify.get<{ Querystring: { userCode: string } }>(
+        '/approve',
+        async (request, reply) => {
+            const { userCode } = request.query;
+            const appUrl = process.env.APP_URL || 'http://localhost:3000';
+            return reply.redirect(`${appUrl}/terminal/approve?userCode=${userCode}`);
         }
     );
 

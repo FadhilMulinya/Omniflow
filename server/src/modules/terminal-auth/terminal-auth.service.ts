@@ -20,7 +20,8 @@ export const TerminalAuthService = {
         });
 
         // The URL the user should open on the frontend
-        const loginUrl = `${ENV.APP_URL || 'http://localhost:3000'}/terminal/approve?userCode=${userCode}`;
+        const apiUrl = process.env.API_URL || 'http://localhost:3001/api';
+        const loginUrl = `${apiUrl}/terminal/auth/approve?userCode=${userCode}`;
 
         return {
             deviceCode,

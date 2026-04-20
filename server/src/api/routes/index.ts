@@ -38,6 +38,4 @@ export async function registerRoutes(app: FastifyInstance) {
     app.register(aiRoutes, { prefix: '/ai' });
     app.register(developerApiKeyController, { prefix: '/developer' });
     app.register(sdkRoutes, { prefix: '/sdk' });
-
-    // The server setup will prefix all these with /api except where bypassed.
 }

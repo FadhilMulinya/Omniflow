@@ -3,11 +3,15 @@ import { exitCommand } from './exit/index.js';
 import { agentCommand } from './agent/index.js';
 import { execCommand } from './exec/index.js';
 import { chatCommand, chatMessageCommand } from './chat/index.js';
+import { whoamiCommand } from './whoami/index.js';
+import { helpCommand } from './help/index.js';
 
 export const COMMAND_REGISTRY: Record<string, (args: string[], context: any) => Promise<React.ReactNode> | React.ReactNode> = {
+    help: helpCommand,
     login: loginCommand,
     exit: exitCommand,
     quit: exitCommand,
+    whoami: whoamiCommand,
     agent: agentCommand,
     exec: execCommand,
     chat: chatCommand,

@@ -73,7 +73,7 @@ export const Repl = ({ session, setSession }: { session: TerminalSession | null,
                     });
                 }
             } else {
-                outputNode = await executeCommand(trimmed, { session, setChatAgent });
+                outputNode = await executeCommand(trimmed, { session, setSession, setChatAgent });
             }
 
             setHistory(prev => [...prev, {

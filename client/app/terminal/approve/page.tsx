@@ -48,7 +48,7 @@ export default function TerminalApprovePage() {
         setStatus('loading');
 
         try {
-            await apiClient.post('/api/terminal/auth/approve', {
+            await apiClient.post('/terminal/auth/approve', {
                 userCode,
                 workspaceId: activeWorkspace?._id || workspaces[0]?._id
             });
