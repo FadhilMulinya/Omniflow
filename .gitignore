@@ -7,8 +7,6 @@
 **/.next/
 **/out/
 
-CLAUDE.md
-
 
 # Production
 **/build
@@ -53,26 +51,13 @@ Archive.zip
 tmp/
 temp/
 
-# Product proposal folder
-ProjectProposal/
 
 # python
 __pycache__/
 *.pyc
 
-# local tools
-.claude/
-.marscode/
-
-# Playwright browser automation 
-**/.playwright-cli/
-*.playwright-cli/
 
 
-/client/*.png
-/client/*.jpg
-/*.png
-/*.jpg
 
 # env
 .env
