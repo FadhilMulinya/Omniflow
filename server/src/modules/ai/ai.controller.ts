@@ -4,23 +4,38 @@ import { AiService } from './ai.service';
 import { CompletionRequest } from '../../infrastructure/ai/types';
 import { standardErrorResponses } from '../../shared/docs';
 
+/**
+ * AiRoutes: Internal utility endpoints for direct AI model interaction, 
+ * bypassing agent orchestration for testing or specialized tasks.
+ */
 export const aiRoutes: FastifyPluginAsync = async (fastify) => {
+
+    // POST /ai/test-connection - Provider validation
     fastify.post<{ Body: { provider: string; apiKey: string } }>('/test-connection', {
         schema: {
-            tags: ['AI'],
+            tags: ['AI Primitives'],
             summary: 'Test AI provider connection',
-            description: 'Tests connectivity and authentication with the specified AI provider using the provided API key.',
+            description: 'Validates API keys and connectivity for a specific model provider (OpenAI, Gemini, Ollama).',
             body: {
                 type: 'object',
                 required: ['provider', 'apiKey'],
                 properties: {
-                    provider: { type: 'string', description: 'AI provider name (e.g. openai, gemini, ollama)' },
-                    apiKey: { type: 'string' },
+                    provider: { type: 'string', enum: ['openai', 'gemini', 'ollama'], description: 'Name of the AI backend' },
+                    apiKey: { type: 'string', description: 'Provider-specific secret key' },
                 },
             },
             response: {
-                200: { description: 'Connection result', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([500]),
+                200: {
+                    description: 'Connectivity report',
+                    type: 'object',
+                    required: ['success'],
+                    properties: {
+                        success: { type: 'boolean' },
+                        message: { type: 'string' },
+                        models: { type: 'array', items: { type: 'string' } },
+                    },
+                },
+                ...standardErrorResponses([400, 500]),
             },
         },
     }, async (request, reply) => {
@@ -28,22 +43,42 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         catch (error: any) { return reply.code(error.code || 500).send({ error: error.message }); }
     });
 
+    // POST /ai/complete - Synchronous model call
     fastify.post<{ Body: CompletionRequest }>('/complete', {
         schema: {
-            tags: ['AI'],
+            tags: ['AI Primitives'],
             summary: 'AI completion',
-            description: 'Generates an AI completion using the configured provider. Pass an optional `X-AI-API-Key` header to override stored keys.',
+            description: 'Generates a standard chat completion. Pass `X-AI-API-Key` to override workspace defaults.',
             body: {
                 type: 'object',
+                required: ['messages'],
                 properties: {
-                    messages: { type: 'array', items: { type: 'object', additionalProperties: true } },
-                    model: { type: 'string' },
-                    temperature: { type: 'number' },
+                    messages: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            required: ['role', 'content'],
+                            properties: {
+                                role: { type: 'string', enum: ['system', 'user', 'assistant'] },
+                                content: { type: 'string' },
+                            },
+                        },
+                    },
+                    model: { type: 'string', description: 'Specific model string (e.g. gpt-4, gemini-pro)' },
+                    temperature: { type: 'number', minimum: 0, maximum: 2 },
                 },
             },
             response: {
-                200: { description: 'Completion result', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([500]),
+                200: {
+                    description: 'Model output',
+                    type: 'object',
+                    required: ['content'],
+                    properties: {
+                        content: { type: 'string' },
+                        usage: { type: 'object', additionalProperties: true },
+                    },
+                },
+                ...standardErrorResponses([400, 401, 500]),
             },
         },
     }, async (request, reply) => {
@@ -52,22 +87,28 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         catch (error: any) { return reply.code(500).send({ error: error.message }); }
     });
 
+    // POST /ai/stream - SSE model call
     fastify.post<{ Body: CompletionRequest & { agentId?: string } }>('/stream', {
         schema: {
-            tags: ['AI'],
+            tags: ['AI Primitives'],
             summary: 'Streaming AI completion (SSE)',
-            description: 'Generates a streaming AI completion via Server-Sent Events. Pass an optional `X-AI-API-Key` header to override stored keys.',
+            description: 'Establishes a real-time event stream for token-by-token processing.',
             body: {
                 type: 'object',
+                required: ['messages'],
                 properties: {
                     messages: { type: 'array', items: { type: 'object', additionalProperties: true } },
                     model: { type: 'string' },
-                    agentId: { type: 'string' },
+                    agentId: { type: 'string', description: 'Optional agent context for attribution' },
                 },
             },
             response: {
-                200: { description: 'SSE stream (text/event-stream)', type: 'string' },
-                ...standardErrorResponses([500]),
+                200: {
+                    description: 'Token event stream',
+                    type: 'string',
+                    content: { 'text/event-stream': { schema: { type: 'string' } } },
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request, reply) => {

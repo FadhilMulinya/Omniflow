@@ -1,48 +1,64 @@
 import { FastifyInstance } from 'fastify';
 import { DeveloperApiKeyService } from './developer-api-key.service';
 import {
-    cookieAuthSecurity, keyIdParamSchema, apiKeyRecordSchema, standardErrorResponses,
+    cookieAuthSecurity,
+    keyIdParamSchema,
+    apiKeyRecordSchema,
+    standardErrorResponses,
 } from '../../shared/docs';
 
+/**
+ * DeveloperApiKeyController: Endpoints for managing workspace API keys used by
+ * external SDKs or automated integrations.
+ */
 export async function developerApiKeyController(fastify: FastifyInstance) {
+
+    // GET /keys - List prefix and metadata
     fastify.get('/keys', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Developer API Keys'],
             summary: 'List developer API keys',
-            description: 'Returns all developer API keys for the authenticated user\'s workspace. Secrets are never returned — only the prefix and metadata.',
+            description: 'Returns all developer API keys for the authenticated user\'s workspace. Note: Full secret keys are never returned after creation for security.',
             security: [cookieAuthSecurity],
             response: {
-                200: { description: 'API keys (no secrets)', type: 'array', items: apiKeyRecordSchema },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'List of API key metadata',
+                    type: 'array',
+                    items: apiKeyRecordSchema,
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request) => DeveloperApiKeyService.listKeys(request.user.id));
 
+    // POST /keys - Create a new key
     fastify.post<{ Body: { name: string } }>(
         '/keys', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Developer API Keys'],
             summary: 'Create a developer API key',
-            description: 'Generates a new developer API key. **The full secret is only shown once at creation time** — store it securely.',
+            description: 'Generates a new developer API key. **Warning**: The full secret is ONLY shown in this response. It cannot be retrieved later.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
+                required: ['name'],
                 properties: {
-                    name: { type: 'string', description: 'Friendly label for this key', examples: ['Production SDK Key'] },
+                    name: { type: 'string', description: 'A descriptive label for this key', examples: ['Production Bot Key'] },
                 },
             },
             response: {
                 201: {
-                    description: 'Key created — secret shown once',
+                    description: 'API key successfully created',
                     type: 'object',
+                    required: ['key', 'record'],
                     properties: {
-                        key: { type: 'string', description: 'Full API key — store immediately, not persisted' },
+                        key: { type: 'string', description: 'The absolute full API key string (Keep it secret!)' },
                         record: apiKeyRecordSchema,
                     },
                 },
-                ...standardErrorResponses([401, 500]),
+                ...standardErrorResponses([400, 401, 500]),
             },
         },
     },
@@ -54,17 +70,24 @@ export async function developerApiKeyController(fastify: FastifyInstance) {
         }
     );
 
+    // DELETE /keys/:id - Revoke access
     fastify.delete<{ Params: { id: string } }>(
         '/keys/:id', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Developer API Keys'],
             summary: 'Revoke a developer API key',
-            description: 'Permanently revokes and deletes the specified API key. Any SDK clients using this key will immediately lose access.',
+            description: 'Deactivates and deletes an API key. Any integrations using this key will immediately return 401 Unauthorized.',
             security: [cookieAuthSecurity],
             params: keyIdParamSchema(),
             response: {
-                200: { description: 'Key revoked', type: 'object', properties: { success: { type: 'boolean' } } },
+                200: {
+                    description: 'API key successfully revoked',
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                    },
+                },
                 ...standardErrorResponses([401, 403, 404, 500]),
             },
         },

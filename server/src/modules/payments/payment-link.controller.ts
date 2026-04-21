@@ -1,7 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 import { PaymentLinkService } from './payment-link.service';
 import { PaymentVerificationService } from './payment-verification.service';
-import { cookieAuthSecurity, standardErrorResponses } from '../../shared/docs';
+import {
+    cookieAuthSecurity,
+    standardErrorResponses,
+    paymentLinkSchema,
+} from '../../shared/docs';
 
 /**
  * PaymentLinkController: REST API endpoints for managing and verifying payment links.
@@ -15,25 +19,29 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
         schema: {
             tags: ['Payments'],
             summary: 'Create a payment link',
+            description: 'Generates a new multi-chain payment link. Requires a workspace context via `x-workspace-id` header.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
                 required: ['chain', 'recipientAddress', 'signerAddress', 'amount', 'asset'],
                 properties: {
-                    chain: { type: 'string' },
+                    chain: { type: 'string', description: 'The blockchain network (e.g., ckb)' },
                     recipientAddress: { type: 'string' },
                     signerAddress: { type: 'string' },
                     amount: { type: 'string' },
                     asset: { type: 'string' },
                     memo: { type: 'string' },
-                    reference: { type: 'string' },
+                    reference: { type: 'string', description: 'Internal reference ID for tracking' },
                     expiresAt: { type: 'string', format: 'date-time' },
                     metadata: { type: 'object', additionalProperties: { type: 'string' } }
                 }
             },
             response: {
-                201: { type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401, 403, 500])
+                201: {
+                    description: 'Payment link created',
+                    ...paymentLinkSchema,
+                },
+                ...standardErrorResponses([400, 401, 403, 500])
             }
         }
     }, async (request, reply) => {
@@ -61,10 +69,15 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
         schema: {
             tags: ['Payments'],
             summary: 'List payment links',
+            description: 'Returns all payment links for the current workspace.',
             security: [cookieAuthSecurity],
             response: {
-                200: { type: 'array', items: { type: 'object', additionalProperties: true } },
-                ...standardErrorResponses([401, 403, 500])
+                200: {
+                    description: 'List of payment links',
+                    type: 'array',
+                    items: paymentLinkSchema,
+                },
+                ...standardErrorResponses([400, 401, 403, 500])
             }
         }
     }, async (request, reply) => {
@@ -81,13 +94,18 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
         schema: {
             tags: ['Payments'],
             summary: 'Get payment link details',
+            description: 'Returns the full details and current status of a specific payment link.',
             security: [cookieAuthSecurity],
             params: {
                 type: 'object',
+                required: ['id'],
                 properties: { id: { type: 'string' } }
             },
             response: {
-                200: { type: 'object', additionalProperties: true },
+                200: {
+                    description: 'Payment link details',
+                    ...paymentLinkSchema,
+                },
                 ...standardErrorResponses([401, 404, 500])
             }
         }
@@ -104,19 +122,31 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
         schema: {
             tags: ['Payments'],
             summary: 'Verify on-chain payment',
+            description: 'Checks the blockchain for the provided transaction hash and matches it against the payment link requirements.',
             security: [cookieAuthSecurity],
             params: {
                 type: 'object',
+                required: ['id'],
                 properties: { id: { type: 'string' } }
             },
             body: {
                 type: 'object',
                 required: ['txHash'],
-                properties: { txHash: { type: 'string' } }
+                properties: {
+                    txHash: { type: 'string', description: 'The on-chain transaction hash to verify' }
+                }
             },
             response: {
-                200: { type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } },
-                ...standardErrorResponses([401, 400, 404, 500])
+                200: {
+                    description: 'Verification result',
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                        message: { type: 'string' },
+                        verificationData: { type: 'object', additionalProperties: true },
+                    },
+                },
+                ...standardErrorResponses([400, 401, 404, 500])
             }
         }
     }, async (request, reply) => {
@@ -132,13 +162,18 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
         schema: {
             tags: ['Payments'],
             summary: 'Cancel payment link',
+            description: 'Immediately deactivates the payment link, preventing further verification attempts.',
             security: [cookieAuthSecurity],
             params: {
                 type: 'object',
+                required: ['id'],
                 properties: { id: { type: 'string' } }
             },
             response: {
-                200: { type: 'object', additionalProperties: true },
+                200: {
+                    description: 'Payment link cancelled',
+                    ...paymentLinkSchema,
+                },
                 ...standardErrorResponses([401, 404, 500])
             }
         }

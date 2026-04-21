@@ -1,28 +1,52 @@
 import { FastifyInstance } from 'fastify';
 import { TerminalAuthService } from './terminal-auth.service';
-import { standardErrorResponses } from '../../shared/docs';
+import {
+    standardErrorResponses,
+    terminalSessionSchema,
+    cookieAuthSecurity,
+} from '../../shared/docs';
 
+/**
+ * TerminalAuthController: Endpoints for terminal CLI device-code authentication.
+ */
 export async function terminalAuthController(fastify: FastifyInstance) {
+
+    const startSessionSchema = {
+        tags: ['Terminal Auth'],
+        summary: 'Start a terminal login session',
+        description: 'Generates a device code and a user code. The terminal CLI uses the device code to poll for status, while the user visits the login URL to approve.',
+        response: {
+            200: {
+                description: 'Session started',
+                type: 'object',
+                properties: {
+                    deviceCode: { type: 'string' },
+                    userCode: { type: 'string' },
+                    loginUrl: { type: 'string' },
+                    expiresIn: { type: 'number' },
+                    pollInterval: { type: 'number' },
+                },
+            },
+            ...standardErrorResponses([500]),
+        },
+    };
+
     // POST /terminal/auth/start - classic start
-    fastify.post('/start', async (request, reply) => {
-        console.log('[TerminalAuth] POST /start hit - body:', request.body);
+    fastify.post('/start', { schema: startSessionSchema }, async (_request, reply) => {
         try {
             const session = await TerminalAuthService.startLoginSession();
             return reply.send(session);
         } catch (e: any) {
-            console.error('[TerminalAuth] POST /start error:', e);
             return reply.code(500).send({ error: e.message });
         }
     });
 
-    // GET /terminal/auth/start - for simple terminal clients or if body is an issue
-    fastify.get('/start', async (_request, reply) => {
-        console.log('[TerminalAuth] GET /start hit');
+    // GET /terminal/auth/start - fallback for simple terminal clients
+    fastify.get('/start', { schema: startSessionSchema }, async (_request, reply) => {
         try {
             const session = await TerminalAuthService.startLoginSession();
             return reply.send(session);
         } catch (e: any) {
-            console.error('[TerminalAuth] GET /start error:', e);
             return reply.code(500).send({ error: e.message });
         }
     });
@@ -30,29 +54,29 @@ export async function terminalAuthController(fastify: FastifyInstance) {
     // GET /terminal/auth/approve?userCode=... - redirect browser to frontend
     fastify.get<{ Querystring: { userCode: string } }>(
         '/approve',
+        {
+            schema: {
+                tags: ['Terminal Auth'],
+                summary: 'Redirect to approval page',
+                description: 'Used as a convenience redirect. Takes the user directly to the frontend authorization screen with the provided userCode.',
+                querystring: {
+                    type: 'object',
+                    required: ['userCode'],
+                    properties: {
+                        userCode: { type: 'string', description: 'The 8-character user code shown in the terminal' },
+                    },
+                },
+                response: {
+                    302: { description: 'Redirect to frontend' },
+                },
+            },
+        },
         async (request, reply) => {
             const { userCode } = request.query;
-            console.log('[TerminalAuth] GET /approve hit - userCode:', userCode);
             const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/api$/, '');
             const url = `${appUrl}/terminal/approve?userCode=${userCode}`;
-            console.log('[TerminalAuth] Redirecting to:', url);
             return reply.redirect(url);
-        }
-    );
-
-    // GET version of /start for easy testing/fallback
-    fastify.get('/start', async (_request, reply) => {
-        const session = await TerminalAuthService.startLoginSession();
-        return reply.send(session);
-    });
-
-    // GET /approve?userCode=... redirects to frontend
-    fastify.get<{ Querystring: { userCode: string } }>(
-        '/approve',
-        async (request, reply) => {
-            const { userCode } = request.query;
-            const appUrl = process.env.APP_URL || 'http://localhost:3000';
-            return reply.redirect(`${appUrl}/terminal/approve?userCode=${userCode}`);
+            
         }
     );
 
@@ -61,8 +85,8 @@ export async function terminalAuthController(fastify: FastifyInstance) {
         {
             schema: {
                 tags: ['Terminal Auth'],
-                summary: 'Poll terminal login session',
-                description: 'Used by the terminal to poll session status. Needs deviceCode.',
+                summary: 'Poll terminal login status',
+                description: 'The terminal CLI calls this until the user approves the session. If approved, it returns a high-entropy access token.',
                 body: {
                     type: 'object',
                     required: ['deviceCode'],
@@ -71,6 +95,16 @@ export async function terminalAuthController(fastify: FastifyInstance) {
                     },
                 },
                 response: {
+                    200: {
+                        description: 'Session status',
+                        type: 'object',
+                        properties: {
+                            status: { type: 'string', enum: ['pending', 'approved', 'denied', 'expired'] },
+                            accessToken: { type: 'string', description: 'Only present once when status is approved' },
+                            userId: { type: 'string' },
+                            workspaceId: { type: 'string' },
+                        },
+                    },
                     ...standardErrorResponses([400, 500]),
                 },
             },
@@ -93,13 +127,17 @@ export async function terminalAuthController(fastify: FastifyInstance) {
         {
             schema: {
                 tags: ['Terminal Auth'],
-                summary: 'Terminal logout',
+                summary: 'Terminal logout (revoke by device code)',
+                description: 'Called by the terminal CLI to immediately terminate and delete the current session by its device code.',
                 body: {
                     type: 'object',
                     required: ['deviceCode'],
                     properties: {
                         deviceCode: { type: 'string' },
                     },
+                },
+                response: {
+                    200: { description: 'Logged out', type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } },
                 },
             },
         },
@@ -119,8 +157,9 @@ export async function terminalAuthController(fastify: FastifyInstance) {
             onRequest: [fastify.authenticate],
             schema: {
                 tags: ['Terminal Auth'],
-                summary: 'Approve terminal session',
-                description: 'Called by the web frontend once the user authorizes the terminal session.',
+                summary: 'Authorize terminal session',
+                description: 'Called by the web dashboard when the user clicks "Approve". Links the session to the user and workspace.',
+                security: [cookieAuthSecurity],
                 body: {
                     type: 'object',
                     required: ['userCode', 'workspaceId'],
@@ -128,6 +167,10 @@ export async function terminalAuthController(fastify: FastifyInstance) {
                         userCode: { type: 'string' },
                         workspaceId: { type: 'string' }
                     }
+                },
+                response: {
+                    200: { description: 'Authorization successful', type: 'object', properties: { success: { type: 'boolean' } } },
+                    ...standardErrorResponses([400, 401, 500]),
                 }
             }
         },
@@ -151,7 +194,16 @@ export async function terminalAuthController(fastify: FastifyInstance) {
             schema: {
                 tags: ['Terminal Auth'],
                 summary: 'List active terminal sessions',
+                description: 'Returns all terminal sessions associated with the authenticated user for management and revocation.',
+                security: [cookieAuthSecurity],
                 response: {
+                    200: {
+                        description: 'List of sessions',
+                        type: 'object',
+                        properties: {
+                            sessions: { type: 'array', items: terminalSessionSchema },
+                        },
+                    },
                     ...standardErrorResponses([401, 500])
                 }
             }
@@ -173,7 +225,9 @@ export async function terminalAuthController(fastify: FastifyInstance) {
             onRequest: [fastify.authenticate],
             schema: {
                 tags: ['Terminal Auth'],
-                summary: 'Revoke a terminal session',
+                summary: 'Revoke a specific session',
+                description: 'Instantly deactivates a terminal session by its internal ID.',
+                security: [cookieAuthSecurity],
                 params: {
                     type: 'object',
                     required: ['id'],
@@ -182,7 +236,8 @@ export async function terminalAuthController(fastify: FastifyInstance) {
                     }
                 },
                 response: {
-                    ...standardErrorResponses([400, 401, 500])
+                    200: { description: 'Revocation successful', type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } },
+                    ...standardErrorResponses([400, 401, 403, 500])
                 }
             }
         },

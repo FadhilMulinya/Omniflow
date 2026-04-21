@@ -3,22 +3,32 @@ import { Readable } from 'stream';
 import { executionEmitter } from './execution.events';
 import { OnhandlSDKInternal } from '../../sdk/onhandl-sdk-internal';
 import {
-    cookieAuthSecurity, executionIdParamSchema,
-    executionSchema, standardErrorResponses,
+    cookieAuthSecurity,
+    executionIdParamSchema,
+    executionSchema,
+    standardErrorResponses,
 } from '../../shared/docs';
 
+/**
+ * ExecutionController: Endpoints for monitoring and controlling agent runtime
+ * executions.
+ */
 export async function executionController(fastify: FastifyInstance) {
 
+    // GET /executions/:id - Fetch single record
     fastify.get<{ Params: { id: string } }>('/:id', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Executions'],
             summary: 'Get execution by ID',
-            description: 'Returns the details of a specific execution. The authenticated user must own the execution or its associated workspace.',
+            description: 'Returns the full state, logs, and status of a specific agent execution.',
             security: [cookieAuthSecurity],
             params: executionIdParamSchema(),
             response: {
-                200: { description: 'Execution details', ...executionSchema },
+                200: {
+                    description: 'Execution details',
+                    ...executionSchema,
+                },
                 ...standardErrorResponses([401, 403, 404, 500]),
             },
         },
@@ -28,13 +38,20 @@ export async function executionController(fastify: FastifyInstance) {
         } catch (err: any) { return reply.code(err.code || 500).send({ error: err.message }); }
     });
 
+    // GET /executions/:id/stream - Real-time SSE logs
     fastify.get<{ Params: { id: string } }>('/:id/stream', {
         schema: {
             tags: ['Executions'],
             summary: 'Stream execution events (SSE)',
-            description: 'Opens a Server-Sent Events stream for real-time execution progress. Emits node-level events as the agent runs. Closes when execution completes or fails.',
+            description: 'Subscribes to real-time events for an active execution. Emits JSON data for node starts, finishes, and final results.',
             params: executionIdParamSchema(),
-            response: { 200: { description: 'SSE stream (text/event-stream)', type: 'string' } },
+            response: {
+                200: {
+                    description: 'Real-time event stream',
+                    type: 'string',
+                    content: { 'text/event-stream': { schema: { type: 'string' } } },
+                },
+            },
         },
     }, (request, reply) => {
         const { id } = request.params;
@@ -56,42 +73,53 @@ export async function executionController(fastify: FastifyInstance) {
             .header('Access-Control-Allow-Credentials', 'true').send(stream);
     });
 
+    // GET /executions - List all user/agent executions
     fastify.get<{ Querystring: { agentId: string } }>('/', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Executions'],
             summary: 'List executions',
-            description: 'Returns all executions for the authenticated user, optionally filtered by agent ID.',
+            description: 'Returns a history of agent executions. Use `agentId` query parameter to filter by a specific agent.',
             security: [cookieAuthSecurity],
             querystring: {
                 type: 'object',
-                properties: { agentId: { type: 'string', description: 'Filter by agent ID' } },
+                properties: {
+                    agentId: { type: 'string', description: 'Filter history by specific agent ID' },
+                },
             },
             response: {
-                200: { description: 'Execution list', type: 'array', items: executionSchema },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'Execution history',
+                    type: 'array',
+                    items: executionSchema,
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request) => OnhandlSDKInternal.listExecutions(request.query.agentId, { userId: request.user.id, type: 'user' }));
 
+    // POST /executions - Start a new one
     fastify.post<{ Body: { agentId: string; initialState?: any } }>(
         '/', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Executions'],
-            summary: 'Start a new execution',
-            description: 'Creates and queues a new execution for the given agent. Token costs may apply.',
+            summary: 'Create a new execution',
+            description: 'Queues a new execution for the specified agent. Returns the placeholder execution record.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
                 required: ['agentId'],
                 properties: {
-                    agentId: { type: 'string', description: 'Agent ID to execute' },
-                    initialState: { type: 'object', additionalProperties: true, description: 'Optional initial flow state' },
+                    agentId: { type: 'string', description: 'ID of the agent to run' },
+                    initialState: { type: 'object', additionalProperties: true, description: 'Optional seed data for the agent' },
                 },
             },
             response: {
-                201: { description: 'Execution created', ...executionSchema },
+                201: {
+                    description: 'Execution successfully initialized',
+                    ...executionSchema,
+                },
                 ...standardErrorResponses([401, 403, 500]),
             },
         },
@@ -104,25 +132,36 @@ export async function executionController(fastify: FastifyInstance) {
         }
     );
 
+    // POST /executions/simulate/node - Isolate node testing
     fastify.post<{ Body: any }>('/simulate/node', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Executions'],
             summary: 'Simulate a single node',
-            description: 'Executes a single node in isolation without running a full flow. Useful for debugging individual agent nodes.',
+            description: 'Developer endpoint to test one node in isolation without running the whole flow graph.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
+                required: ['node', 'nodeType', 'inputValues'],
                 properties: {
-                    node: { type: 'object', additionalProperties: true },
-                    nodeType: { type: 'string' },
-                    inputValues: { type: 'object', additionalProperties: true },
-                    agentId: { type: 'string' },
+                    node: { type: 'object', additionalProperties: true, description: 'The node configuration object' },
+                    nodeType: { type: 'string', description: 'Type of node (e.g., tool, chain)' },
+                    inputValues: { type: 'object', additionalProperties: true, description: 'Mocked input data context' },
+                    agentId: { type: 'string', description: 'Agent context' },
                 },
             },
             response: {
-                200: { description: 'Simulation output', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401, 500]),
+                200: {
+                    description: 'Simulation output result',
+                    type: 'object',
+                    required: ['success', 'output'],
+                    properties: {
+                        success: { type: 'boolean' },
+                        output: { type: 'object', additionalProperties: true },
+                        logs: { type: 'array', items: { type: 'string' } },
+                    },
+                },
+                ...standardErrorResponses([400, 401, 500]),
             },
         },
     }, async (request, reply) => {
@@ -131,16 +170,23 @@ export async function executionController(fastify: FastifyInstance) {
         } catch (err: any) { return reply.code(err.code || 500).send({ error: err.message }); }
     });
 
+    // POST /executions/:id/run - Trigger engine
     fastify.post<{ Params: { id: string } }>('/:id/run', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Executions'],
-            summary: 'Run an execution',
-            description: 'Triggers the orchestration engine to process a previously created execution.',
+            summary: 'Start orchestration engine',
+            description: 'Moves a "pending" execution into "running" status and begins processing the flow.',
             security: [cookieAuthSecurity],
             params: executionIdParamSchema(),
             response: {
-                200: { description: 'Execution started', type: 'object', properties: { message: { type: 'string' } } },
+                200: {
+                    description: 'Execution triggered',
+                    type: 'object',
+                    properties: {
+                        message: { type: 'string' },
+                    },
+                },
                 ...standardErrorResponses([401, 403, 404, 500]),
             },
         },

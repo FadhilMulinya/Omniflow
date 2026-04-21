@@ -1,27 +1,40 @@
 import { FastifyInstance } from 'fastify';
 import { ReviewService as ReviewsService } from './reviews.service';
-import { cookieAuthSecurity, idParamSchema, reviewSchema, standardErrorResponses } from '../../shared/docs';
+import {
+    cookieAuthSecurity,
+    idParamSchema,
+    reviewSchema,
+    standardErrorResponses,
+} from '../../shared/docs';
 
+/**
+ * ReviewsController: Community feedback and ratings for marketplace agents.
+ */
 export async function reviewsController(fastify: FastifyInstance) {
+
+    // POST /reviews/:agentId - Submit Feedback
     fastify.post<{ Params: { agentId: string }; Body: { rating: number; comment?: string } }>(
         '/reviews/:agentId', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Reviews'],
             summary: 'Submit a review',
-            description: 'Submits a review for a marketplace agent. Requires the user to have purchased or used the agent.',
+            description: 'Submit technical feedback or user experience rating for an agent. Limited to one review per user per agent version.',
             security: [cookieAuthSecurity],
-            params: idParamSchema('Agent ID'),
+            params: idParamSchema('Marketplace Agent ID'),
             body: {
                 type: 'object',
                 required: ['rating'],
                 properties: {
-                    rating: { type: 'number', minimum: 1, maximum: 5 },
-                    comment: { type: 'string' },
+                    rating: { type: 'number', minimum: 1, maximum: 5, description: 'Star rating from 1 to 5' },
+                    comment: { type: 'string', description: 'Optional detailed feedback' },
                 },
             },
             response: {
-                201: { description: 'Review created', ...reviewSchema },
+                201: {
+                    description: 'Review submitted successfully',
+                    ...reviewSchema,
+                },
                 ...standardErrorResponses([400, 401, 403, 500]),
             },
         },
@@ -34,15 +47,20 @@ export async function reviewsController(fastify: FastifyInstance) {
         }
     );
 
+    // GET /reviews/:agentId - View agent feedback
     fastify.get<{ Params: { agentId: string } }>('/reviews/:agentId', {
         schema: {
             tags: ['Reviews'],
             summary: 'List reviews for an agent',
-            description: 'Returns all visible reviews for the specified marketplace agent.',
-            params: idParamSchema('Agent ID'),
+            description: 'Returns public reviews and ratings for a given marketplace agent.',
+            params: idParamSchema('Marketplace Agent ID'),
             response: {
-                200: { description: 'Reviews list', type: 'array', items: reviewSchema },
-                ...standardErrorResponses([404]),
+                200: {
+                    description: 'List of public reviews',
+                    type: 'array',
+                    items: reviewSchema,
+                },
+                ...standardErrorResponses([404, 500]),
             },
         },
     }, async (request, reply) => {
@@ -50,16 +68,21 @@ export async function reviewsController(fastify: FastifyInstance) {
         catch (err: any) { return reply.code(err.code || 500).send({ error: err.message }); }
     });
 
+    // GET /reviews/mine - Personal history
     fastify.get('/reviews/mine', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Reviews'],
             summary: 'Get my reviews',
-            description: 'Returns all reviews submitted by the authenticated user.',
+            description: 'Returns all reviews submitted by the current user across all marketplace agents.',
             security: [cookieAuthSecurity],
             response: {
-                200: { description: 'My reviews', type: 'array', items: reviewSchema },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'User\'s review history',
+                    type: 'array',
+                    items: reviewSchema,
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request, reply) => {

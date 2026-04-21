@@ -3,22 +3,29 @@ import { standardErrorResponses } from '../../shared/docs';
 import { chatWithBot, ChatHistoryItem } from './bot.service';
 import { telegramService, TelegramService } from '../../infrastructure/messaging/telegram.service';
 
+/**
+ * BotsController: Public assistance and multi-platform bot integration endpoints.
+ */
 export async function botsController(fastify: FastifyInstance) {
+
+    // POST /chat - Main AI Assistant interaction
     fastify.post<{ Body: { message: string; history?: Array<{ role: string; content: string }> } }>(
         '/chat', {
         schema: {
             tags: ['Bots'],
             summary: 'Chat with the Onhandl Assistant',
-            description: 'Sends a message to the Onhandl AI support assistant. Pass conversation history for context-aware responses.',
+            description: 'Sends a message to the Onhandl AI support assistant. Provide short-term history for conversational continuity.',
             body: {
                 type: 'object',
                 required: ['message'],
                 properties: {
-                    message: { type: 'string', minLength: 1 },
+                    message: { type: 'string', minLength: 1, description: 'User message text' },
                     history: {
                         type: 'array',
+                        description: 'Optional previous messages in this session',
                         items: {
                             type: 'object',
+                            required: ['role', 'content'],
                             properties: {
                                 role: { type: 'string', enum: ['user', 'assistant'] },
                                 content: { type: 'string' },
@@ -28,7 +35,14 @@ export async function botsController(fastify: FastifyInstance) {
                 },
             },
             response: {
-                200: { description: 'Assistant reply', type: 'object', properties: { reply: { type: 'string' } } },
+                200: {
+                    description: 'Assistant reply text',
+                    type: 'object',
+                    required: ['reply'],
+                    properties: {
+                        reply: { type: 'string' },
+                    },
+                },
                 ...standardErrorResponses([400, 500]),
             },
         },
@@ -43,13 +57,18 @@ export async function botsController(fastify: FastifyInstance) {
         }
     );
 
+    // POST /telegram/webhook - Inbound messaging
     fastify.post<{ Body: { update_id: number; message?: any;[key: string]: any } }>('/telegram/webhook', {
         schema: {
             tags: ['Bots'],
             summary: 'Telegram bot webhook',
-            description: 'Receives incoming Telegram updates. Called by Telegram when a user sends a message to the configured bot.',
+            description: 'Processes real-time updates from the Telegram Bot API. Should only be called by Telegram servers.',
             response: {
-                200: { description: 'Update processed', type: 'object', properties: { status: { type: 'string' } } },
+                200: {
+                    description: 'Update acknowledged',
+                    type: 'object',
+                    properties: { status: { type: 'string' } },
+                },
                 ...standardErrorResponses([400, 500]),
             },
         },
@@ -64,32 +83,43 @@ export async function botsController(fastify: FastifyInstance) {
         }
     });
 
+    // GET /telegram/webhook - Webhook setup check
     fastify.get('/telegram/webhook', {
         schema: {
             tags: ['Bots'],
             summary: 'Telegram webhook verification',
-            description: 'Health check used during Telegram webhook setup to verify server availability.',
-            response: { 200: { description: 'Operational', type: 'string' } },
+            description: 'Utility route to verify our server is reachable for Telegram webhook registration.',
+            response: {
+                200: { description: 'Server reachable', type: 'string' },
+            },
         },
     }, async (_request, reply) => reply.send('Verification endpoint operational'));
 
+    // POST /telegram/test-connection - User-facing verification
     fastify.post<{ Body: { botToken: string; chatId: string; botName?: string } }>(
         '/telegram/test-connection', {
         schema: {
             tags: ['Bots'],
             summary: 'Test Telegram bot connection',
-            description: 'Sends a test message to the specified Telegram chat using the provided bot token to verify connectivity.',
+            description: 'Validates a user-provided bot token by attempting to send a greeting message.',
             body: {
                 type: 'object',
                 required: ['botToken', 'chatId'],
                 properties: {
-                    botToken: { type: 'string', description: 'Telegram bot token' },
-                    chatId: { type: 'string', description: 'Telegram chat ID' },
-                    botName: { type: 'string' },
+                    botToken: { type: 'string', description: 'BotFather token' },
+                    chatId: { type: 'string', description: 'Chat ID to receive test message' },
+                    botName: { type: 'string', description: 'Optional label for the bot' },
                 },
             },
             response: {
-                200: { description: 'Connection successful', type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' } } },
+                200: {
+                    description: 'Connection test passed',
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                        message: { type: 'string' },
+                    },
+                },
                 ...standardErrorResponses([400, 500]),
             },
         },

@@ -23,3 +23,9 @@ export const executionIdParamSchema = () => idParamSchema('Execution ID');
 /** Developer API key record id param. */
 export const keyIdParamSchema = () => idParamSchema('API key record ID');
 
+/** Workspace id param. */
+export const workspaceIdParamSchema = () => idParamSchema('Workspace ID');
+
+/** User id param. */
+export const userIdParamSchema = () => idParamSchema('User ID');
+

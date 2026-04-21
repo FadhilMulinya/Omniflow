@@ -1,7 +1,15 @@
 import { FastifyInstance } from 'fastify';
 import { UserService } from './user.service';
-import { cookieAuthSecurity, standardErrorResponses } from '../../shared/docs';
+import {
+    cookieAuthSecurity,
+    standardErrorResponses,
+    notificationSettingsSchema,
+} from '../../shared/docs';
 
+/**
+ * UserController: Endpoints for user-specific settings like notifications,
+ * payment methods, and AI provider API keys.
+ */
 export async function userController(fastify: FastifyInstance) {
     // ── Notifications ────────────────────────────────────────────────────────
     fastify.get('/notifications', {
@@ -14,14 +22,9 @@ export async function userController(fastify: FastifyInstance) {
             response: {
                 200: {
                     description: 'Notification preferences',
-                    type: 'object',
-                    properties: {
-                        telegram: { type: 'boolean' },
-                        dailySummaries: { type: 'boolean' },
-                        email: { type: 'boolean' },
-                    },
+                    ...notificationSettingsSchema,
                 },
-                ...standardErrorResponses([401]),
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request) => UserService.getNotifications(request.user.id));
@@ -35,16 +38,14 @@ export async function userController(fastify: FastifyInstance) {
             description: 'Updates the notification channel settings for the authenticated user.',
             security: [cookieAuthSecurity],
             body: {
-                type: 'object',
-                properties: {
-                    telegram: { type: 'boolean' },
-                    dailySummaries: { type: 'boolean' },
-                    email: { type: 'boolean' },
-                },
+                ...notificationSettingsSchema,
             },
             response: {
-                200: { description: 'Updated preferences', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'Updated preferences',
+                    ...notificationSettingsSchema,
+                },
+                ...standardErrorResponses([401, 400, 500]),
             },
         },
     },
@@ -57,11 +58,29 @@ export async function userController(fastify: FastifyInstance) {
         schema: {
             tags: ['Users'],
             summary: 'Get payment methods',
-            description: 'Returns saved Stripe and crypto wallet configurations for the authenticated user.',
+            description: 'Returns saved crypto wallet configurations for the authenticated user. Stripe is deprecated.',
             security: [cookieAuthSecurity],
             response: {
-                200: { description: 'Payment methods', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'Payment methods',
+                    type: 'object',
+                    properties: {
+                        stripe: { type: 'object', properties: { enabled: { type: 'boolean' } } },
+                        crypto: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    label: { type: 'string' },
+                                    network: { type: 'string' },
+                                    walletAddress: { type: 'string' },
+                                    asset: { type: 'string' },
+                                },
+                            },
+                        },
+                    },
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request) => UserService.getPaymentMethods(request.user.id));
@@ -72,7 +91,7 @@ export async function userController(fastify: FastifyInstance) {
         schema: {
             tags: ['Users'],
             summary: 'Update payment methods',
-            description: 'Updates Stripe account and crypto wallet configurations for the authenticated user.',
+            description: 'Updates saved crypto wallet configurations for the authenticated user.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
@@ -83,20 +102,31 @@ export async function userController(fastify: FastifyInstance) {
                         items: {
                             type: 'object',
                             properties: {
-                                label: { type: 'string' }, network: { type: 'string' },
-                                walletAddress: { type: 'string' }, asset: { type: 'string' },
+                                label: { type: 'string' },
+                                network: { type: 'string' },
+                                walletAddress: { type: 'string' },
+                                asset: { type: 'string' },
                             },
                         },
                     },
                 },
             },
             response: {
-                200: { description: 'Updated payment methods', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'Updated payment methods successfully',
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                    },
+                },
+                ...standardErrorResponses([401, 400, 500]),
             },
         },
     },
-        async (request) => UserService.updatePaymentMethods(request.user.id, request.body.stripe, request.body.crypto)
+        async (request) => {
+            await UserService.updatePaymentMethods(request.user.id, request.body.stripe, request.body.crypto);
+            return { success: true };
+        }
     );
 
     // ── AI provider keys ────────────────────────────────────────────────────
@@ -105,11 +135,22 @@ export async function userController(fastify: FastifyInstance) {
         schema: {
             tags: ['Users'],
             summary: 'Get AI provider API keys',
-            description: 'Returns configured AI provider keys (Gemini, OpenAI, Ollama). Keys are stored encrypted.',
+            description: 'Returns configured AI provider keys (Gemini, OpenAI, Ollama). Keys are partially masked.',
             security: [cookieAuthSecurity],
             response: {
-                200: { description: 'AI provider keys', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'AI provider keys',
+                    type: 'object',
+                    properties: {
+                        gemini: { type: 'string' },
+                        openai: { type: 'string' },
+                        openaiBaseUrl: { type: 'string' },
+                        openaiModel: { type: 'string' },
+                        ollamaBaseUrl: { type: 'string' },
+                        ollamaModel: { type: 'string' },
+                    },
+                },
+                ...standardErrorResponses([401, 500]),
             },
         },
     }, async (request) => UserService.getApiKeys(request.user.id));
@@ -120,7 +161,7 @@ export async function userController(fastify: FastifyInstance) {
         schema: {
             tags: ['Users'],
             summary: 'Update AI provider API keys',
-            description: 'Saves or updates AI provider keys used during agent execution.',
+            description: 'Saves or updates AI provider keys used during agent execution. Keys are encrypted at rest.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
@@ -134,11 +175,20 @@ export async function userController(fastify: FastifyInstance) {
                 },
             },
             response: {
-                200: { description: 'Updated provider keys', type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401]),
+                200: {
+                    description: 'Updated provider keys successfully',
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                    },
+                },
+                ...standardErrorResponses([401, 400, 500]),
             },
         },
     },
-        async (request) => UserService.updateApiKeys(request.user.id, request.body)
+        async (request) => {
+            await UserService.updateApiKeys(request.user.id, request.body);
+            return { success: true };
+        }
     );
 }

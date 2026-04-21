@@ -4,7 +4,16 @@ import {
     ChainTransactionVerifier,
 } from '../../../core/payments/payment-links/payment-link.types';
 
-const SHANNONS_PER_CKB = 100_000_000n;
+/**
+ * Derive a CKB bech32 address string from a lock Script using the CCC SDK.
+ *
+ * CellOutput objects (from getTransaction) expose `.lock` (Script) and `.capacity`
+ * (bigint in Shannons), but do NOT have an `.address` property.
+ * The correct pattern per the CCC SDK is `new ccc.Address(script, client)`.
+ */
+function lockToAddress(lock: ReturnType<typeof ccc.Script.from>): string {
+    return new ccc.Address(lock, cccClient).toString();
+}
 
 /**
  * CkbPaymentService: Chain-specific payment transaction verifier for CKB.
@@ -12,8 +21,9 @@ const SHANNONS_PER_CKB = 100_000_000n;
  * Owns ALL low-level CKB blockchain logic:
  *   - transaction fetching
  *   - output / recipient matching
- *   - Shannon ↔ CKB conversion
+ *   - Shannon → CKB conversion  (1 CKB = 100,000,000 Shannons)
  *   - status derivation
+ *   - best-effort payer derivation
  *
  * Returns a normalised ChainVerificationResult so the general service never
  * touches blockchain-level details.
@@ -39,7 +49,7 @@ export const CkbPaymentService: ChainTransactionVerifier = {
             verificationData: {},
         };
 
-        // 1. Fetch transaction
+        // 1. Fetch transaction via CCC SDK
         let tx: Awaited<ReturnType<typeof cccClient.getTransaction>>;
         try {
             tx = await cccClient.getTransaction(txHash);
@@ -47,16 +57,22 @@ export const CkbPaymentService: ChainTransactionVerifier = {
             return { ...base, status: 'invalid', verificationData: { error: String(err) } };
         }
 
-        if (!tx) return base;                           // not_found
+        if (!tx) return base;   // not_found
 
-        // 2. Parse outputs
+        // 2. Parse outputs.
+        //    CellOutput fields per CCC SDK:
+        //      .capacity  — bigint (Shannons)
+        //      .lock      — Script (the ownership lock, equivalent to "address")
+        //      .type      — Script | undefined (optional token/script type)
+        //    There is NO `.address` property — derive it via new ccc.Address(output.lock, client).
         const rawOutputs: { address: string; capacityShannons: bigint }[] = [];
         for (const output of tx.transaction.outputs) {
-            const address = (await output.address).toString();
-            rawOutputs.push({ address, capacityShannons: BigInt(output.capacity.toString()) });
+            const address = lockToAddress(output.lock);
+            rawOutputs.push({ address, capacityShannons: output.capacity });
         }
 
         // 3. Match recipient + amount
+        // expectedAmount is in CKB (e.g. "10.5"); convert to Shannons for comparison.
         const expectedShannons = BigInt(Math.round(parseFloat(expectedAmount) * 1e8));
 
         const matchedOutput = rawOutputs.find(
@@ -71,7 +87,8 @@ export const CkbPaymentService: ChainTransactionVerifier = {
             ? (Number(matchedOutput.capacityShannons) / 1e8).toString()
             : '0';
 
-        // 4. Best-effort payer derivation (first input script address)
+        // 4. Best-effort payer derivation.
+        //    Walk back to the first input's previous output and read its lock script address.
         let payerAddress = '';
         try {
             const firstInput = tx.transaction.inputs[0];
@@ -81,7 +98,7 @@ export const CkbPaymentService: ChainTransactionVerifier = {
                     const prevIndex = Number(firstInput.previousOutput.index);
                     const prevOutput = prevTx.transaction.outputs[prevIndex];
                     if (prevOutput) {
-                        payerAddress = (await prevOutput.address).toString();
+                        payerAddress = lockToAddress(prevOutput.lock);
                     }
                 }
             }

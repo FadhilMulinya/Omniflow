@@ -98,3 +98,147 @@ export const ticketSchema = {
         createdAt: { type: 'string' as const, format: 'date-time' },
     },
 };
+
+export const paymentLinkSchema = {
+    type: 'object' as const,
+    required: ['_id', 'workspaceId', 'chain', 'asset', 'recipientAddress', 'signerAddress', 'amount', 'link', 'status', 'createdAt'],
+    properties: {
+        _id: { type: 'string' as const },
+        workspaceId: { type: 'string' as const },
+        agentId: { type: 'string' as const },
+        createdBy: { type: 'string' as const },
+        chain: { type: 'string' as const },
+        asset: { type: 'string' as const },
+        recipientAddress: { type: 'string' as const },
+        signerAddress: { type: 'string' as const },
+        amount: { type: 'string' as const },
+        reference: { type: 'string' as const },
+        memo: { type: 'string' as const },
+        metadata: { type: 'object' as const, additionalProperties: { type: 'string' as const } },
+        link: { type: 'string' as const },
+        status: { type: 'string' as const, enum: ['active', 'paid', 'expired', 'cancelled'] },
+        expiresAt: { type: 'string' as const, format: 'date-time' },
+        fulfilledAt: { type: 'string' as const, format: 'date-time' },
+        txHash: { type: 'string' as const },
+        payerAddress: { type: 'string' as const },
+        paidAmount: { type: 'string' as const },
+        verificationData: { type: 'object' as const, additionalProperties: true as const },
+        createdAt: { type: 'string' as const, format: 'date-time' },
+        updatedAt: { type: 'string' as const, format: 'date-time' },
+    },
+};
+
+export const creatorSchema = {
+    type: 'object' as const,
+    properties: {
+        _id: { type: 'string' as const },
+        name: { type: 'string' as const },
+        username: { type: 'string' as const },
+        avatarUrl: { type: 'string' as const, nullable: true as const },
+        bio: { type: 'string' as const, nullable: true as const },
+        profileViews: { type: 'number' as const },
+    },
+};
+
+export const marketplaceListingSchema = {
+    type: 'object' as const,
+    properties: {
+        published: { type: 'boolean' as const },
+        category: { type: 'string' as const },
+        visibility: { type: 'string' as const, enum: ['public', 'private'] },
+        pricing: {
+            type: 'object' as const,
+            properties: {
+                type: { type: 'string' as const, enum: ['free', 'paid'] },
+                price: { type: 'number' as const },
+                currency: { type: 'string' as const },
+            },
+        },
+        stats: {
+            type: 'object' as const,
+            properties: {
+                views: { type: 'number' as const },
+                purchases: { type: 'number' as const },
+                rating: { type: 'number' as const },
+            },
+        },
+    },
+};
+
+export const notificationSettingsSchema = {
+    type: 'object' as const,
+    properties: {
+        telegram: { type: 'boolean' as const },
+        dailySummaries: { type: 'boolean' as const },
+        email: { type: 'boolean' as const },
+    },
+};
+
+export const userProfileSchema = {
+    type: 'object' as const,
+    required: ['_id', 'username', 'email'],
+    properties: {
+        ...userSchema.properties,
+        whatsapp: { type: 'string' as const },
+        telegramUsername: { type: 'string' as const },
+        bio: { type: 'string' as const },
+        planExpiry: { type: 'string' as const, format: 'date-time' },
+        notifications: notificationSettingsSchema,
+        profileViews: { type: 'number' as const },
+        updatedAt: { type: 'string' as const, format: 'date-time' },
+    },
+};
+
+export const terminalSessionSchema = {
+    type: 'object' as const,
+    required: ['_id', 'deviceCode', 'userCode', 'status', 'expiresAt', 'createdAt'],
+    properties: {
+        _id: { type: 'string' as const },
+        deviceCode: { type: 'string' as const },
+        userCode: { type: 'string' as const },
+        status: { type: 'string' as const, enum: ['pending', 'approved', 'denied', 'expired'] },
+        userId: { type: 'string' as const },
+        workspaceId: { type: 'string' as const },
+        deviceName: { type: 'string' as const },
+        revoked: { type: 'boolean' as const },
+        expiresAt: { type: 'string' as const, format: 'date-time' },
+        createdAt: { type: 'string' as const, format: 'date-time' },
+        updatedAt: { type: 'string' as const, format: 'date-time' },
+    },
+};
+
+export const authUserSchema = {
+    type: 'object' as const,
+    required: ['_id', 'username', 'email'],
+    properties: {
+        _id: { type: 'string' as const },
+        username: { type: 'string' as const },
+        email: { type: 'string' as const },
+    },
+};
+
+export const marketplaceAgentSchema = {
+    type: 'object' as const,
+    required: ['_id', 'name', 'ownerId', 'createdAt', 'marketplace'],
+    properties: {
+        ...agentSchema.properties,
+        marketplace: marketplaceListingSchema,
+        creator: creatorSchema,
+    },
+};
+
+export const blogPostSchema = {
+    type: 'object' as const,
+    required: ['_id', 'title', 'body', 'authorId', 'authorName', 'createdAt'],
+    properties: {
+        _id: { type: 'string' as const },
+        title: { type: 'string' as const },
+        body: { type: 'string' as const },
+        authorId: { type: 'string' as const },
+        authorName: { type: 'string' as const },
+        tags: { type: 'array' as const, items: { type: 'string' as const } },
+        type: { type: 'string' as const },
+        createdAt: { type: 'string' as const, format: 'date-time' as const },
+        updatedAt: { type: 'string' as const, format: 'date-time' as const },
+    },
+};
