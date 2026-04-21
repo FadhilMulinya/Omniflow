@@ -10,10 +10,6 @@ export const AdminService = {
         return AdminRepository.findAgents({ isDraft: true });
     },
 
-    async listMarketplaceAgents() {
-        return AdminRepository.findAgents({ 'marketplace.published': true });
-    },
-
     // ── Executions ────────────────────────────────────────────────────────────
     async listExecutions(page: number) {
         const limit = 50;

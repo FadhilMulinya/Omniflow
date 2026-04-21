@@ -10,8 +10,6 @@ export type SDKScope =
     | 'executions:write'
     | 'agents:read'
     | 'agents:write'
-    | 'marketplace:read'
-    | 'marketplace:write'
     | 'sdk:simulate'
     | 'sdk:admin'
     | 'keys:read'

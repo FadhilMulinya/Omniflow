@@ -41,21 +41,6 @@ export function registerAgentHandlers(fastify: FastifyInstance) {
         },
     }, async () => AdminService.listDraftAgents());
 
-    // GET /api/admin/marketplace — agents listed on marketplace
-    fastify.get('/marketplace', {
-        onRequest: [fastify.authorizeAdmin],
-        schema: {
-            tags: ['Admin / Agents'],
-            summary: 'List marketplace listings (Admin)',
-            description: 'Returns all agents that have a configured marketplace entry.',
-            security: [cookieAuthSecurity],
-            response: {
-                200: { description: 'Marketplace listings', type: 'array', items: agentSchema },
-                ...standardErrorResponses([401, 403]),
-            },
-        },
-    }, async () => AdminService.listMarketplaceAgents());
-
     // GET /api/admin/executions — all execution runs
     fastify.get<{ Querystring: { page?: string } }>('/executions', {
         onRequest: [fastify.authorizeAdmin],

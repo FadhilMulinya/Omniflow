@@ -57,24 +57,6 @@ export function assertTemplateAccess(planId: PlanId, templateTier: 'basic' | 'pr
     }
 }
 
-export function assertMarketplacePublish(planId: PlanId) {
-    const plan = getPlanFeatures(planId);
-    if (!plan.canPublishMarketplace) {
-        throw planLimitError(
-            `Marketplace publishing is available on Starter and above. Upgrade your plan to publish agents.`
-        );
-    }
-}
-
-export function assertRevenueDashboard(planId: PlanId) {
-    const plan = getPlanFeatures(planId);
-    if (!plan.canAccessRevenueDashboard) {
-        throw planLimitError(
-            `Revenue dashboard is available on Pro and Unlimited plans only. Upgrade to access revenue analytics.`
-        );
-    }
-}
-
 export function assertAdvancedAnalytics(planId: PlanId) {
     const plan = getPlanFeatures(planId);
     if (!plan.canAccessAdvancedAnalytics) {

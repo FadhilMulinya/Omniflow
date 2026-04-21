@@ -74,18 +74,6 @@ export const apiKeyRecordSchema = {
     },
 };
 
-export const reviewSchema = {
-    type: 'object' as const,
-    required: ['_id', 'userId', 'agentId', 'rating', 'createdAt'],
-    properties: {
-        _id: { type: 'string' as const },
-        userId: { type: 'string' as const },
-        agentId: { type: 'string' as const },
-        rating: { type: 'number' as const },
-        comment: { type: 'string' as const },
-        createdAt: { type: 'string' as const, format: 'date-time' },
-    },
-};
 
 export const ticketSchema = {
     type: 'object' as const,
@@ -128,42 +116,6 @@ export const paymentLinkSchema = {
     },
 };
 
-export const creatorSchema = {
-    type: 'object' as const,
-    properties: {
-        _id: { type: 'string' as const },
-        name: { type: 'string' as const },
-        username: { type: 'string' as const },
-        avatarUrl: { type: 'string' as const, nullable: true as const },
-        bio: { type: 'string' as const, nullable: true as const },
-        profileViews: { type: 'number' as const },
-    },
-};
-
-export const marketplaceListingSchema = {
-    type: 'object' as const,
-    properties: {
-        published: { type: 'boolean' as const },
-        category: { type: 'string' as const },
-        visibility: { type: 'string' as const, enum: ['public', 'private'] },
-        pricing: {
-            type: 'object' as const,
-            properties: {
-                type: { type: 'string' as const, enum: ['free', 'paid'] },
-                price: { type: 'number' as const },
-                currency: { type: 'string' as const },
-            },
-        },
-        stats: {
-            type: 'object' as const,
-            properties: {
-                views: { type: 'number' as const },
-                purchases: { type: 'number' as const },
-                rating: { type: 'number' as const },
-            },
-        },
-    },
-};
 
 export const notificationSettingsSchema = {
     type: 'object' as const,
@@ -217,15 +169,6 @@ export const authUserSchema = {
     },
 };
 
-export const marketplaceAgentSchema = {
-    type: 'object' as const,
-    required: ['_id', 'name', 'ownerId', 'createdAt', 'marketplace'],
-    properties: {
-        ...agentSchema.properties,
-        marketplace: marketplaceListingSchema,
-        creator: creatorSchema,
-    },
-};
 
 export const blogPostSchema = {
     type: 'object' as const,

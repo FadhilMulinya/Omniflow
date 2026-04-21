@@ -32,7 +32,6 @@ export async function listAgents(userId: string, query: { isDraft?: string; stat
 
     if (status === 'published') filter.isDraft = false;
     else if (status === 'drafts') filter.isDraft = true;
-    else if (status === 'listed') filter['marketplace.published'] = true;
     else if (isDraft !== undefined) filter.isDraft = isDraft === 'true';
 
     if (search?.trim()) {

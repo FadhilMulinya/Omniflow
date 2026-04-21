@@ -19,8 +19,6 @@ interface Plan {
     canDelete: boolean;
     canReEdit: boolean;
     templatesAccess: 'basic' | 'all';
-    canPublishMarketplace: boolean;
-    canAccessRevenueDashboard: boolean;
     canAccessAdvancedAnalytics: boolean;
     canUseCustomIntegrations: boolean;
     hasSlaGuarantees: boolean;
@@ -39,8 +37,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: false,
         canReEdit: false,
         templatesAccess: 'basic',
-        canPublishMarketplace: false,
-        canAccessRevenueDashboard: false,
         canAccessAdvancedAnalytics: false,
         canUseCustomIntegrations: false,
         hasSlaGuarantees: false,
@@ -64,8 +60,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: true,
         canReEdit: true,
         templatesAccess: 'all',
-        canPublishMarketplace: true,
-        canAccessRevenueDashboard: false,
         canAccessAdvancedAnalytics: false,
         canUseCustomIntegrations: false,
         hasSlaGuarantees: false,
@@ -77,7 +71,6 @@ export const PLANS: Record<PlanId, Plan> = {
             '5,000 tokens / month',
             'Email support',
             'All templates',
-            'Marketplace publishing',
         ],
     },
     pro: {
@@ -89,8 +82,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: true,
         canReEdit: true,
         templatesAccess: 'all',
-        canPublishMarketplace: true,
-        canAccessRevenueDashboard: true,
         canAccessAdvancedAnalytics: true,
         canUseCustomIntegrations: false,
         hasSlaGuarantees: false,
@@ -103,7 +94,6 @@ export const PLANS: Record<PlanId, Plan> = {
             'Priority support',
             'Custom personas',
             'Analytics dashboard',
-            'Revenue dashboard',
             'Embed & PWA export',
         ],
     },
@@ -116,8 +106,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: true,
         canReEdit: true,
         templatesAccess: 'all',
-        canPublishMarketplace: true,
-        canAccessRevenueDashboard: true,
         canAccessAdvancedAnalytics: true,
         canUseCustomIntegrations: true,
         hasSlaGuarantees: true,
@@ -129,7 +117,6 @@ export const PLANS: Record<PlanId, Plan> = {
             '100,000 tokens / month',
             'Dedicated support',
             'White-label embeds',
-            'Revenue dashboard',
             'Advanced analytics',
             'Custom integrations',
             'SLA guarantees',
@@ -144,8 +131,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: true,
         canReEdit: true,
         templatesAccess: 'all',
-        canPublishMarketplace: true,
-        canAccessRevenueDashboard: true,
         canAccessAdvancedAnalytics: true,
         canUseCustomIntegrations: true,
         hasSlaGuarantees: true,
@@ -170,8 +155,6 @@ export const PLANS: Record<PlanId, Plan> = {
         canDelete: true,
         canReEdit: true,
         templatesAccess: 'all',
-        canPublishMarketplace: true,
-        canAccessRevenueDashboard: true,
         canAccessAdvancedAnalytics: true,
         canUseCustomIntegrations: true,
         hasSlaGuarantees: true,
@@ -181,7 +164,6 @@ export const PLANS: Record<PlanId, Plan> = {
             'Unlimited nodes per agent',
             '100,000 tokens / month',
             'Dedicated support',
-            'Revenue dashboard',
             'Custom integrations',
         ],
     },
@@ -224,8 +206,6 @@ const TOKEN_COSTS: Record<string, number> = {
     agent_query: 5,
     // Embed/PWA chat
     embed_chat: 3,
-    // Marketplace listing
-    publish_agent: 10,
     // Export PWA download
     export_pwa: 5,
 };

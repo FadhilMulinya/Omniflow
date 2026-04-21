@@ -8,7 +8,6 @@ import { AgentEdge } from '../../infrastructure/database/models/AgentEdge';
 export interface AgentFilter {
     workspaceId: mongoose.Types.ObjectId | string;
     isDraft?: boolean;
-    'marketplace.published'?: boolean;
     '$or'?: Array<Record<string, unknown>>;
 }
 
