@@ -16,6 +16,9 @@ export const helpCommand = async (args: string[], context: any): Promise<React.R
 
     const descriptions: Record<string, string> = {
         agent: 'List and select agents for interaction',
+        chat: 'Legacy chat command (redirects to agent)',
+        createAgent: 'Create a new AI agent interactively',
+        'create-agent': 'Create a new AI agent interactively',
         exec: 'Watch and manage agent executions',
         exit: 'Exit the terminal',
         quit: 'Exit the terminal',

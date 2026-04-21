@@ -73,6 +73,36 @@ export const terminalOpsRoutes: FastifyPluginAsync = async (fastify) => {
         },
     }, TerminalOpsController.listAgents);
 
+    // POST /terminal/ops/agents - Create an agent from CLI
+    fastify.post('/agents', {
+        schema: {
+            tags: ['Terminal Operations'],
+            summary: 'Create a new AI agent',
+            description: 'Creates a new agent with character generation from persona.',
+            body: {
+                type: 'object',
+                required: ['name', 'persona'],
+                properties: {
+                    name: { type: 'string' },
+                    persona: { type: 'string' },
+                    agentType: { type: 'string', enum: ['operational_agent', 'financial_agent'] },
+                },
+            },
+            response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                        success: { type: 'boolean' },
+                        id: { type: 'string' },
+                        name: { type: 'string' },
+                        agentType: { type: 'string' },
+                    },
+                },
+                ...standardErrorResponses([400, 401, 500]),
+            },
+        },
+    }, TerminalOpsController.createAgent);
+
     // POST /terminal/executions - Start agent from CLI
     fastify.post('/executions', {
         schema: {

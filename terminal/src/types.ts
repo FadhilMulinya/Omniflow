@@ -9,6 +9,8 @@ export interface TerminalSession {
         id: string;
         username: string;
         email?: string;
+        plan?: string;
+        tokens?: number;
     };
     expiresAt: string;
 }

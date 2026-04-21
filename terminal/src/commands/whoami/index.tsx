@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text, Newline } from 'ink';
 import { apiClient } from '../../services/api.js';
+import { SessionStore } from '../../services/session.js';
 
 export const whoamiCommand = async (args: string[], context: any): Promise<React.ReactNode> => {
     const { session } = context;
@@ -32,6 +33,12 @@ export const whoamiCommand = async (args: string[], context: any): Promise<React
             workspaceName: session.workspace?.name || 'Default Workspace',
         };
         agentsCount = agentsRes.data.agents?.length ?? 0;
+        // Cache user details locally in hidden file
+        SessionStore.saveDetails({
+            ...profile,
+            email: meRes.data.email,
+            updatedAt: new Date().toISOString()
+        });
     } catch (err) {
         // Use fallback session data if either call fails
     }

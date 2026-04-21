@@ -59,10 +59,10 @@ export const TerminalAuthService = {
             let plan = 'free';
             if (session.userId) {
                 try {
-                    const user = await UserService.getProfile(session.userId.toString(), 'username plan');
+                    const user = await UserService.getProfile(session.userId.toString(), 'username plan tokens');
                     if (user) {
-                        username = user.username || 'Authenticated User';
-                        plan = user.plan || 'free';
+                        username = (user as any).username || (user as any).email || 'Authenticated User';
+                        plan = (user as any).plan || 'free';
                     }
                 } catch (e) {
                     // Ignore and use defaults

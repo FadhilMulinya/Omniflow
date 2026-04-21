@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { listAgents } from '../agents/agent.service.js';
+import { AgentCreationService } from '../agents/services/agent-creation.service.js';
 import { ExecutionService } from '../executions/execution.service.js';
 import { executionEmitter } from '../executions/execution.events.js';
 import { AiService } from '../ai/ai.service.js';
@@ -13,10 +14,13 @@ export const TerminalOpsController = {
 
         try {
             const profile = await UserService.getProfile(userId, 'username email name plan tokens profileViews');
+            const username = (profile as any).username || (profile as any).name || (profile as any).email;
+            const email = (profile as any).email || null;
+
             return {
                 id: userId,
-                username: (profile as any).username || null,
-                email: (profile as any).email || null,
+                username: username || email || 'Auth User',
+                email: email,
                 name: (profile as any).name || null,
                 plan: (profile as any).plan || 'free',
                 tokens: (profile as any).tokens || 0,
@@ -41,6 +45,36 @@ export const TerminalOpsController = {
                 createdAt: a.createdAt
             }))
         };
+    },
+
+    async createAgent(request: FastifyRequest, reply: FastifyReply) {
+        const userId = request.user?.id;
+        if (!userId) return reply.code(401).send({ error: 'User not identified' });
+
+        const { name, persona, agentType } = request.body as { name: string, persona: string, agentType?: string };
+        if (!name || !persona) {
+            return reply.code(400).send({ error: 'Name and persona are required' });
+        }
+
+        try {
+            const agent = await AgentCreationService.createAgent({
+                userId,
+                name,
+                persona,
+                agentType: agentType || 'operational_agent',
+                isDraft: false,
+                log: (msg) => console.log(`[Terminal Agent Creation] ${msg}`),
+            });
+
+            return {
+                success: true,
+                id: agent._id,
+                name: agent.name,
+                agentType: agent.agentType
+            };
+        } catch (e: any) {
+            return reply.code(e.code || 500).send({ error: e.message });
+        }
     },
 
     async startExecution(request: FastifyRequest<{ Body: { agentId: string, initialState?: any } }>, reply: FastifyReply) {

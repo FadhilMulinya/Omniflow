@@ -6,6 +6,7 @@ import { chatCommand, chatMessageCommand } from './chat/index.js';
 import { whoamiCommand } from './whoami/index.js';
 import { helpCommand } from './help/index.js';
 import { logoutCommand } from './logout/index.js';
+import { createAgentCommand } from './create-agent/index.js';
 
 export const COMMAND_REGISTRY: Record<string, (args: string[], context: any) => Promise<React.ReactNode> | React.ReactNode> = {
     help: helpCommand,
@@ -15,7 +16,9 @@ export const COMMAND_REGISTRY: Record<string, (args: string[], context: any) => 
     whoami: whoamiCommand,
     agent: agentCommand,
     exec: execCommand,
-    chat: chatCommand
+    chat: chatCommand,
+    createAgent: createAgentCommand,
+    'create-agent': createAgentCommand
 };
 
 export const executeCommand = async (commandLine: string, context: any): Promise<React.ReactNode> => {

@@ -23,6 +23,7 @@ export const Repl = ({ session, setSession }: { session: TerminalSession | null,
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [chatAgent, setChatAgent] = useState<{ id: string, name: string } | null>(null);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+    const [exclusiveMode, setExclusiveMode] = useState<React.ReactNode | null>(null);
 
     // Intercept Ctrl+C to exit chat mode first
     useInput((input, key) => {
@@ -75,14 +76,29 @@ export const Repl = ({ session, setSession }: { session: TerminalSession | null,
                     });
                 }
             } else {
+                // Determine if this is an interactive command that needs exclusive mode
+                if (trimmed === 'createAgent' || trimmed === 'create-agent') {
+                    const onFinish = (finalNode?: React.ReactNode) => {
+                        setExclusiveMode(null);
+                        if (finalNode) {
+                            setHistory(prev => [...prev, { command: trimmed, output: finalNode }]);
+                        }
+                    };
+                    setExclusiveMode(await executeCommand(trimmed, { session, setSession, setChatAgent, exit, onFinish }));
+                    setInputValue('');
+                    return;
+                }
+
                 outputNode = await executeCommand(trimmed, { session, setSession, setChatAgent, exit });
             }
 
-            setHistory(prev => [...prev, {
-                command: trimmed,
-                output: outputNode,
-                agentName: chatAgent?.name
-            }]);
+            if (outputNode) {
+                setHistory(prev => [...prev, {
+                    command: trimmed,
+                    output: outputNode,
+                    agentName: chatAgent?.name
+                }]);
+            }
         } catch (err: any) {
             setHistory(prev => [...prev, { command: trimmed, output: <Text color="red">{err.message}</Text> }]);
         } finally {
@@ -103,16 +119,21 @@ export const Repl = ({ session, setSession }: { session: TerminalSession | null,
                     {entry.output && <Box paddingLeft={2}>{entry.output}</Box>}
                 </Box>
             ))}
-            <Box>
-                <Box marginRight={1}>
-                    <Text color="cyan">{promptLabel}</Text>
+
+            {exclusiveMode ? (
+                <Box paddingLeft={2}>{exclusiveMode}</Box>
+            ) : (
+                <Box>
+                    <Box marginRight={1}>
+                        <Text color="cyan">{promptLabel}</Text>
+                    </Box>
+                    <TextInput
+                        value={inputValue}
+                        onChange={setInputValue}
+                        onSubmit={handleSubmit}
+                    />
                 </Box>
-                <TextInput
-                    value={inputValue}
-                    onChange={setInputValue}
-                    onSubmit={handleSubmit}
-                />
-            </Box>
+            )}
         </Box>
     );
 };
