@@ -16,6 +16,7 @@ export interface CreatePaymentLinkDTO {
     memo?: string;
     reference?: string;
     expiresAt?: Date;
+    signerSecret?: string;
     metadata?: Record<string, string>;
 }
 
@@ -38,10 +39,7 @@ export const PaymentLinkService = {
             reference: dto.reference,
             expiresAt: dto.expiresAt?.getTime(),
             metadata: dto.metadata
-        }, "" /* We don't sign here yet, or we use a system key if needed. 
-       Actually, the task says "call core generatePaymentLink". 
-       Wait, core generatePaymentLink needs a signerSecret. 
-       In a real app, this might be a server-managed key. */);
+        }, dto.signerSecret || "" /* Use provided secret or fall back to empty which is caught by error handler */);
 
         // 2. Persist to database
         const paymentLink = await PaymentLinkRepository.create({
@@ -72,6 +70,12 @@ export const PaymentLinkService = {
     },
 
     async getPaymentLink(id: string): Promise<IPaymentLink | null> {
+        // 1. Check if it's a valid link code (starts with payl:)
+        if (id.startsWith('payl:')) {
+            return PaymentLinkRepository.findByLink(id);
+        }
+
+        // 2. Otherwise assume it's a MongoDB ID
         return PaymentLinkRepository.findById(id);
     },
 

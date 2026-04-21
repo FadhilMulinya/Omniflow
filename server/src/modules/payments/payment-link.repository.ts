@@ -18,6 +18,10 @@ export const PaymentLinkRepository = {
         return await PaymentLink.findOne({ reference });
     },
 
+    async findByLink(link: string): Promise<IPaymentLink | null> {
+        return await PaymentLink.findOne({ link });
+    },
+
     async listByWorkspace(workspaceId: string): Promise<IPaymentLink[]> {
         if (!mongoose.Types.ObjectId.isValid(workspaceId)) return [];
         return await PaymentLink.find({ workspaceId }).sort({ createdAt: -1 });

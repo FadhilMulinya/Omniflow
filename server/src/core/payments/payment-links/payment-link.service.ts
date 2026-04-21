@@ -1,6 +1,6 @@
 import { PaymentLinkCodec } from './payment-link.codec';
 import { ChainPaymentLinkAdapter } from './chain-payment-link-adapter';
-import { PaymentLinkPayload, PaymentLinkParams, ParsedPaymentLink } from './payment-link.types';
+import { PaymentLinkPayload, PaymentLinkParams, ParsedPaymentLink, PaymentLinkError } from './payment-link.types';
 
 /**
  * PaymentLinkService: The core engine for generating and validating multi-chain payment links.
@@ -28,15 +28,15 @@ export class PaymentLinkService {
         const adapter = this.adapters.get(chainKey);
 
         if (!adapter) {
-            throw new Error(`Unsupported chain: ${params.chain}`);
+            throw new PaymentLinkError(`Unsupported chain: ${params.chain}`);
         }
 
         // 1. Validate addresses
         if (!adapter.validateAddress(params.recipientAddress)) {
-            throw new Error(`Invalid recipient address for ${params.chain}`);
+            throw new PaymentLinkError(`Invalid recipient address for ${params.chain}`);
         }
         if (!adapter.validateAddress(params.signerAddress)) {
-            throw new Error(`Invalid signer address for ${params.chain}`);
+            throw new PaymentLinkError(`Invalid signer address for ${params.chain}`);
         }
 
         // 2. Build payload

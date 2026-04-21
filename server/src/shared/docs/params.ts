@@ -36,5 +36,6 @@ export const workspaceHeaderSchema = {
         'x-workspace-id': { type: 'string' as const, description: 'The active workspace ID for this operation' },
     },
     required: ['x-workspace-id'] as string[],
+    additionalProperties: true,
 };
 

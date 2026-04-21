@@ -10,6 +10,11 @@ export interface ChainPaymentLinkAdapter {
     chain: string;
 
     /**
+     * Returns the list of required fields for this chain (e.g., ["recipientAddress", "amount"]).
+     */
+    getRequiredFields(): string[];
+
+    /**
      * Validates the format of an address for this chain.
      */
     validateAddress(address: string): boolean;

@@ -36,7 +36,7 @@ export interface VerifyPaymentResult {
  * This service does NOT perform any blockchain-level fetching or parsing.
  */
 export const PaymentVerificationService = {
-    async verifyPayment(paymentLinkId: string, txHash: string): Promise<VerifyPaymentResult> {
+    async verifyPayment(paymentLinkId: string, verificationBody: Record<string, any>): Promise<VerifyPaymentResult> {
         // 1. Fetch link record
         const linkRecord = await PaymentLinkRepository.findById(paymentLinkId);
         if (!linkRecord) return { success: false, message: 'Payment link not found' };
@@ -56,7 +56,7 @@ export const PaymentVerificationService = {
 
         // 5. Delegate all on-chain verification to the chain layer
         const verification = await verifier.verifyTransaction(
-            txHash,
+            verificationBody,
             linkRecord.recipientAddress,
             linkRecord.amount,
             linkRecord.asset,
@@ -67,7 +67,7 @@ export const PaymentVerificationService = {
 
         // 6. Persist the normalised verification result
         await PaymentLinkRepository.markPaid(paymentLinkId, {
-            txHash,
+            txHash: verification.txHash,
             payerAddress: verification.payerAddress,
             paidAmount: verification.paidAmount,
             fulfilledAt: new Date(),

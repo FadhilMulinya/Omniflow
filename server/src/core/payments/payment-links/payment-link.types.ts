@@ -66,10 +66,27 @@ export interface ChainVerificationResult {
 /** Every chain-specific payment verifier must implement this contract. */
 export interface ChainTransactionVerifier {
     chain: string;
+
+    /**
+     * Returns the required fields for transaction verification on this chain.
+     */
+    getRequiredVerificationFields(): string[];
+
+    /**
+     * Verifies a transaction satisfies the payment link requirements.
+     * @param input Chain-specific verification data (e.g., { txHash: '0x...' })
+     */
     verifyTransaction(
-        txHash: string,
+        input: Record<string, any>,
         expectedRecipient: string,
         expectedAmount: string,
         expectedAsset: string,
     ): Promise<ChainVerificationResult>;
+}
+
+export class PaymentLinkError extends Error {
+    constructor(public message: string) {
+        super(message);
+        this.name = 'PaymentLinkError';
+    }
 }

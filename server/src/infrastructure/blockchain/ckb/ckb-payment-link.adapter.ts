@@ -10,6 +10,13 @@ export class CkbPaymentLinkAdapter implements ChainPaymentLinkAdapter {
     readonly chain = "CKB";
 
     /**
+     * Returns the list of required fields for CKB payment links.
+     */
+    getRequiredFields(): string[] {
+        return ["recipientAddress", "signerAddress", "amount", "asset"];
+    }
+
+    /**
      * Validates if an address follows CKB mainnet (ckb) or testnet (ckt) prefix.
      */
     validateAddress(address: string): boolean {

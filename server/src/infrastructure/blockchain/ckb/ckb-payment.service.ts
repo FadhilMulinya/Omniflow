@@ -31,12 +31,20 @@ function lockToAddress(lock: ReturnType<typeof ccc.Script.from>): string {
 export const CkbPaymentService: ChainTransactionVerifier = {
     chain: 'CKB',
 
+    getRequiredVerificationFields(): string[] {
+        return ['txHash'];
+    },
+
     async verifyTransaction(
-        txHash: string,
+        input: Record<string, any>,
         expectedRecipient: string,
         expectedAmount: string,
         _expectedAsset: string,   // only "CKB" is supported; reserved for future multi-asset
     ): Promise<ChainVerificationResult> {
+        const txHash = input.txHash;
+        if (!txHash) {
+            throw new Error('CKB verification requires txHash');
+        }
         const base: ChainVerificationResult = {
             chain: 'CKB',
             txHash,
