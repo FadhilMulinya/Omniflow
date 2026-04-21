@@ -68,34 +68,7 @@ export const agentApi = {
         return res.json();
     },
 
-    // ── Marketplace ───────────────────────────────────────────────────────────
-    getMarketplace: async (params: { category?: string; pricing?: string; network?: string; search?: string; page?: number; limit?: number } = {}) => {
-        const qs = new URLSearchParams(
-            Object.entries(params)
-                .filter(([, v]) => v !== undefined && v !== '')
-                .map(([k, v]) => [k, String(v)])
-        ).toString();
-        return apiFetch(`/marketplace${qs ? `?${qs}` : ''}`);
-    },
-
-    getMarketplaceAgent: async (id: string) => apiFetch(`/marketplace/${id}`),
-
-    publishToMarketplace: async (id: string, settings: { published?: boolean; category?: string; visibility?: string; pricing?: any; paymentMethods?: any }) =>
-        apiFetch(`/marketplace/${id}/publish`, { method: 'POST', body: JSON.stringify(settings) }),
-
-    getMyPurchases: async () => apiFetch('/marketplace/purchases/mine'),
-
-    useMarketplaceAgent: async (id: string) =>
-        apiFetch(`/marketplace/${id}/use`, { method: 'POST', body: JSON.stringify({}) }),
-
     // ── Payments ──────────────────────────────────────────────────────────────
-    getStripeConnectUrl: async () => apiFetch('/payments/stripe/connect-url'),
-
-    getStripeStatus: async () => apiFetch('/payments/stripe/status'),
-
-    createStripeCheckout: async (agentId: string) =>
-        apiFetch(`/payments/stripe/checkout/${agentId}`, { method: 'POST', body: JSON.stringify({}) }),
-
     submitCryptoPurchase: async (agentId: string, txHash: string, network: string) =>
         apiFetch(`/payments/crypto/purchase/${agentId}`, { method: 'POST', body: JSON.stringify({ txHash, network }) }),
 

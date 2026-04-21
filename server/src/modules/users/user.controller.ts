@@ -58,14 +58,13 @@ export async function userController(fastify: FastifyInstance) {
         schema: {
             tags: ['Users'],
             summary: 'Get payment methods',
-            description: 'Returns saved crypto wallet configurations for the authenticated user. Stripe is deprecated.',
+            description: 'Returns saved crypto wallet configurations for the authenticated user.',
             security: [cookieAuthSecurity],
             response: {
                 200: {
                     description: 'Payment methods',
                     type: 'object',
                     properties: {
-                        stripe: { type: 'object', properties: { enabled: { type: 'boolean' } } },
                         crypto: {
                             type: 'array',
                             items: {
@@ -85,7 +84,7 @@ export async function userController(fastify: FastifyInstance) {
         },
     }, async (request) => UserService.getPaymentMethods(request.user.id));
 
-    fastify.put<{ Body: { stripe?: { enabled: boolean }; crypto?: Array<{ label: string; network: string; walletAddress: string; asset: string }> } }>(
+    fastify.put<{ Body: { crypto?: Array<{ label: string; network: string; walletAddress: string; asset: string }> } }>(
         '/payment-methods', {
         onRequest: [fastify.authenticate],
         schema: {
@@ -96,7 +95,6 @@ export async function userController(fastify: FastifyInstance) {
             body: {
                 type: 'object',
                 properties: {
-                    stripe: { type: 'object', properties: { enabled: { type: 'boolean' } } },
                     crypto: {
                         type: 'array',
                         items: {
@@ -124,7 +122,7 @@ export async function userController(fastify: FastifyInstance) {
         },
     },
         async (request) => {
-            await UserService.updatePaymentMethods(request.user.id, request.body.stripe, request.body.crypto);
+            await UserService.updatePaymentMethods(request.user.id, request.body.crypto);
             return { success: true };
         }
     );

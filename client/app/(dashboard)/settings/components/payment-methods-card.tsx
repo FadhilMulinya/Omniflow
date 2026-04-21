@@ -19,7 +19,6 @@ const ASSETS: Record<string, string[]> = {
 interface CryptoMethod { label: string; network: string; walletAddress: string; asset: string }
 
 export function PaymentMethodsCard() {
-    const [stripe, setStripe] = useState(false);
     const [cryptoList, setCryptoList] = useState<CryptoMethod[]>([]);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -27,9 +26,8 @@ export function PaymentMethodsCard() {
 
     useEffect(() => {
         apiFetch('/auth/payment-methods').then((d: any) => {
-            setStripe(d.stripe?.enabled ?? false);
             setCryptoList(d.crypto || []);
-        }).catch(() => {});
+        }).catch(() => { });
     }, []);
 
     const addCrypto = () => setCryptoList([...cryptoList, { label: '', network: 'Ethereum', walletAddress: '', asset: 'ETH' }]);
@@ -45,7 +43,7 @@ export function PaymentMethodsCard() {
         try {
             await apiFetch('/auth/payment-methods', {
                 method: 'PUT',
-                body: JSON.stringify({ stripe: { enabled: stripe }, crypto: cryptoList }),
+                body: JSON.stringify({ crypto: cryptoList }),
             });
             setSaved(true);
             toast({ title: 'Payment methods saved' });
@@ -60,27 +58,13 @@ export function PaymentMethodsCard() {
             <CardHeader className="border-b border-border/50 bg-muted/5">
                 <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-primary" />
-                    Saved Payment Methods
+                    Saved Crypto Wallets
                 </CardTitle>
                 <CardDescription>
-                    Save your payment details once — select them when publishing to the marketplace.
+                    Save your crypto payment details for receiving payments on the platform.
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
-                {/* Stripe */}
-                <div className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-background">
-                    <div>
-                        <p className="text-sm font-medium">Stripe Payments</p>
-                        <p className="text-xs text-muted-foreground">Accept card payments via your Stripe account.</p>
-                    </div>
-                    <button
-                        onClick={() => setStripe(!stripe)}
-                        className={`w-11 h-6 rounded-full relative transition-colors cursor-pointer ${stripe ? 'bg-primary' : 'bg-muted'}`}
-                        role="switch" aria-checked={stripe}
-                    >
-                        <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${stripe ? 'translate-x-5' : ''}`} />
-                    </button>
-                </div>
 
                 {/* Crypto wallets */}
                 <div className="space-y-3">
@@ -128,7 +112,7 @@ export function PaymentMethodsCard() {
                 <Button onClick={handleSave} disabled={saving} className="rounded-full px-6">
                     {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
                         : saved ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Saved!</>
-                        : <><Save className="mr-2 h-4 w-4" /> Save Methods</>}
+                            : <><Save className="mr-2 h-4 w-4" /> Save Methods</>}
                 </Button>
             </CardFooter>
         </Card>

@@ -67,7 +67,7 @@ export async function terminalAuthController(fastify: FastifyInstance) {
                     },
                 },
                 response: {
-                    302: { description: 'Redirect to frontend' },
+                    302: { type: 'null', description: 'Redirect to frontend' },
                 },
             },
         },
@@ -76,7 +76,7 @@ export async function terminalAuthController(fastify: FastifyInstance) {
             const appUrl = (process.env.APP_URL || 'http://localhost:3000').replace(/\/api$/, '');
             const url = `${appUrl}/terminal/approve?userCode=${userCode}`;
             return reply.redirect(url);
-            
+
         }
     );
 

@@ -39,10 +39,22 @@ const LoginFlow = ({ setSession }: { setSession: (s: any) => void }) => {
 
                 if (data.status === 'approved') {
                     clearInterval(interval);
+
+                    // Fetch actual user profile to get real username
+                    let username = 'Authenticated User';
+                    try {
+                        const { data: profile } = await apiClient.get('/auth/me', {
+                            headers: { Authorization: `Bearer ${data.accessToken}` }
+                        });
+                        username = profile.username || profile.email || 'Authenticated User';
+                    } catch (e) {
+                        // Fallback to placeholder if profile fetch fails
+                    }
+
                     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
                     const newSession = {
                         accessToken: data.accessToken,
-                        user: { id: data.userId || '', username: 'Authenticated User' },
+                        user: { id: data.userId || '', username },
                         workspace: { id: data.workspaceId || '', name: 'Default Workspace' },
                         deviceName: data.deviceName || 'Terminal',
                         expiresAt

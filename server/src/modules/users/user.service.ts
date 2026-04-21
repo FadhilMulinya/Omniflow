@@ -21,17 +21,15 @@ export const UserService = {
     },
 
     async getPaymentMethods(userId: string) {
-        const record = await UserRepository.findById(userId, 'savedPaymentMethods stripeAccountId');
+        const record = await UserRepository.findById(userId, 'savedPaymentMethods');
         const saved = (record as any)?.savedPaymentMethods || {};
         return {
-            stripe: { enabled: !!saved.stripe?.enabled, stripeAccountId: (record as any)?.stripeAccountId || '' },
             crypto: saved.crypto || [],
         };
     },
 
-    async updatePaymentMethods(userId: string, stripe?: { enabled: boolean }, crypto?: Array<{ label: string; network: string; walletAddress: string; asset: string }>) {
+    async updatePaymentMethods(userId: string, crypto?: Array<{ label: string; network: string; walletAddress: string; asset: string }>) {
         const update: Record<string, unknown> = {};
-        if (stripe !== undefined) update['savedPaymentMethods.stripe'] = stripe;
         if (crypto !== undefined) update['savedPaymentMethods.crypto'] = crypto;
         await UserRepository.findByIdAndUpdate(userId, { $set: update });
         return { success: true };

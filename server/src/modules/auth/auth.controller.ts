@@ -305,7 +305,7 @@ export async function authController(fastify: FastifyInstance) {
     fastify.get(
         '/me',
         {
-            onRequest: [fastify.authenticate],
+            onRequest: [fastify.authenticateAny],
             schema: {
                 tags: ['Auth'],
                 summary: 'Get current user profile',

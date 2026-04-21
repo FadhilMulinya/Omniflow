@@ -29,3 +29,12 @@ export const workspaceIdParamSchema = () => idParamSchema('Workspace ID');
 /** User id param. */
 export const userIdParamSchema = () => idParamSchema('User ID');
 
+/** Common workspace header requirement for Scalar/OpenAPI docs. */
+export const workspaceHeaderSchema = {
+    type: 'object' as const,
+    properties: {
+        'x-workspace-id': { type: 'string' as const, description: 'The active workspace ID for this operation' },
+    },
+    required: ['x-workspace-id'] as string[],
+};
+

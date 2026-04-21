@@ -76,6 +76,50 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
       }
     }
   );
+
+  fastify.decorate(
+    'authenticateAny',
+    async function authenticateAny(
+      request: FastifyRequest,
+      reply: FastifyReply
+    ): Promise<void> {
+      // 1. Try standard JWT (Cookie or Auth Header)
+      try {
+        await request.jwtVerify();
+        return; // Success
+      } catch (err) {
+        // Continue to terminal auth
+      }
+
+      // 2. Try Terminal Opaque Token
+      const authHeader = request.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ') && !authHeader.split(' ')[1].includes('.')) {
+        try {
+          const rawToken = authHeader.split(' ')[1];
+          const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+          const session = await TerminalSession.findOne({
+            hashedAccessToken: hashedToken,
+            status: 'approved',
+            revoked: false
+          }).lean();
+
+          if (session) {
+            request.user = {
+              id: session.userId?.toString() || '',
+              workspaceId: session.workspaceId?.toString(),
+              type: 'terminal'
+            };
+            return; // Success
+          }
+        } catch (err) {
+          // Ignore terminal auth error and fall through to 401
+        }
+      }
+
+      return reply.code(401).send({ error: 'Authentication failed' });
+    }
+  );
 }
 
 export default fp(authPlugin, {
@@ -95,6 +139,11 @@ declare module 'fastify' {
     ) => Promise<void>;
 
     authenticateTerminal: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
+
+    authenticateAny: (
       request: FastifyRequest,
       reply: FastifyReply
     ) => Promise<void>;

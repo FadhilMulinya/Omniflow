@@ -24,12 +24,17 @@ export const DeveloperApiKeyService = {
         });
 
         return {
-            id: apiKey._id,
-            name: apiKey.name,
-            keyPrefix: apiKey.keyPrefix,
-            rawKey, // Only returned once
-            scopes: apiKey.scopes,
-            createdAt: apiKey.createdAt,
+            key: rawKey, // Only returned once
+            record: {
+                _id: String(apiKey._id),
+                name: apiKey.name || 'Unnamed Key',
+                keyPrefix: apiKey.keyPrefix || 'legacy',
+                scopes: apiKey.scopes || [],
+                isActive: apiKey.isActive ?? true,
+                lastUsedAt: apiKey.lastUsedAt,
+                createdAt: apiKey.createdAt || new Date(),
+                expiresAt: apiKey.expiresAt,
+            }
         };
     },
 
@@ -61,13 +66,13 @@ export const DeveloperApiKeyService = {
     async listKeys(userId: string) {
         const keys = await DeveloperApiKeyRepository.findByUserId(userId);
         return keys.map(key => ({
-            id: key._id,
-            name: key.name,
-            keyPrefix: key.keyPrefix,
-            scopes: key.scopes,
-            isActive: key.isActive,
+            _id: String(key._id),
+            name: key.name || 'Unnamed Key',
+            keyPrefix: key.keyPrefix || 'legacy',
+            scopes: key.scopes || [],
+            isActive: key.isActive ?? true,
             lastUsedAt: key.lastUsedAt,
-            createdAt: key.createdAt,
+            createdAt: key.createdAt || new Date(),
             expiresAt: key.expiresAt,
         }));
     },

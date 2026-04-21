@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { TerminalAuthRepository } from './terminal-auth.repository';
 import { ENV } from '../../shared/config/environments';
+import { UserService } from '../users/user.service';
 
 const POLL_INTERVAL = 5; // seconds
 const SESSION_EXPIRY = 15 * 60; // 15 mins
@@ -53,11 +54,29 @@ export const TerminalAuthService = {
                 hashedAccessToken: hashedToken
             });
 
+            // Fetch user info to return in poll response
+            let username = 'Authenticated User';
+            let plan = 'free';
+            if (session.userId) {
+                try {
+                    const { UserService } = await import('../users/user.service');
+                    const user = await UserService.getProfile(session.userId.toString(), 'username plan');
+                    if (user) {
+                        username = user.username || 'Authenticated User';
+                        plan = user.plan || 'free';
+                    }
+                } catch (e) {
+                    // Ignore and use defaults
+                }
+            }
+
             return {
                 status: 'approved',
                 accessToken: rawToken, // This is explicitly the ONLY time raw token is available
                 userId: session.userId?.toString(),
-                workspaceId: session.workspaceId?.toString()
+                workspaceId: session.workspaceId?.toString(),
+                username,
+                plan
             };
         }
 
@@ -82,7 +101,8 @@ export const TerminalAuthService = {
         await TerminalAuthRepository.updateStatus(session._id.toString(), 'approved', {
             userId: userId as any,
             workspaceId: workspaceId as any,
-            deviceName
+            deviceName,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Extend session to 7 days
         });
 
         return { success: true };

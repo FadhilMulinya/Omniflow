@@ -5,6 +5,7 @@ import {
     cookieAuthSecurity,
     standardErrorResponses,
     paymentLinkSchema,
+    workspaceHeaderSchema,
 } from '../../shared/docs';
 
 /**
@@ -34,8 +35,9 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
                     reference: { type: 'string', description: 'Internal reference ID for tracking' },
                     expiresAt: { type: 'string', format: 'date-time' },
                     metadata: { type: 'object', additionalProperties: { type: 'string' } }
-                }
+                },
             },
+            headers: workspaceHeaderSchema,
             response: {
                 201: {
                     description: 'Payment link created',
@@ -77,8 +79,9 @@ export const paymentLinkRoutes: FastifyPluginAsync = async (fastify) => {
                     type: 'array',
                     items: paymentLinkSchema,
                 },
-                ...standardErrorResponses([400, 401, 403, 500])
-            }
+            },
+            headers: workspaceHeaderSchema,
+            ...standardErrorResponses([400, 401, 403, 500])
         }
     }, async (request, reply) => {
         const workspaceId = request.headers['x-workspace-id'] as string;

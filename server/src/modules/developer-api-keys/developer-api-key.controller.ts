@@ -66,7 +66,10 @@ export async function developerApiKeyController(fastify: FastifyInstance) {
             try {
                 const result = await DeveloperApiKeyService.createApiKeyForUser(request.user.id, request.body.name || 'Default Key');
                 return reply.code(201).send(result);
-            } catch (err: any) { return reply.code(err.code || 500).send({ error: err.message }); }
+            } catch (err: any) {
+                console.error('[DeveloperApiKeyController] Error during key creation:', err);
+                return reply.code(err.code || 500).send({ error: err.message });
+            }
         }
     );
 

@@ -67,13 +67,14 @@ export const Repl = ({ session, setSession }: { session: TerminalSession | null,
                         session,
                         setChatAgent,
                         messages: currentHistory,
+                        exit,
                         onDone: (fullContent: string) => {
                             setChatHistory(prev => [...prev, { role: 'user', content: trimmed }, { role: 'assistant', content: fullContent }]);
                         }
                     });
                 }
             } else {
-                outputNode = await executeCommand(trimmed, { session, setSession, setChatAgent });
+                outputNode = await executeCommand(trimmed, { session, setSession, setChatAgent, exit });
             }
 
             setHistory(prev => [...prev, {
