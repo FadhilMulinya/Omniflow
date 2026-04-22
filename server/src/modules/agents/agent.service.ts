@@ -7,8 +7,6 @@ import { User } from '../../infrastructure/database/models/User';
 import { PLANS, PlanId } from '../../shared/constants/tokens';
 import { getUserPlan, assertCanDelete, assertCanReEdit } from '../../shared/utils/plan-enforcement';
 
-// ── List & filter ─────────────────────────────────────────────────────────────
-
 export async function getAgentCharacter(id: string) {
     const agent = await AgentRepository.findById(id);
     if (!agent) return null;
@@ -42,30 +40,9 @@ export async function listAgents(userId: string, query: { isDraft?: string; stat
     return AgentRepository.findMany(filter);
 }
 
-// ── Get single agent with graph ───────────────────────────────────────────────
-
 export async function getAgentWithGraph(id: string) {
-    const agent = await AgentRepository.findById(id);
-    if (!agent) return null;
-
-    const { nodes, edges } = await AgentRepository.getGraph(id);
-    return {
-        ...agent.toObject(),
-        graph: {
-            nodes: nodes.map((n: any) => ({
-                id: n.nodeId, type: n.type, position: n.position,
-                data: { ...n.data, chain: n.chain, tool: n.tool, params: n.params },
-            })),
-            edges: edges.map((e: any) => ({
-                id: e.edgeId, source: e.source, target: e.target,
-                sourceHandle: e.sourceHandle, targetHandle: e.targetHandle,
-                label: e.label, data: e.data,
-            })),
-        },
-    };
+    return AgentRepository.findById(id);
 }
-
-// ── Plan status ───────────────────────────────────────────────────────────────
 
 export async function getPlanStatus(userId: string) {
     const user = await User.findById(userId).select('tokens plan planExpiry');
@@ -83,15 +60,12 @@ export async function getPlanStatus(userId: string) {
     };
 }
 
-// ── Update agent ──────────────────────────────────────────────────────────────
-
-export interface UpdateAgentParams {
+interface UpdateAgentParams {
     id: string;
-    userId?: string; // required for plan enforcement
+    userId?: string;
     name?: string;
     description?: string;
     persona?: string;
-    graph?: any;
     identities?: any;
     character?: any;
     isDraft?: boolean;
@@ -103,8 +77,8 @@ export interface UpdateAgentParams {
 }
 
 export async function updateAgent(params: UpdateAgentParams) {
-    const { id, userId, name, description, persona, graph, identities, character,
-        isDraft, provider, apiKey, model, agentType, log } = params;
+    const { id, userId, name, description, persona, identities, character,
+        isDraft, provider, apiKey, model, agentType } = params;
 
     if (userId) {
         const planId = await getUserPlan(userId);
@@ -127,7 +101,7 @@ export async function updateAgent(params: UpdateAgentParams) {
     let intermediateCharacter = character ? { ...agent.character, ...character } : agent.character || {};
 
     if (persona && persona !== agent.persona && (!(intermediateCharacter as any).character?.bio || Object.keys(intermediateCharacter).length <= 1)) {
-        const enhanced = await enhancePersona(name || agent.name, persona, provider || agent.modelProvider, apiKey, model || agent.modelConfig.modelName, currentAgentType);
+        const enhanced = await enhancePersona(agent.name, persona, provider || agent.modelProvider, apiKey, model || agent.modelConfig.modelName, currentAgentType);
         if (!enhanced.character || !enhanced.identity) throw new Error('AI generated an incomplete character.');
         intermediateCharacter = enhanced;
         agent.persona = persona;
@@ -142,12 +116,8 @@ export async function updateAgent(params: UpdateAgentParams) {
 
     if (agentType) agent.agentType = agentType as any;
     await AgentRepository.save(agent);
-    if (graph) await AgentRepository.syncGraph(id, graph);
-
     return agent;
 }
-
-// ── Delete agent ──────────────────────────────────────────────────────────────
 
 export async function deleteAgent(id: string, userId?: string) {
     if (userId) {
@@ -156,6 +126,5 @@ export async function deleteAgent(id: string, userId?: string) {
     }
     const agent = await AgentRepository.findByIdAndDelete(id);
     if (!agent) throw { code: 404, message: 'Agent not found' };
-    await AgentRepository.deleteGraph(id);
     return agent;
 }

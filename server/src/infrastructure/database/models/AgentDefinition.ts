@@ -14,7 +14,6 @@ interface IAgentDefinition extends Document {
     modelConfig: { modelName: string; temperature?: number; maxTokens?: number };
     isActive: boolean;
     isDraft: boolean;
-    // Agent control — start/stop super-command state
     status: 'running' | 'stopped';
     persona?: string;
     blockchain?: {
@@ -26,16 +25,6 @@ interface IAgentDefinition extends Document {
         walletType?: 'managed' | 'externally_owned';
         peerId?: string;
     }[];
-    graph: { nodes: any[]; edges: any[] };
-    exportSettings?: {
-        embedEnabled: boolean;
-        allowedDomains: string[];
-        allowedIPs: string[];
-        theme: string;
-        pwaDownloadCount: number;
-        lastExportedAt: Date;
-        mcpEnabled: boolean;
-    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -72,19 +61,9 @@ const AgentDefinitionSchema: Schema = new Schema(
                 publicKey: { type: String },
                 privateKey: { type: String },
                 walletType: { type: String, enum: ['managed', 'externally_owned'] },
-                peerId: { type: String }, // Fiber/CKB peer ID for discovery
+                peerId: { type: String },
             },
         ],
-        graph: { type: Schema.Types.Mixed, default: { nodes: [], edges: [] } },
-        exportSettings: {
-            embedEnabled: { type: Boolean, default: false },
-            allowedDomains: [{ type: String }],
-            allowedIPs: [{ type: String }],
-            theme: { type: String, default: 'dark' },
-            pwaDownloadCount: { type: Number, default: 0 },
-            lastExportedAt: { type: Date },
-            mcpEnabled: { type: Boolean, default: false },
-        },
     },
     { timestamps: true }
 );

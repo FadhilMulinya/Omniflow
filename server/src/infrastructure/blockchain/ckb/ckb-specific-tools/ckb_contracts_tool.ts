@@ -4,30 +4,30 @@ export type GetTransactionInput = z.infer<typeof GetTransactionSchema>;
 export type GetBlockInput = z.infer<typeof GetBlockSchema>;
 export type GetCapacityByLockInput = z.infer<typeof GetCapacityByLockSchema>;
 export type GetLiveCellsByLockInput = z.infer<typeof GetLiveCellsByLockSchema>;
-export type BuildTransferTxInput = z.infer<typeof BuildTransferTxSchema>;
+type BuildTransferTxInput = z.infer<typeof BuildTransferTxSchema>;
 export type CreateSignatureInput = z.infer<typeof CreateSignatureSchema>;
 export type VerifySignatureInput = z.infer<typeof VerifySignatureSchema>;
 export type GetAddressInput = z.infer<typeof GetAddressSchema>;
 export type GenerateWalletInput = z.infer<typeof GenerateWalletSchema>;
 
 
-export const OutPointSchema = z.object({
+const OutPointSchema = z.object({
     tx_hash: z.string(),
     index: z.string(), // Hex string
 });
 
-export const CellInputSchema = z.object({
+const CellInputSchema = z.object({
     since: z.string().optional(),
     previous_output: OutPointSchema,
 });
 
-export const ScriptSchema = z.object({
+const ScriptSchema = z.object({
     code_hash: z.string(),
     hash_type: z.enum(["type", "data", "data1", "data2"]),
     args: z.string(),
 });
 
-export const CellOutputSchema = z.object({
+const CellOutputSchema = z.object({
     capacity: z.string(), // Hex string shannons
     lock: ScriptSchema,
     type: ScriptSchema.optional(),
@@ -96,4 +96,4 @@ export const GetAddressSchema = z.object({
 
 export const GenerateWalletSchema = z.object({}).describe("Generates a new CKB wallet (private key and address)");
 
-export const ckbContractsTools = [];
+const ckbContractsTools = [];

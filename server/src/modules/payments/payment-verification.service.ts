@@ -16,11 +16,11 @@ const verifiers = new Map<string, ChainTransactionVerifier>([
 /**
  * Register additional chain verifiers at startup (e.g. EVM, Solana).
  */
-export function registerTransactionVerifier(verifier: ChainTransactionVerifier): void {
+function registerTransactionVerifier(verifier: ChainTransactionVerifier): void {
     verifiers.set(verifier.chain.toUpperCase(), verifier);
 }
 
-export interface VerifyPaymentResult {
+interface VerifyPaymentResult {
     success: boolean;
     message: string;
     verification?: ChainVerificationResult;

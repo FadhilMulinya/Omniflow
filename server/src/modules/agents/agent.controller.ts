@@ -1,37 +1,30 @@
 import { FastifyPluginAsync } from 'fastify';
-import { Readable } from 'stream';
-import { Orchestrator } from '../../core/engine/orchestrator';
 import {
     listAgents, getAgentWithGraph, getAgentCharacter, getPlanStatus, updateAgent, deleteAgent,
 } from './agent.service';
 import { AgentCreationService } from './services/agent-creation.service';
 import {
     cookieAuthSecurity,
-    idParamSchema,
     agentIdParamSchema,
     agentSchema,
     standardErrorResponses,
 } from '../../shared/docs';
 
-/**
- * Agent READ Endpoints
- */
-export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
-    // GET /agents - List my agents
+const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.get<{ Querystring: { isDraft?: string; status?: string; search?: string } }>(
         '/agents', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'List my agents',
-            description: 'Returns all agents owned by the authenticated user. Supports searching by name and filtering by status (drafts, published, listed).',
+            description: 'Returns all agents owned by the authenticated user. Supports searching by name and filtering by status.',
             security: [cookieAuthSecurity],
             querystring: {
                 type: 'object',
                 properties: {
-                    isDraft: { type: 'string', enum: ['true', 'false'], description: 'Legacy draft filter' },
-                    status: { type: 'string', enum: ['published', 'drafts', 'listed'], description: 'Filter agents by their current lifecycle status' },
-                    search: { type: 'string', description: 'Search agents by name or description' },
+                    isDraft: { type: 'string', enum: ['true', 'false'] },
+                    status: { type: 'string', enum: ['published', 'drafts', 'listed'] },
+                    search: { type: 'string' },
                 },
             },
             response: {
@@ -47,13 +40,12 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
         async (request) => listAgents(request.user.id, request.query)
     );
 
-    // GET /agents/plan-status - User capability check
     fastify.get('/agents/plan-status', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Get plan status',
-            description: 'Returns the current user\'s plan details, including agent limits and remaining capacity.',
+            description: 'Returns the current user plan details and capacity.',
             security: [cookieAuthSecurity],
             response: {
                 200: {
@@ -78,22 +70,20 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
         catch (e: any) { return reply.code(e.code || 500).send({ error: e.message }); }
     });
 
-    // GET /agents/:id - Get detail (with graph)
     fastify.get<{ Params: { id: string } }>('/agents/:id', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Get agent by ID',
-            description: 'Returns an agent with its full configuration, identities, and visual graph definition.',
+            description: 'Returns an agent with its full configuration and identities.',
             security: [cookieAuthSecurity],
             params: agentIdParamSchema(),
             response: {
                 200: {
-                    description: 'Agent details with full graph',
+                    description: 'Agent details',
                     ...agentSchema,
                     properties: {
                         ...agentSchema.properties,
-                        graph: { type: 'object', additionalProperties: true },
                         identities: { type: 'object', additionalProperties: true },
                         character: { type: 'object', additionalProperties: true },
                     },
@@ -107,13 +97,12 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
         return result;
     });
 
-    // GET /agents/:id.json - Exported character format
     fastify.get<{ Params: { id: string } }>('/agents/:id.json', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Export agent character (JSON)',
-            description: 'Returns the agent in a portable JSON format compatible with external executors.',
+            description: 'Returns the agent character in portable JSON format.',
             security: [cookieAuthSecurity],
             params: agentIdParamSchema(),
             response: {
@@ -137,17 +126,13 @@ export const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
     });
 };
 
-/**
- * Agent CREATE Endpoints
- */
-export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
-    // POST /agents/enhance - AI-powered persona refining
+const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
     fastify.post<{ Body: { name: string; persona: string; agentType?: string; chains?: string[] } }>(
         '/agents/enhance', {
         schema: {
             tags: ['Agents'],
             summary: 'Preview enhanced persona',
-            description: 'Uses an LLM to refine and expand a raw agent concept into a polished persona. Does not persist the agent.',
+            description: 'Uses an LLM to refine and expand a raw agent concept into a polished persona.',
             body: {
                 type: 'object',
                 required: ['name', 'persona'],
@@ -182,14 +167,13 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
         }
     );
 
-    // POST /agents - Core agent creation
-    fastify.post<{ Body: { name: string; description?: string; persona?: string; graph?: any; identities?: any; character?: any; isDraft?: boolean; agentType?: string; chains?: string[] } }>(
+    fastify.post<{ Body: { name: string; description?: string; persona?: string; identities?: any; character?: any; isDraft?: boolean; agentType?: string; chains?: string[] } }>(
         '/agents', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Create a new agent',
-            description: 'Initializes a new AI agent. Requires Starter plan or better for non-draft agents.',
+            description: 'Initializes a new AI agent.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
@@ -198,7 +182,6 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     name: { type: 'string', minLength: 1, maxLength: 100 },
                     description: { type: 'string' },
                     persona: { type: 'string' },
-                    graph: { type: 'object', additionalProperties: true },
                     identities: { type: 'object', additionalProperties: true },
                     character: { type: 'object', additionalProperties: true },
                     isDraft: { type: 'boolean', default: false },
@@ -222,52 +205,16 @@ export const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
             } catch (err: any) { return reply.code(err.code || 500).send({ error: err.message || 'Internal server error', details: err.details }); }
         }
     );
-
-    // POST /agents/from-template - Template-based creation
-    fastify.post<{ Body: { templateId: string; name: string } }>(
-        '/agents/from-template', {
-        onRequest: [fastify.authenticate],
-        schema: {
-            tags: ['Agents'],
-            summary: 'Create agent from template',
-            description: 'Clones an agent from a pre-defined library template.',
-            security: [cookieAuthSecurity],
-            body: {
-                type: 'object',
-                required: ['templateId', 'name'],
-                properties: {
-                    templateId: { type: 'string' },
-                    name: { type: 'string' },
-                },
-            },
-            response: {
-                200: {
-                    description: 'Template instantiated successfully',
-                    ...agentSchema,
-                },
-                ...standardErrorResponses([401, 403, 404, 500]),
-            },
-        },
-    },
-        async (request, reply) => {
-            try { return await AgentCreationService.createAgentFromTemplate(request.user.id, request.body.templateId, request.body.name); }
-            catch (err: any) { return reply.code(err.code || 500).send({ error: err.message || 'Failed to create agent from template' }); }
-        }
-    );
 };
 
-/**
- * Agent UPDATE / DELETE / QUERY Endpoints
- */
-export const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
-    // PUT /agents/:id - General update
-    fastify.put<{ Params: { id: string }; Body: { name?: string; description?: string; persona?: string; graph?: any; identities?: any; character?: any; isDraft?: boolean; provider?: string; apiKey?: string; model?: string; agentType?: string } }>(
+const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
+    fastify.put<{ Params: { id: string }; Body: { name?: string; description?: string; persona?: string; identities?: any; character?: any; isDraft?: boolean; provider?: string; apiKey?: string; model?: string; agentType?: string } }>(
         '/agents/:id', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Update an agent',
-            description: 'Modifies an existing agent\'s configuration or graph. Triggers AI re-enhancement if the persona changes significantly.',
+            description: 'Modifies an existing agent configuration and persona.',
             security: [cookieAuthSecurity],
             params: agentIdParamSchema(),
             body: {
@@ -276,7 +223,6 @@ export const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     name: { type: 'string' },
                     description: { type: 'string' },
                     persona: { type: 'string' },
-                    graph: { type: 'object', additionalProperties: true },
                     identities: { type: 'object', additionalProperties: true },
                     character: { type: 'object', additionalProperties: true },
                     isDraft: { type: 'boolean' },
@@ -298,13 +244,12 @@ export const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
         }
     );
 
-    // DELETE /agents/:id - Soft or hard deletion
     fastify.delete<{ Params: { id: string } }>('/agents/:id', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Delete an agent',
-            description: 'Deletes an agent and its associated graph. Requires a paid plan to perform deletions.',
+            description: 'Deletes an agent.',
             security: [cookieAuthSecurity],
             params: agentIdParamSchema(),
             response: {
@@ -319,59 +264,11 @@ export const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
     }, async (request, reply) => {
         try {
             await deleteAgent(request.params.id, request.user.id);
-            return { message: 'Agent and associated data deleted successfully' };
+            return { message: 'Agent deleted successfully' };
         } catch (err: any) { return reply.code(err.code || 500).send({ error: err.message || 'Failed to delete agent' }); }
     });
-
-    // POST /agent/query - Interactive Chat (SSE)
-    fastify.post<{ Body: { prompt: string; agentId: string; sessionId: string } }>(
-        '/agent/query', {
-        onRequest: [fastify.authenticate],
-        schema: {
-            tags: ['Agents'],
-            summary: 'Query agent (SSE chat)',
-            description: 'Establishes a Server-Sent Events stream for real-time agent interaction. Streams JSON events for content, tool usage, and completion.',
-            security: [cookieAuthSecurity],
-            body: {
-                type: 'object',
-                required: ['prompt', 'agentId', 'sessionId'],
-                properties: {
-                    prompt: { type: 'string', description: 'User input text' },
-                    agentId: { type: 'string' },
-                    sessionId: { type: 'string', description: 'Chat session identifier for memory persistence' },
-                },
-            },
-            response: {
-                200: {
-                    description: 'Event stream',
-                    type: 'string',
-                    content: { 'text/event-stream': { schema: { type: 'string' } } },
-                },
-                ...standardErrorResponses([401, 404, 500]),
-            },
-        },
-    },
-        async (request, reply) => {
-            const { prompt, agentId, sessionId } = request.body;
-            const userId = request.user.id;
-            try {
-                const readable = new Readable({ read() { } });
-                Orchestrator.handleQuery(prompt, agentId, userId, sessionId, readable)
-                    .then(() => readable.push(null))
-                    .catch((err) => { readable.push(`data: ${JSON.stringify({ error: err.message })}\n\n`); readable.push(null); });
-                return reply
-                    .header('Content-Type', 'text/event-stream').header('Cache-Control', 'no-cache')
-                    .header('Connection', 'keep-alive')
-                    .header('Access-Control-Allow-Origin', request.headers.origin || 'http://localhost:3000')
-                    .header('Access-Control-Allow-Credentials', 'true').send(readable);
-            } catch (error: any) { return reply.code(500).send({ error: error.message }); }
-        }
-    );
 };
 
-/**
- * Module entry
- */
 export const agentRoutes: FastifyPluginAsync = async (app) => {
     app.register(readAgentRoutes);
     app.register(createAgentRoutes);

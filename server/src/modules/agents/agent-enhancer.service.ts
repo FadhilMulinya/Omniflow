@@ -107,6 +107,6 @@ Summarized Persona: ${persona}
 }
 
 /** @deprecated Use the named export `enhancePersona` instead. Kept for backward compat during migration. */
-export class AgentEnhancer {
+class AgentEnhancer {
     static enhancePersona = enhancePersona;
 }
