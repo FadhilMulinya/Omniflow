@@ -18,9 +18,9 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
             description: 'Validates API keys and connectivity for a specific model provider (OpenAI, Gemini, Ollama).',
             body: {
                 type: 'object',
-                required: ['provider', 'apiKey'],
+                required: ['provider'],
                 properties: {
-                    provider: { type: 'string', enum: ['openai', 'gemini', 'ollama'], description: 'Name of the AI backend' },
+                    provider: { type: 'string', enum: ['openai', 'gemini', 'ollama','anthropic'], description: 'Name of the AI backend' },
                     apiKey: { type: 'string', description: 'Provider-specific secret key' },
                     baseUrl: { type: 'string', description: 'Provider-specific base URL' },
                 },
