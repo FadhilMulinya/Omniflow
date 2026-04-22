@@ -1,4 +1,5 @@
 import { PaymentLinkRepository } from './payment-link.repository';
+import { PaymentLinkService } from './payment-link.service';
 import { CkbPaymentService } from '../../infrastructure/blockchain/ckb/ckb-payment.service';
 import { PaymentLinkService as CorePaymentLinkService } from '../../core/payments/payment-links/payment-link.service';
 import {
@@ -36,10 +37,16 @@ export interface VerifyPaymentResult {
  * This service does NOT perform any blockchain-level fetching or parsing.
  */
 export const PaymentVerificationService = {
-    async verifyPayment(paymentLinkId: string, verificationBody: Record<string, any>): Promise<VerifyPaymentResult> {
-        // 1. Fetch link record
-        const linkRecord = await PaymentLinkRepository.findById(paymentLinkId);
-        if (!linkRecord) return { success: false, message: 'Payment link not found' };
+    async verifyPayment(paymentLinkId: string | undefined, verificationBody: Record<string, any>): Promise<VerifyPaymentResult> {
+        // 1. Resolve identifier (from URL override or Body)
+        const id = paymentLinkId || verificationBody.id;
+        if (!id) return { success: false, message: 'Missing payment link ID or code' };
+
+        // 2. Fetch link record (supports ID or Code)
+        const linkRecord = await PaymentLinkService.getPaymentLink(id);
+        if (!linkRecord) {
+            return { success: false, message: `Payment link not found for identifier: ${id}` };
+        }
 
         // 2. Business-rule guards
         if (linkRecord.status === 'paid') return { success: false, message: 'Payment link already fulfilled' };
@@ -66,7 +73,7 @@ export const PaymentVerificationService = {
         if (!verification.isPaid) return { success: false, message: 'Transaction does not satisfy payment requirements', verification };
 
         // 6. Persist the normalised verification result
-        await PaymentLinkRepository.markPaid(paymentLinkId, {
+        await PaymentLinkRepository.markPaid(id, {
             txHash: verification.txHash,
             payerAddress: verification.payerAddress,
             paidAmount: verification.paidAmount,
@@ -77,7 +84,7 @@ export const PaymentVerificationService = {
 
         // 7. Emit event
         eventBus.emit('PAYMENT_LINK_PAID', {
-            paymentLinkId,
+            paymentLinkId: id,
             chain: verification.chain,
             txHash: verification.txHash,
             payerAddress: verification.payerAddress,

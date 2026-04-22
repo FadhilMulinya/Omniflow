@@ -1,4 +1,7 @@
 import { CharacterSchema } from '../../core/characters/schema';
+import { ENV } from '../../shared/config/environments';
+import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'developer';
 
@@ -7,6 +10,21 @@ export interface CompletionMessage {
     content: string;
 }
 
+export const OpenAIClient = new OpenAI({
+  apiKey: ENV.OPENAI_API_KEY,
+  baseURL: ENV.OPENAI_BASE_URL, 
+});
+
+export const AnthropicClient = new Anthropic({
+    apiKey: ENV.ANTHROPIC_API_KEY,
+    baseURL: ENV.ANTHROPIC_BASE_URL,
+});
+
+export const OllamaClient = {
+    apiKey: ENV.OLLAMA_API_KEY,
+    baseURL: ENV.OLLAMA_BASE_URL,
+};
+
 export interface CompletionRequest {
     provider?: 'gemini' | 'openai' | 'ollama';
     model?: string;
@@ -14,7 +32,8 @@ export interface CompletionRequest {
     temperature?: number;
     maxTokens?: number;
     character?: CharacterSchema;
-    apiKey?: string; // Optional user-provided key
+    apiKey?: string;
+    baseUrl?: string;  
 }
 
 export interface CompletionResponse {
@@ -28,8 +47,10 @@ export interface CompletionResponse {
     provider: string;
 }
 
+
+
 export interface IAIProvider {
     generateCompletion(request: CompletionRequest): Promise<CompletionResponse>;
     generateStream?(request: CompletionRequest): AsyncIterableIterator<string>;
-    testConnection(apiKey: string): Promise<boolean>;
+    testConnection(apiKey: string, baseUrl?: string): Promise<boolean>;
 }

@@ -1,7 +1,7 @@
 /**
  * Builds a standardized system prompt based on a character profile.
  * 
- * @param character - The Eliza-style character profile
+ * @param character - The character profile
  * @returns A formatted string containing names, bios, and instructions
  */
 export function buildSystemPrompt(character: any): string {

@@ -11,7 +11,7 @@ import { standardErrorResponses } from '../../shared/docs';
 export const aiRoutes: FastifyPluginAsync = async (fastify) => {
 
     // POST /ai/test-connection - Provider validation
-    fastify.post<{ Body: { provider: string; apiKey: string } }>('/test-connection', {
+    fastify.post<{ Body: { provider: string; apiKey: string; baseUrl?: string } }>('/test-connection', {
         schema: {
             tags: ['AI Primitives'],
             summary: 'Test AI provider connection',
@@ -22,6 +22,7 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
                 properties: {
                     provider: { type: 'string', enum: ['openai', 'gemini', 'ollama'], description: 'Name of the AI backend' },
                     apiKey: { type: 'string', description: 'Provider-specific secret key' },
+                    baseUrl: { type: 'string', description: 'Provider-specific base URL' },
                 },
             },
             response: {
@@ -39,8 +40,15 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
             },
         },
     }, async (request, reply) => {
-        try { return await AiService.testConnection(request.body.provider, request.body.apiKey); }
-        catch (error: any) { return reply.code(error.code || 500).send({ error: error.message }); }
+        try { 
+            return await AiService.testConnection(
+                request.body.provider, 
+                request.body.apiKey, 
+                request.body.baseUrl
+            ); 
+        } catch (error: any) { 
+            return reply.code(error.code || 500).send({ error: error.message }); 
+        }
     });
 
     // POST /ai/complete - Synchronous model call
@@ -83,8 +91,11 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
         },
     }, async (request, reply) => {
         const apiKey = request.headers['x-ai-api-key'] as string;
-        try { return await AiService.generateCompletion(request.body, apiKey); }
-        catch (error: any) { return reply.code(500).send({ error: error.message }); }
+        try { 
+            return await AiService.generateCompletion(request.body, apiKey); 
+        } catch (error: any) { 
+            return reply.code(500).send({ error: error.message }); 
+        }
     });
 
     // POST /ai/stream - SSE model call
@@ -125,10 +136,14 @@ export const aiRoutes: FastifyPluginAsync = async (fastify) => {
                 }
             })());
             return reply
-                .header('Content-Type', 'text/event-stream').header('Cache-Control', 'no-cache')
+                .header('Content-Type', 'text/event-stream')
+                .header('Cache-Control', 'no-cache')
                 .header('Connection', 'keep-alive')
                 .header('Access-Control-Allow-Origin', request.headers.origin || 'http://localhost:3000')
-                .header('Access-Control-Allow-Credentials', 'true').send(readable);
-        } catch (error: any) { return reply.code(500).send({ error: error.message }); }
+                .header('Access-Control-Allow-Credentials', 'true')
+                .send(readable);
+        } catch (error: any) { 
+            return reply.code(500).send({ error: error.message }); 
+        }
     });
 };

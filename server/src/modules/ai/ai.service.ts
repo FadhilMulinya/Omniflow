@@ -1,16 +1,24 @@
+// ai.service.ts
 import { Readable } from 'stream';
 import { AIFactory } from '../../infrastructure/ai/factory';
 import { CompletionRequest } from '../../infrastructure/ai/types';
 import { AgentRepository } from '../agents/agent.repository';
 import { getSpecializedSystemPrompt } from '../../core/engine/processors/prompts';
 import { generateRandomBalance } from '../../core/engine/simulators/crypto/helpers';
+import { ENV } from '../../shared/config/environments';
 
 export const AiService = {
-    async testConnection(provider: string, apiKey: string) {
-        if (!apiKey) throw Object.assign(new Error('API Key is required'), { code: 400 });
+    async testConnection(provider: string, apiKey?: string, baseUrl?: string) {
+        // Use system defaults if not provided
+        const finalApiKey = apiKey || this.getDefaultApiKey(provider) as string;
+        const finalBaseUrl = baseUrl || this.getDefaultBaseUrl(provider);
+        
+        if (!finalApiKey && provider !== 'ollama') {
+            throw Object.assign(new Error(`API Key is required for ${provider}. Either pass it or set ${provider.toUpperCase()}_API_KEY in env`), { code: 400 });
+        }
 
         const aiProvider = AIFactory.getProvider(provider);
-        const success = await aiProvider.testConnection(apiKey);
+        const success = await aiProvider.testConnection(finalApiKey, finalBaseUrl);
 
         if (!success) {
             throw new Error(`Connection test failed for ${provider}. Please check your API key.`);
@@ -21,18 +29,28 @@ export const AiService = {
 
     async generateCompletion(reqBody: CompletionRequest, headersApiKey?: string) {
         const providerName = reqBody.provider || 'gemini';
-        const apiKey = headersApiKey || reqBody.apiKey;
+        
+        // Use priority: request body apiKey > header apiKey > system env
+        const apiKey = reqBody.apiKey || headersApiKey || this.getDefaultApiKey(providerName);
+        const baseUrl = reqBody.baseUrl || this.getDefaultBaseUrl(providerName);
+        const model = reqBody.model || this.getDefaultModel(providerName);
 
         const aiProvider = AIFactory.getProvider(providerName);
         return aiProvider.generateCompletion({
             ...reqBody,
-            apiKey
+            model,
+            apiKey,
+            baseUrl
         });
     },
 
     async generateStream(reqBody: CompletionRequest & { agentId?: string }, headersApiKey?: string) {
         const providerName = reqBody.provider || 'gemini';
-        const apiKey = headersApiKey || reqBody.apiKey;
+        
+        // Use priority: request body apiKey > header apiKey > system env
+        const apiKey = reqBody.apiKey || headersApiKey || this.getDefaultApiKey(providerName);
+        const baseUrl = reqBody.baseUrl || this.getDefaultBaseUrl(providerName);
+        const model = reqBody.model || this.getDefaultModel(providerName);
         const agentId = reqBody.agentId;
 
         const aiProvider = AIFactory.getProvider(providerName);
@@ -53,7 +71,6 @@ export const AiService = {
                 if (agent.agentType === 'financial_agent' || (agent as any).character?.agent_type === 'financial_agent') {
                     const wallets = (agent as any).blockchain || [];
 
-                    // 1. Fetch stored wallets
                     if (wallets.length > 0) {
                         walletContext += '\nYOUR PERMANENT BALANCES:';
                         wallets.forEach((w: any) => {
@@ -62,10 +79,8 @@ export const AiService = {
                         });
                     }
 
-                    // 2. Proactively detect addresses in the LATEST user message
                     const lastUserMsg = messages.filter(m => m.role === 'user').pop();
                     if (lastUserMsg) {
-                        // Extract CKB addresses (ckt/ckb followed by alphanumeric)
                         const ckbRegex = /(ckt|ckb)1[0-9a-z]{38,}/gi;
                         const matches = lastUserMsg.content.match(ckbRegex);
                         if (matches && matches.length > 0) {
@@ -84,7 +99,6 @@ export const AiService = {
 
                 const specializedPrompt = getSpecializedSystemPrompt(agent, walletContext);
 
-                // Replace or prepend the system prompt
                 const systemIdx = messages.findIndex(m => m.role === 'system');
                 if (systemIdx !== -1) {
                     messages[systemIdx].content = specializedPrompt;
@@ -96,8 +110,53 @@ export const AiService = {
 
         return aiProvider.generateStream({
             ...reqBody,
+            model,
             messages,
-            apiKey
+            apiKey,
+            baseUrl
         });
     },
+
+    // Helper methods to get system defaults
+    getDefaultApiKey(provider: string): string | undefined {
+        const providerLower = provider.toLowerCase();
+        switch (providerLower) {
+            case 'openai':
+                return ENV.OPENAI_API_KEY;
+            case 'gemini':
+                return ENV.GEMINI_API_KEY;
+            case 'ollama':
+                return ENV.OLLAMA_API_KEY;
+            default:
+                return undefined;
+        }
+    },
+
+    getDefaultBaseUrl(provider: string): string | undefined {
+        const providerLower = provider.toLowerCase();
+        switch (providerLower) {
+            case 'openai':
+                return ENV.OPENAI_BASE_URL;
+            case 'gemini':
+                return ENV.GEMINI_BASE_URL;
+            case 'ollama':
+                return ENV.OLLAMA_BASE_URL;
+            default:
+                return undefined;
+        }
+    },
+
+    getDefaultModel(provider: string): string | undefined {
+        const providerLower = provider.toLowerCase();
+        switch (providerLower) {
+            case 'openai':
+                return ENV.OPENAI_MODEL;
+            case 'gemini':
+                return ENV.GEMINI_MODEL;
+            case 'ollama':
+                return ENV.OLLAMA_MODEL;
+            default:
+                return undefined;
+        }
+    }
 };

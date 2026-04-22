@@ -5,6 +5,7 @@ import {
     CompletionResponse
 } from '../types';
 import { buildSystemPrompt } from '../utils';
+import { ENV } from '../../../shared/config/environments';
 
 export class GeminiProvider implements IAIProvider {
     private defaultModel = 'gemini-2.0-flash';
@@ -97,14 +98,24 @@ export class GeminiProvider implements IAIProvider {
         }
     }
 
-    async testConnection(apiKey: string): Promise<boolean> {
-        try {
-            const ai = new GoogleGenAI({ apiKey });
-            await ai.models.list({ config: { pageSize: 1 } });
-            return true;
-        } catch (error) {
-            console.error('Gemini connection test failed:', error);
+async testConnection(apiKey?: string, baseUrl?: string): Promise<boolean> {
+    try {
+        const finalApiKey = apiKey || ENV.GEMINI_API_KEY;
+        if (!finalApiKey) {
+            console.error('No API key provided for Gemini');
             return false;
         }
+        
+        const ai = new GoogleGenAI({ 
+            apiKey: finalApiKey,
+            ...(baseUrl && { baseUrl })
+        });
+        
+        await ai.models.list({ config: { pageSize: 1 } });
+        return true;
+    } catch (error) {
+        console.error('Gemini connection test failed:', error);
+        return false;
     }
+}
 }

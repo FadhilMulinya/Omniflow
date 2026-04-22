@@ -1,0 +1,34 @@
+#Option 1: Use system defaults (no keys passed)
+
+curl -X POST http://localhost:3001/api/ai/complete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "openai",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+
+
+
+#Option 2: Override with custom values
+
+  curl -X POST http://localhost:3001/api/ai/complete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "openai",
+    "apiKey": "custom-key",
+    "baseUrl": "https://custom-endpoint.com",
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+
+
+
+#Option 3: Use header for API key
+
+  curl -X POST http://localhost:3001/api/ai/complete \
+  -H "Content-Type: application/json" \
+  -H "X-AI-API-Key: custom-key" \
+  -d '{
+    "provider": "openai",
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'

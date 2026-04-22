@@ -9,16 +9,25 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const ENV = {
     NODE_ENV,
-    MONGO_URI: process.env.MONGO_URI as string,
+    MONGO_URI: process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/onhandl',
     JWT_SECRET: process.env.JWT_SECRET || 'supersecret_faev',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY as string,
+    GEMINI_BASE_URL: process.env.GEMINI_BASE_URL as string,
+    GEMINI_MODEL: process.env.GEMINI_MODEL as string,
     ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || [
         'http://localhost:3000',
     ],
     OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
+    OPENAI_BASE_URL: process.env.OPENAI_BASE_URL as string,
+    OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-5.4',
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY as string,
+    ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN as string,
+    ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL as string,
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001',
     OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL as string,
     OLLAMA_MODEL: process.env.OLLAMA_MODEL as string,
-    DEFAULT_AI_PROVIDER: (process.env.DEFAULT_AI_PROVIDER || 'ollama') as 'ollama' | 'gemini' | 'openai',
+    OLLAMA_API_KEY: process.env.OLLAMA_API_KEY || "",
+    DEFAULT_AI_PROVIDER: (process.env.DEFAULT_AI_PROVIDER || 'ollama') as 'ollama' | 'gemini' | 'openai' | 'anthropic',
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
     API_URL: process.env.API_URL || 'http://localhost:3001/api',
 

@@ -144,22 +144,20 @@ export class OllamaProvider implements IAIProvider {
         };
     }
 
-    async testConnection(baseUrlInput?: string): Promise<boolean> {
-        try {
-            let baseUrl = this.defaultBaseUrl;
-            if (baseUrlInput && baseUrlInput.startsWith('http')) {
-                baseUrl = baseUrlInput;
-            }
-            const response = await fetch(`${baseUrl}/api/tags`);
-            if (!response.ok) return false;
-            // Optionally, check if the default model is in the tags list if required
-            // const data = await response.json();
-            // const models = data.models.map((m: any) => m.name);
-            // return models.includes(this.defaultModel);
-            return true;
-        } catch (error) {
-            console.error('Ollama connection test failed:', error);
-            return false;
+async testConnection(apiKey?: string, baseUrl?: string): Promise<boolean> {
+    try {
+        let url = ENV.OLLAMA_BASE_URL || 'http://localhost:11434';
+        if (baseUrl && baseUrl.startsWith('http')) {
+            url = baseUrl;
+        } else if (apiKey && apiKey.startsWith('http')) {
+            url = apiKey;
         }
+        
+        const response = await fetch(`${url}/api/tags`);
+        return response.ok;
+    } catch (error) {
+        console.error('Ollama connection test failed:', error);
+        return false;
     }
+}
 }
