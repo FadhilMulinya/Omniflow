@@ -9,7 +9,6 @@ export const FINANCIAL_EVENT_TYPES = [
 export type FinancialEventType = typeof FINANCIAL_EVENT_TYPES[number];
 
 export const FINANCIAL_POLICY_ACTION_TYPES = [
-  'SPLIT_FUNDS',
   'ALLOCATE_FUNDS',
   'TRANSFER_FUNDS',
   'SWAP_FUNDS',
@@ -27,16 +26,6 @@ export interface FundsReceivedPayload {
   recipientAddress: string;
   payerAddress?: string;
   txHash?: string;
-}
-
-export interface PaymentLinkCreatedPayload {
-  paymentLinkId: string;
-  amount: string;
-  asset: string;
-  chain: string;
-  recipientAddress: string;
-  payerAddress?: string;
-  txHash: string;
 }
 
 export interface PaymentLinkPaidPayload {
@@ -94,105 +83,105 @@ export interface PolicyCondition {
 
 export type PolicyAction =
   | {
-    type: 'SPLIT_FUNDS';
-    config: {
-      reservePct: number;
-      investPct: number;
-      liquidPct: number;
-      asset?: string;
-      chain?: string;
-    };
-  }
+      type: 'ALLOCATE_FUNDS';
+      config: {
+        allocations: Array<
+          | {
+              kind: 'transfer';
+              percentage: number;
+              to: string;
+              asset?: string;
+              chain?: string;
+              label?: string;
+            }
+          | {
+              kind: 'swap';
+              percentage: number;
+              toAsset: string;
+              fromAsset?: string;
+              chain?: string;
+              strategy?: string;
+              label?: string;
+            }
+          | {
+              kind: 'retain';
+              percentage: number;
+              label?: string;
+            }
+        >;
+      };
+    }
   | {
-    type: 'ALLOCATE_FUNDS';
-    config: {
-      allocations: Array<
-        | {
-          kind: 'transfer';
-          percentage: number;
-          to: string;
-          asset?: string;
-          chain?: string;
-          label?: string;
-        }
-        | {
-          kind: 'swap';
-          percentage: number;
-          toAsset: string;
-          fromAsset?: string;
-          chain?: string;
-          strategy?: string;
-          label?: string;
-        }
-      >;
-    };
-  }
+      type: 'TRANSFER_FUNDS';
+      config: {
+        to: string;
+        amount: string;
+        asset: string;
+        chain: string;
+        label?: string;
+      };
+    }
   | {
-    type: 'TRANSFER_FUNDS';
-    config: {
-      to: string;
-      amount: string;
-      asset: string;
-      chain: string;
-      label?: string;
-    };
-  }
+      type: 'SWAP_FUNDS';
+      config: {
+        amount: string;
+        fromAsset: string;
+        toAsset: string;
+        chain: string;
+        strategy?: string;
+        label?: string;
+      };
+    }
   | {
-    type: 'SWAP_FUNDS';
-    config: {
-      amount: string;
-      fromAsset: string;
-      toAsset: string;
-      chain: string;
-      strategy?: string;
-      label?: string;
+      type: 'INVEST_FUNDS';
+      config: {
+        strategy: string;
+        amount: string;
+        asset: string;
+        chain: string;
+        label?: string;
+      };
     };
-  }
-  | {
-    type: 'INVEST_FUNDS';
-    config: {
-      strategy: string;
-      amount: string;
-      asset: string;
-      chain: string;
-      label?: string;
-    };
-  };
 
 export type ExecutableAction =
   | {
-    type: 'TRANSFER_FUNDS';
-    config: {
-      bucket?: 'reserve' | 'liquid';
-      to?: string;
-      amount: string;
-      asset: string;
-      chain: string;
-      label?: string;
-    };
-  }
+      type: 'TRANSFER_FUNDS';
+      config: {
+        to: string;
+        amount: string;
+        asset: string;
+        chain: string;
+        label?: string;
+      };
+    }
   | {
-    type: 'SWAP_FUNDS';
-    config: {
-      amount: string;
-      fromAsset: string;
-      toAsset: string;
-      chain: string;
-      strategy?: string;
-      label?: string;
-    };
-  }
+      type: 'SWAP_FUNDS';
+      config: {
+        amount: string;
+        fromAsset: string;
+        toAsset: string;
+        chain: string;
+        strategy?: string;
+        label?: string;
+      };
+    }
   | {
-    type: 'INVEST_FUNDS';
-    config: {
-      bucket?: 'invest';
-      strategy: string;
-      amount: string;
-      asset: string;
-      chain: string;
-      label?: string;
+      type: 'INVEST_FUNDS';
+      config: {
+        strategy: string;
+        amount: string;
+        asset: string;
+        chain: string;
+        label?: string;
+      };
+    }
+  | {
+      type: 'RETAIN_FUNDS';
+      config: {
+        amount: string;
+        label?: string;
+      };
     };
-  };
 
 export interface MatchedPolicy {
   policyId: string;
@@ -200,29 +189,13 @@ export interface MatchedPolicy {
   actions: PolicyAction[];
 }
 
-export interface PermissionConfig {
-  maxSpendPerTx?: string;
-  maxSpendPerMonth?: string;
-  maxSpendPerWeek?: string;
-  maxSpendPerDay?: string;
-  allowedAssets?: string[];
-  allowedChains?: string[];
-  blockedAssets?: string[];
-  blockedChains?: string[];
-  blockedRecipients?: string[];
-  allowedRecipients?: string[];
-  allowedActions?: FinancialPolicyActionType[];
-  blockedActions?: FinancialPolicyActionType[];
-}
-
-export interface ApprovalConfig {
-  requireApprovalAbove?: string;
-  requireApprovalForNewRecipients?: boolean;
-  requireApprovalForInvestments?: boolean;
-  requireApprovalForSwaps?: boolean;
-}
-
 export interface PermissionCheckResult {
   allowed: boolean;
+  reason?: string;
+}
+
+export interface ApprovalDecision {
+  required: boolean;
+  requestId?: string;
   reason?: string;
 }

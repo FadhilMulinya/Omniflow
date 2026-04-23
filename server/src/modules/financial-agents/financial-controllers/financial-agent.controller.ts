@@ -11,7 +11,6 @@ import {
 } from '../../../shared/docs';
 import {
     FINANCIAL_AGENT_PRESETS,
-    draftFinancialAgentInputSchema,
     FINANCIAL_DRAFT_EVENT_TYPES,
     FINANCIAL_DRAFT_ACTION_TYPES,
     SUPPORTED_NETWORKS,
@@ -90,7 +89,6 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
                 workspaceId,
                 prompt: body.prompt,
                 preset: body.preset,
-                knownRecipients: body.knownRecipients,
             });
 
             return reply.code(200).send(draft);
@@ -319,18 +317,11 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             }
 
             const body = request.body;
-            const parsedDraft = draftFinancialAgentInputSchema.safeParse(body.draft);
-
-            if (!parsedDraft.success) {
-                return reply.code(400).send({
-                    error: parsedDraft.error.issues[0]?.message || 'Invalid draft payload',
-                });
-            }
 
             const result = await FinancialAgentService.createFromStructured({
                 mode: 'structured',
                 workspaceId,
-                draft: parsedDraft.data,
+                draft: body.draft,
             });
 
             return reply.code(201).send(result);

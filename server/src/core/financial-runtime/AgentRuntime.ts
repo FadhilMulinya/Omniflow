@@ -45,14 +45,13 @@ export class AgentRuntime {
                 const plannedActions = this.actionPlanner.plan(event, matched.actions);
 
                 for (const action of plannedActions) {
-                    const permission = this.permissionEngine.check(action, agent.permissionConfig as {} || {});
+                    const permission = this.permissionEngine.check(action, agent);
                     if (!permission.allowed) continue;
 
                     const approvalResult = await this.approvalEngine.requiresApproval(
                         String(agent._id),
                         action,
-                        agent.approvalConfig || {},
-                        agent.permissionConfig?.allowedRecipients || []
+                        agent
                     );
                     if (approvalResult.required) {
                         if (approvalResult.requestId && state) {

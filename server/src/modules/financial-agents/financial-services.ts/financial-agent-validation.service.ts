@@ -32,8 +32,10 @@ export const RECIPIENT_POLICIES = [
 
 export type FinancialAgentPreset = typeof FINANCIAL_AGENT_PRESETS[number];
 export type SupportedNetwork = typeof SUPPORTED_NETWORKS[number];
+export type FinancialDraftActionType = typeof FINANCIAL_DRAFT_ACTION_TYPES[number];
 
 const DEFAULT_NETWORK: SupportedNetwork = 'CKB';
+const DEFAULT_ALLOWED_ACTIONS: FinancialDraftActionType[] = [...FINANCIAL_DRAFT_ACTION_TYPES];
 
 const numericStringSchema = z
   .string()
@@ -65,16 +67,24 @@ const allocateSwapSchema = z.object({
   label: z.string().min(1).optional(),
 });
 
+const allocateRetainSchema = z.object({
+  kind: z.literal('retain'),
+  percentage: z.number().min(0).max(100),
+  label: z.string().min(1).optional(),
+});
+
 const allocateFundsActionSchema = z.object({
   type: z.literal('ALLOCATE_FUNDS'),
   config: z.object({
-    allocations: z.array(z.union([allocateTransferSchema, allocateSwapSchema])).min(1),
+    allocations: z.array(
+      z.union([allocateTransferSchema, allocateSwapSchema, allocateRetainSchema])
+    ).min(1),
   }).superRefine((config, ctx) => {
     const total = config.allocations.reduce((acc, allocation) => acc + allocation.percentage, 0);
     if (Math.abs(total - 100) > 1e-9) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'ALLOCATE_FUNDS percentages must sum to 100',
+        message: `Funds allocation must explicitly account for 100% of funds. You allocated ${config.allocations.map(a => a.percentage).join(', ')} but left ${100 - total}% unspecified. If the remainder should stay in the agent wallet, use a retain allocation.`,
       });
     }
   }),
@@ -191,10 +201,34 @@ function toSet(values?: string[]): Set<string> {
   return new Set(values || []);
 }
 
+function normalizeActionPermissions(config: {
+  allowedActions?: FinancialDraftActionType[];
+  blockedActions?: FinancialDraftActionType[];
+}) {
+  const hasAllowed = Array.isArray(config.allowedActions) && config.allowedActions.length > 0;
+  const hasBlocked = Array.isArray(config.blockedActions) && config.blockedActions.length > 0;
+
+  if (!hasAllowed && !hasBlocked) {
+    config.allowedActions = [...DEFAULT_ALLOWED_ACTIONS];
+  }
+
+  if (Array.isArray(config.allowedActions) && config.allowedActions.length === 0) {
+    config.allowedActions = hasBlocked ? undefined : [...DEFAULT_ALLOWED_ACTIONS];
+  }
+
+  if (Array.isArray(config.blockedActions) && config.blockedActions.length === 0) {
+    config.blockedActions = undefined;
+  }
+}
+
 function normalizeDraft(parsed: DraftFinancialAgentInput): DraftFinancialAgentInput {
+  normalizeActionPermissions(parsed.agent.permissionConfig);
+
   for (const cfg of parsed.agent.networkConfigs) {
     cfg.network = cfg.network || DEFAULT_NETWORK;
     cfg.recipientPolicy = cfg.recipientPolicy || 'all';
+
+    normalizeActionPermissions(cfg);
   }
 
   for (const policy of parsed.policies) {
@@ -209,7 +243,9 @@ function normalizeDraft(parsed: DraftFinancialAgentInput): DraftFinancialAgentIn
 
       if (action.type === 'ALLOCATE_FUNDS') {
         for (const allocation of action.config.allocations) {
-          allocation.chain = allocation.chain || DEFAULT_NETWORK;
+          if (allocation.kind !== 'retain') {
+            allocation.chain = allocation.chain || DEFAULT_NETWORK;
+          }
         }
       }
     }
@@ -371,7 +407,7 @@ function validateDraftCrossFields(parsed: DraftFinancialAgentInput) {
         if (localAllowedActions.size > 0 && !localAllowedActions.has(actionType)) {
           throw {
             code: 400,
-            message: `Action ${actionType} is not allowlisted on network ${network}`,
+            message: `Action ${actionType} is not allowlisted on network ${network}. By default, allowedActions should include the full supported action set unless the user explicitly restricts actions.`,
           };
         }
 
@@ -423,6 +459,10 @@ function validateDraftCrossFields(parsed: DraftFinancialAgentInput) {
 
       if (action.type === 'ALLOCATE_FUNDS') {
         for (const allocation of action.config.allocations) {
+          if (allocation.kind === 'retain') {
+            continue;
+          }
+
           const derivedActionType = allocation.kind === 'swap' ? 'SWAP_FUNDS' : 'TRANSFER_FUNDS';
           const networkCfg = assertNetworkAllowed(allocation.chain!, derivedActionType);
 

@@ -7,7 +7,6 @@ import {
     DraftPolicyInput,
     FinancialAgentPreset,
     FinancialAgentValidationService,
-    KnownRecipientInput,
     SupportedNetwork,
 } from './financial-agent-validation.service';
 import { FinancialAgentDraftingService } from './financial-agent-drafting.service';
@@ -28,7 +27,6 @@ export interface DraftFinancialAgentPromptInput {
     workspaceId: string;
     prompt: string;
     preset?: FinancialAgentPreset;
-    knownRecipients?: KnownRecipientInput[];
 }
 
 async function createManagedWalletForNetwork(network: SupportedNetwork) {
@@ -56,14 +54,13 @@ export const FinancialAgentService = {
         const drafted = await FinancialAgentDraftingService.draftFromPrompt({
             prompt: input.prompt,
             preset: input.preset,
-            knownRecipients: input.knownRecipients,
         });
 
-        return FinancialAgentValidationService.validateDraft(drafted);
+        return await FinancialAgentValidationService.validateDraft(drafted);
     },
 
     async createFromStructured(input: CreateFinancialAgentStructuredInput) {
-        const validated = FinancialAgentValidationService.validateDraft(input.draft);
+        const validated = await FinancialAgentValidationService.validateDraft(input.draft);
         return this.createFromValidatedDraft(input.workspaceId, validated);
     },
 

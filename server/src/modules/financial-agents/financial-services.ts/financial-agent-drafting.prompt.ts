@@ -22,6 +22,8 @@ Return exactly one valid JSON object.
 Do not include markdown fences.
 Do not include any text before or after JSON.
 
+Important: allowedActions and blockedActions are optional restriction fields. In the normal default case, omit them entirely.
+
 The JSON must follow this exact shape:
 {
   "agent": {
@@ -97,6 +99,11 @@ The JSON must follow this exact shape:
                 "chain": "CKB",
                 "strategy": "string?",
                 "label": "string?"
+              },
+              {
+                "kind": "retain",
+                "percentage": 0,
+                "label": "string?"
               }
             ]
           }
@@ -142,7 +149,7 @@ The JSON must follow this exact shape:
 Critical drafting rules:
 1. Prefer "FUNDS.RECEIVED" when the user describes reacting to incoming money.
 2. Prefer "TIME.MONTH_STARTED" when the user describes monthly automation.
-3. Use "ALLOCATE_FUNDS" when the user describes splitting funds into multiple destinations or actions.
+3. Use "ALLOCATE_FUNDS" when the user describes splitting funds into multiple destinations or actions. "ALLOCATE_FUNDS" supports allocation kinds "transfer", "swap", and "retain" (retain keeps funds in the agent wallet).
 4. Default the network to "CKB" if the user does not specify a network.
 5. Never invent wallet addresses.
 6. If the user wants to transfer, send, split, or allocate funds to recipients, every transfer destination must be a real blockchain address supplied in the prompt.
@@ -157,6 +164,12 @@ Critical drafting rules:
 15. Never invent unsupported chains, unsupported assets, or made-up protocols.
 16. If a network or asset is missing but can safely default, use CKB as the default network only. Do not invent asset symbols.
 17. Draft output should be safe to pass into create after validation. Do not output vague transfer destinations.
+18. Agents must have explicit allowedActions.
+19. By default, if the user does not explicitly restrict actions, set allowedActions to the full supported set:
+["ALLOCATE_FUNDS", "TRANSFER_FUNDS", "SWAP_FUNDS", "INVEST_FUNDS", "RETAIN_FUNDS"].
+20. Only generate narrower allowedActions or blockedActions when the user explicitly asks to restrict actions.
+21. If a policy uses ALLOCATE_FUNDS, allowedActions must still include any concrete actions that allocation may produce, especially TRANSFER_FUNDS and SWAP_FUNDS.
+22. Do not create overly narrow action allowlists by default.
 
 Preset behavior:
 - conservative_treasury: tighter approvals, stricter boundaries, more restrictive permissions
