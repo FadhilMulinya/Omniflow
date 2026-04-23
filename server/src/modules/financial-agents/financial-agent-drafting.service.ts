@@ -1,22 +1,22 @@
 import { AiService } from '../ai/ai.service';
 import {
-    DraftFinancialAgentInput,
-    FinancialAgentPreset,
-    FINANCIAL_AGENT_PRESETS,
-    KnownRecipientInput,
-    draftFinancialAgentInputSchema,
+  DraftFinancialAgentInput,
+  FinancialAgentPreset,
+  FINANCIAL_AGENT_PRESETS,
+  KnownRecipientInput,
+  draftFinancialAgentInputSchema,
 } from './financial-agent-validation.service';
 
 function buildPrompt(input: {
-    prompt: string;
-    preset?: FinancialAgentPreset;
-    knownRecipients?: KnownRecipientInput[];
+  prompt: string;
+  preset?: FinancialAgentPreset;
+  knownRecipients?: KnownRecipientInput[];
 }) {
-    const preset = input.preset && FINANCIAL_AGENT_PRESETS.includes(input.preset)
-        ? input.preset
-        : 'balanced_allocator';
+  const preset = input.preset && FINANCIAL_AGENT_PRESETS.includes(input.preset)
+    ? input.preset
+    : 'balanced_allocator';
 
-    return `You are a financial agent configuration designer.
+  return `You are a financial agent configuration designer.
 
 Your job is to convert a user's plain-English request into a strict JSON configuration for an event-driven financial automation agent.
 
@@ -158,44 +158,43 @@ ${input.prompt}`;
 }
 
 function extractJsonObject(text: string): string {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1 || end < start) {
-        throw { code: 400, message: 'Drafting model did not return valid JSON content' };
-    }
-    return text.slice(start, end + 1);
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw { code: 400, message: 'Drafting model did not return valid JSON content' };
+  }
+  return text.slice(start, end + 1);
 }
 
 export const FinancialAgentDraftingService = {
-    async draftFromPrompt(input: {
-        prompt: string;
-        preset?: FinancialAgentPreset;
-        knownRecipients?: KnownRecipientInput[];
-    }): Promise<DraftFinancialAgentInput> {
-        if (!input.prompt?.trim()) {
-            throw { code: 400, message: 'Prompt is required' };
-        }
+  async draftFromPrompt(input: {
+    prompt: string;
+    preset?: FinancialAgentPreset;
+    knownRecipients?: KnownRecipientInput[];
+  }): Promise<DraftFinancialAgentInput> {
+    if (!input.prompt?.trim()) {
+      throw { code: 400, message: 'Prompt is required' };
+    }
 
-        const completion = await AiService.generateCompletion({
-            provider: 'anthropic',
-            messages: [{ role: 'user', content: buildPrompt(input) }],
-            temperature: 0.1,
-        });
+    const completion = await AiService.generateCompletion({
+      messages: [{ role: 'user', content: buildPrompt(input) }],
+      temperature: 0.1,
+    });
 
-        const jsonString = extractJsonObject(completion.content || '');
+    const jsonString = extractJsonObject(completion.content || '');
 
-        let parsed: unknown;
-        try {
-            parsed = JSON.parse(jsonString);
-        } catch {
-            throw { code: 400, message: 'Drafting model returned invalid JSON' };
-        }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch {
+      throw { code: 400, message: 'Drafting model returned invalid JSON' };
+    }
 
-        const result = draftFinancialAgentInputSchema.safeParse(parsed);
-        if (!result.success) {
-            throw { code: 400, message: result.error.issues[0]?.message || 'Invalid drafted configuration' };
-        }
+    const result = draftFinancialAgentInputSchema.safeParse(parsed);
+    if (!result.success) {
+      throw { code: 400, message: result.error.issues[0]?.message || 'Invalid drafted configuration' };
+    }
 
-        return result.data;
-    },
+    return result.data;
+  },
 };
