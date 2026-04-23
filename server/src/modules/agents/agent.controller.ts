@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import {
-    listAgents, getAgentWithGraph, getAgentCharacter, getPlanStatus, updateAgent, deleteAgent,
+    listAgents, getAgentCharacter, getPlanStatus, updateAgent, deleteAgent,
 } from './agent.service';
 import { AgentCreationService } from './services/agent-creation.service';
 import {
@@ -92,7 +92,7 @@ const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
             },
         },
     }, async (request, reply) => {
-        const result = await getAgentWithGraph(request.params.id);
+        const result = await getAgentCharacter(request.params.id);
         if (!result) return reply.code(404).send({ error: 'Agent not found' });
         return result;
     });
@@ -127,53 +127,13 @@ const readAgentRoutes: FastifyPluginAsync = async (fastify) => {
 };
 
 const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
-    fastify.post<{ Body: { name: string; persona: string; agentType?: string; chains?: string[] } }>(
-        '/agents/enhance', {
-        schema: {
-            tags: ['Agents'],
-            summary: 'Preview enhanced persona',
-            description: 'Uses an LLM to refine and expand a raw agent concept into a polished persona.',
-            body: {
-                type: 'object',
-                required: ['name', 'persona'],
-                properties: {
-                    name: { type: 'string' },
-                    persona: { type: 'string' },
-                    agentType: { type: 'string', enum: ['operational_agent', 'browser_agent'], default: 'operational_agent' },
-                    chains: { type: 'array', items: { type: 'string' } },
-                },
-            },
-            response: {
-                200: {
-                    description: 'Enhanced persona draft',
-                    type: 'object',
-                    properties: {
-                        enhancedPersona: { type: 'string' },
-                        suggestedChains: { type: 'array', items: { type: 'string' } },
-                        identity: { type: 'object', additionalProperties: true },
-                        character: { type: 'object', additionalProperties: true },
-                    }
-                },
-                ...standardErrorResponses([400, 500]),
-            },
-        },
-    },
-        async (request, reply) => {
-            try {
-                const { name, persona, agentType = 'operational_agent', chains = [] } = request.body;
-                if (!name || !persona) return reply.code(400).send({ error: 'Name and Persona are required' });
-                return await AgentCreationService.previewEnhancePersona(name, persona, agentType, chains, request.user?.id);
-            } catch (err: any) { return reply.code(500).send({ error: err.message }); }
-        }
-    );
-
-    fastify.post<{ Body: { name: string; description?: string; persona?: string; identities?: any; character?: any; isDraft?: boolean; agentType?: string; chains?: string[] } }>(
+    fastify.post<{ Body: { name: string; description?: string; persona?: string; identities?: any; character?: any; isDraft?: boolean; agentType?: 'financial_agent' | 'social_agent' | 'operational_agent'; chains?: string[]; enhancePersona?: boolean } }>(
         '/agents', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Agents'],
             summary: 'Create a new agent',
-            description: 'Initializes a new AI agent.',
+            description: 'Creates a new AI agent and optionally enhances persona during creation.',
             security: [cookieAuthSecurity],
             body: {
                 type: 'object',
@@ -185,7 +145,8 @@ const createAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     identities: { type: 'object', additionalProperties: true },
                     character: { type: 'object', additionalProperties: true },
                     isDraft: { type: 'boolean', default: false },
-                    agentType: { type: 'string', enum: ['operational_agent', 'browser_agent'], default: 'operational_agent' },
+                    enhancePersona: { type: 'boolean', default: true },
+                    agentType: { type: 'string', enum: ['financial_agent', 'social_agent', 'operational_agent'], default: 'operational_agent' },
                     chains: { type: 'array', items: { type: 'string' } },
                 },
             },
@@ -226,7 +187,7 @@ const updateAgentRoutes: FastifyPluginAsync = async (fastify) => {
                     identities: { type: 'object', additionalProperties: true },
                     character: { type: 'object', additionalProperties: true },
                     isDraft: { type: 'boolean' },
-                    agentType: { type: 'string', enum: ['operational_agent', 'browser_agent'] },
+                    agentType: { type: 'string', enum: ['financial_agent', 'social_agent', 'operational_agent'] },
                 },
             },
             response: {

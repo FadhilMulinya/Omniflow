@@ -13,6 +13,7 @@ import { blogRoutes } from '../../modules/blog';
 import { botRoutes } from '../../modules/bots';
 import { aiRoutes } from '../../modules/ai';
 import { developerApiKeyController } from '../../modules/developer-api-keys/developer-api-key.controller';
+import { financialAgentRoutes } from '../../modules/financial-agents';
 
 export async function registerRoutes(app: FastifyInstance) {
     app.register(authRoutes, { prefix: '/auth' });
@@ -22,6 +23,7 @@ export async function registerRoutes(app: FastifyInstance) {
     app.register(agentRoutes, { prefix: '/agents' });
     app.register(toolRoutes, { prefix: '/tools' });
     app.register(paymentRoutes, { prefix: '/payments' });
+    app.register(financialAgentRoutes);
     app.register(supportRoutes, { prefix: '/support' });
     app.register(adminRoutes, { prefix: '/admin' });
     app.register(blogRoutes, { prefix: '/blog' });

@@ -82,14 +82,16 @@ export const PaymentVerificationService = {
             verificationData: verification.verificationData,
         });
 
-        // 7. Emit event
-        eventBus.emit('PAYMENT_LINK_PAID', {
+        // 7. Emit normalized runtime ingress event
+        eventBus.emit('PAYMENT_LINK.PAID', {
             paymentLinkId: id,
+            workspaceId: String(linkRecord.workspaceId),
+            amount: verification.paidAmount,
+            asset: linkRecord.asset,
             chain: verification.chain,
-            txHash: verification.txHash,
+            recipientAddress: linkRecord.recipientAddress,
             payerAddress: verification.payerAddress,
-            paidAmount: verification.paidAmount,
-            workspaceId: linkRecord.workspaceId,
+            txHash: verification.txHash,
         });
 
         return { success: true, message: 'Payment verified successfully', verification };

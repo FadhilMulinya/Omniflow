@@ -1,18 +1,11 @@
 import { AIFactory } from '../../infrastructure/ai/factory';
 import { ENV } from '../../shared/config/environments';
 import { financialAgentSchema } from '../../core/characters/schemas/financial';
-import { socialAgentSchema } from '../../core/characters/schemas/social';
-import { operationalAgentSchema } from '../../core/characters/schemas/operational';
 
 // ── Schema selection ─────────────────────────────────────────────────────────
 
-function selectSchema(agentType: string) {
-    switch (agentType) {
-        case 'financial_agent': return financialAgentSchema;
-        case 'social_agent': return socialAgentSchema;
-        case 'operational_agent':
-        default: return operationalAgentSchema;
-    }
+function selectSchema(_agentType: string) {
+    return financialAgentSchema;
 }
 
 // ── Chain constraint prompt fragment ─────────────────────────────────────────
@@ -106,7 +99,3 @@ Summarized Persona: ${persona}
     }
 }
 
-/** @deprecated Use the named export `enhancePersona` instead. Kept for backward compat during migration. */
-class AgentEnhancer {
-    static enhancePersona = enhancePersona;
-}

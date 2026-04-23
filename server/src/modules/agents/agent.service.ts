@@ -40,9 +40,6 @@ export async function listAgents(userId: string, query: { isDraft?: string; stat
     return AgentRepository.findMany(filter);
 }
 
-export async function getAgentWithGraph(id: string) {
-    return AgentRepository.findById(id);
-}
 
 export async function getPlanStatus(userId: string) {
     const user = await User.findById(userId).select('tokens plan planExpiry');
