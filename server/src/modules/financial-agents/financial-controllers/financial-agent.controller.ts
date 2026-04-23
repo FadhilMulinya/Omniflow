@@ -1,45 +1,67 @@
 import { FastifyPluginAsync } from 'fastify';
-import { FinancialAgentService } from '../financial-services.ts/financial-agent.service';
+import {
+    CreateFinancialAgentPromptInput,
+    CreateFinancialAgentStructuredInput,
+    FinancialAgentService,
+} from '../financial-agent.service';
 import {
     cookieAuthSecurity,
     standardErrorResponses,
     workspaceHeaderSchema,
 } from '../../../shared/docs';
-import { FINANCIAL_EVENT_TYPES, FinancialEventType } from '../../../core/financial-runtime/types';
+import {
+    FINANCIAL_AGENT_PRESETS,
+    draftFinancialAgentInputSchema,
+} from '../financial-agent-validation.service';
 
 export const financialAgentController: FastifyPluginAsync = async (fastify) => {
     fastify.post<{
-        Body: {
-            name: string;
-            description?: string;
-            subscribedEvents?: FinancialEventType[];
-            permissionConfig?: Record<string, unknown>;
-            approvalConfig?: Record<string, unknown>;
-        }
+        Body: CreateFinancialAgentPromptInput | CreateFinancialAgentStructuredInput
     }>('/financial-agents', {
         onRequest: [fastify.authenticate],
         schema: {
             tags: ['Financial Agents'],
             summary: 'Create financial agent',
-            description: 'Creates a runtime financial agent bound to workspace event subscriptions and policies.',
+            description: 'Creates financial agents from either a structured runtime draft or an AI prompt draft flow.',
             security: [cookieAuthSecurity],
             headers: workspaceHeaderSchema,
             body: {
                 type: 'object',
-                required: ['name'],
-                properties: {
-                    name: { type: 'string', minLength: 1, maxLength: 100 },
-                    description: { type: 'string' },
-                    subscribedEvents: {
-                        type: 'array',
-                        items: {
-                            type: 'string',
-                            enum: FINANCIAL_EVENT_TYPES,
+                required: ['mode'],
+                oneOf: [
+                    {
+                        type: 'object',
+                        required: ['mode', 'prompt'],
+                        properties: {
+                            mode: { type: 'string', const: 'prompt' },
+                            prompt: { type: 'string', minLength: 1 },
+                            preset: { type: 'string', enum: FINANCIAL_AGENT_PRESETS },
+                            knownRecipients: {
+                                type: 'array',
+                                items: {
+                                    type: 'object',
+                                    required: ['label', 'address', 'chain'],
+                                    properties: {
+                                        label: { type: 'string', minLength: 1 },
+                                        address: { type: 'string', minLength: 1 },
+                                        chain: { type: 'string', minLength: 1 },
+                                    },
+                                },
+                            },
                         },
                     },
-                    permissionConfig: { type: 'object', additionalProperties: true },
-                    approvalConfig: { type: 'object', additionalProperties: true },
-                },
+                    {
+                        type: 'object',
+                        required: ['mode', 'draft'],
+                        properties: {
+                            mode: { type: 'string', const: 'structured' },
+                            draft: {
+                                type: 'object',
+                                additionalProperties: true,
+                            },
+                        },
+                    },
+                ],
             },
             response: {
                 201: {
@@ -53,11 +75,34 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
         try {
             const workspaceId = request.headers['x-workspace-id'] as string;
             if (!workspaceId) return reply.code(400).send({ error: 'Missing x-workspace-id header' });
-            const agent = await FinancialAgentService.createAgent({
+
+            if (request.body.mode === 'prompt') {
+                const body = request.body as Omit<CreateFinancialAgentPromptInput, 'workspaceId'>;
+                const result = await FinancialAgentService.createFromPrompt({
+                    mode: 'prompt',
+                    workspaceId,
+                    prompt: body.prompt,
+                    preset: body.preset,
+                    knownRecipients: body.knownRecipients,
+                });
+                return reply.code(201).send(result);
+            }
+
+            const body = request.body as Omit<CreateFinancialAgentStructuredInput, 'workspaceId'>;
+            const parsedDraft = draftFinancialAgentInputSchema.safeParse(body.draft);
+            if (!parsedDraft.success) {
+                return reply.code(400).send({
+                    error: parsedDraft.error.issues[0]?.message || 'Invalid draft payload',
+                });
+            }
+
+            const result = await FinancialAgentService.createFromStructured({
+                mode: 'structured',
                 workspaceId,
-                ...request.body,
+                draft: parsedDraft.data,
             });
-            return reply.code(201).send(agent);
+
+            return reply.code(201).send(result);
         } catch (err: any) {
             return reply.code(err.code || 500).send({ error: err.message || 'Failed to create financial agent' });
         }
@@ -92,6 +137,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             summary: 'Get financial agent',
             description: 'Returns financial runtime agent detail with current state.',
             security: [cookieAuthSecurity],
+            headers: workspaceHeaderSchema,
             params: {
                 type: 'object',
                 required: ['id'],
@@ -99,11 +145,13 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             },
             response: {
                 200: { type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401, 404, 500]),
+                ...standardErrorResponses([400, 401, 404, 500]),
             },
         },
     }, async (request, reply) => {
-        const agent = await FinancialAgentService.getAgent(request.params.id);
+        const workspaceId = request.headers['x-workspace-id'] as string;
+        if (!workspaceId) return reply.code(400).send({ error: 'Missing x-workspace-id header' });
+        const agent = await FinancialAgentService.getAgent(workspaceId, request.params.id);
         if (!agent) return reply.code(404).send({ error: 'Financial agent not found' });
         return agent;
     });
@@ -115,6 +163,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             summary: 'Pause financial agent',
             description: 'Pauses event processing for a financial agent.',
             security: [cookieAuthSecurity],
+            headers: workspaceHeaderSchema,
             params: {
                 type: 'object',
                 required: ['id'],
@@ -122,11 +171,13 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             },
             response: {
                 200: { type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401, 404, 500]),
+                ...standardErrorResponses([400, 401, 404, 500]),
             },
         },
     }, async (request, reply) => {
-        const updated = await FinancialAgentService.pauseAgent(request.params.id);
+        const workspaceId = request.headers['x-workspace-id'] as string;
+        if (!workspaceId) return reply.code(400).send({ error: 'Missing x-workspace-id header' });
+        const updated = await FinancialAgentService.pauseAgent(workspaceId, request.params.id);
         if (!updated) return reply.code(404).send({ error: 'Financial agent not found' });
         return updated;
     });
@@ -138,6 +189,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             summary: 'Activate financial agent',
             description: 'Activates event processing for a financial agent.',
             security: [cookieAuthSecurity],
+            headers: workspaceHeaderSchema,
             params: {
                 type: 'object',
                 required: ['id'],
@@ -145,11 +197,13 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             },
             response: {
                 200: { type: 'object', additionalProperties: true },
-                ...standardErrorResponses([401, 404, 500]),
+                ...standardErrorResponses([400, 401, 404, 500]),
             },
         },
     }, async (request, reply) => {
-        const updated = await FinancialAgentService.activateAgent(request.params.id);
+        const workspaceId = request.headers['x-workspace-id'] as string;
+        if (!workspaceId) return reply.code(400).send({ error: 'Missing x-workspace-id header' });
+        const updated = await FinancialAgentService.activateAgent(workspaceId, request.params.id);
         if (!updated) return reply.code(404).send({ error: 'Financial agent not found' });
         return updated;
     });

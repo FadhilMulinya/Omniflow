@@ -6,6 +6,16 @@ import { RuntimeEvent } from '../../core/financial-runtime/types';
 
 let wired = false;
 
+function readString(payload: Record<string, unknown>, key: string): string | undefined {
+    const value = payload[key];
+    return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+}
+
+function readNumber(payload: Record<string, unknown>, key: string): number | undefined {
+    const value = payload[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
 export function createFinancialRuntimeWiring() {
     if (wired) return;
 
@@ -13,28 +23,49 @@ export function createFinancialRuntimeWiring() {
     const router = new EventRouter(runtime);
 
     eventBus.on('PAYMENT_LINK.PAID', async (payload: Record<string, unknown>) => {
-        const paymentLinkEvent: RuntimeEvent = {
+        const workspaceId = readString(payload, 'workspaceId');
+        const paymentLinkId = readString(payload, 'paymentLinkId');
+        const amount = readString(payload, 'amount');
+        const asset = readString(payload, 'asset');
+        const chain = readString(payload, 'chain');
+        const recipientAddress = readString(payload, 'recipientAddress');
+        const txHash = readString(payload, 'txHash');
+
+        if (!workspaceId || !paymentLinkId || !amount || !asset || !chain || !recipientAddress || !txHash) {
+            return;
+        }
+
+        const payerAddress = readString(payload, 'payerAddress');
+
+        const paymentLinkEvent: RuntimeEvent<'PAYMENT_LINK.PAID'> = {
             id: randomUUID(),
             type: 'PAYMENT_LINK.PAID',
-            workspaceId: String(payload.workspaceId || ''),
+            workspaceId,
             source: 'payment-link-verification',
-            payload,
+            payload: {
+                paymentLinkId,
+                amount,
+                asset,
+                chain,
+                recipientAddress,
+                payerAddress,
+                txHash,
+            },
             createdAt: Date.now(),
         };
 
-        const fundsReceivedEvent: RuntimeEvent = {
+        const fundsReceivedEvent: RuntimeEvent<'FUNDS.RECEIVED'> = {
             id: randomUUID(),
             type: 'FUNDS.RECEIVED',
-            workspaceId: String(payload.workspaceId || ''),
+            workspaceId,
             source: 'payment-link-verification',
             payload: {
-                amount: payload.amount,
-                asset: payload.asset,
-                chain: payload.chain,
-                recipientAddress: payload.recipientAddress,
-                payerAddress: payload.payerAddress,
-                txHash: payload.txHash,
-                paymentLinkId: payload.paymentLinkId,
+                amount,
+                asset,
+                chain,
+                recipientAddress,
+                payerAddress,
+                txHash,
             },
             createdAt: Date.now(),
         };
@@ -43,34 +74,61 @@ export function createFinancialRuntimeWiring() {
             await router.route(paymentLinkEvent);
             await router.route(fundsReceivedEvent);
         } catch {
-            // swallow runtime errors to avoid crashing event bus listeners
         }
     });
 
     eventBus.on('APPROVAL.GRANTED', async (payload: Record<string, unknown>) => {
-        const event: RuntimeEvent = {
+        const workspaceId = readString(payload, 'workspaceId');
+        const approvalRequestId = readString(payload, 'approvalRequestId');
+        const agentId = readString(payload, 'agentId');
+        if (!workspaceId || !approvalRequestId || !agentId) return;
+
+        const event: RuntimeEvent<'APPROVAL.GRANTED'> = {
             id: randomUUID(),
             type: 'APPROVAL.GRANTED',
-            workspaceId: String(payload.workspaceId || ''),
-            agentId: payload.agentId ? String(payload.agentId) : undefined,
+            workspaceId,
+            agentId,
             source: 'approval-service',
-            payload,
+            payload: {
+                approvalRequestId,
+                agentId,
+                action: payload.action,
+                resolvedAt: readNumber(payload, 'resolvedAt') ?? Date.now(),
+            },
             createdAt: Date.now(),
         };
-        try { await router.route(event); } catch { }
+
+        try {
+            await router.route(event);
+        } catch {
+        }
     });
 
     eventBus.on('APPROVAL.REJECTED', async (payload: Record<string, unknown>) => {
-        const event: RuntimeEvent = {
+        const workspaceId = readString(payload, 'workspaceId');
+        const approvalRequestId = readString(payload, 'approvalRequestId');
+        const agentId = readString(payload, 'agentId');
+        if (!workspaceId || !approvalRequestId || !agentId) return;
+
+        const event: RuntimeEvent<'APPROVAL.REJECTED'> = {
             id: randomUUID(),
             type: 'APPROVAL.REJECTED',
-            workspaceId: String(payload.workspaceId || ''),
-            agentId: payload.agentId ? String(payload.agentId) : undefined,
+            workspaceId,
+            agentId,
             source: 'approval-service',
-            payload,
+            payload: {
+                approvalRequestId,
+                agentId,
+                action: payload.action,
+                resolvedAt: readNumber(payload, 'resolvedAt') ?? Date.now(),
+            },
             createdAt: Date.now(),
         };
-        try { await router.route(event); } catch { }
+
+        try {
+            await router.route(event);
+        } catch {
+        }
     });
 
     wired = true;

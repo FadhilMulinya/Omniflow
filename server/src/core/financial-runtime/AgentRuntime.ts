@@ -21,6 +21,7 @@ export class AgentRuntime {
     async processEvent(event: RuntimeEvent): Promise<void> {
         const persistedEvent = await FinancialEventRepository.create({
             type: event.type,
+            eventId: event.id,
             workspaceId: new mongoose.Types.ObjectId(event.workspaceId),
             agentId: event.agentId && mongoose.Types.ObjectId.isValid(event.agentId)
                 ? new mongoose.Types.ObjectId(event.agentId)
@@ -30,7 +31,7 @@ export class AgentRuntime {
         });
 
         const agents = event.agentId
-            ? [await FinancialAgentRepository.findById(event.agentId)].filter(Boolean)
+            ? [await FinancialAgentRepository.findByIdInWorkspace(event.agentId, event.workspaceId)].filter(Boolean)
             : await FinancialAgentRepository.findSubscribedToEvent(event.workspaceId, event.type);
 
         for (const agent of agents) {
@@ -38,12 +39,13 @@ export class AgentRuntime {
 
             const state = await FinancialAgentStateRepository.findByAgentId(String(agent._id));
             const matchedPolicies = await this.policyEngine.match(String(agent._id), event);
+            let executedActions = 0;
 
             for (const matched of matchedPolicies) {
                 const plannedActions = this.actionPlanner.plan(event, matched.actions);
 
                 for (const action of plannedActions) {
-                    const permission = this.permissionEngine.check(action, agent.permissionConfig || {});
+                    const permission = this.permissionEngine.check(action, agent.permissionConfig as {} || {});
                     if (!permission.allowed) continue;
 
                     const approvalResult = await this.approvalEngine.requiresApproval(
@@ -64,12 +66,13 @@ export class AgentRuntime {
                         ...event,
                         id: event.id || String(persistedEvent._id),
                     });
+                    executedActions += 1;
                 }
             }
 
             await FinancialAgentStateRepository.upsertByAgentId(String(agent._id), {
                 lastEventAt: new Date(event.createdAt || Date.now()),
-                lastExecutionAt: new Date(),
+                ...(executedActions > 0 ? { lastExecutionAt: new Date() } : {}),
             });
         }
     }

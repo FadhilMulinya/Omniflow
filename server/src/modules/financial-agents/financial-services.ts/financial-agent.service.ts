@@ -1,8 +1,14 @@
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import { FinancialAgentRepository } from '../financial-repositories/financial-agent.repository';
 import { FinancialAgentStateRepository } from '../financial-repositories/financial-agent-state.repository';
 import { FinancialPolicyRepository } from '../financial-repositories/financial-policy.repository';
-import { FinancialEventType, PolicyAction, PolicyCondition } from '../../../core/financial-runtime/types';
+import {
+    FINANCIAL_EVENT_TYPES,
+    FinancialEventType,
+    PolicyAction,
+    PolicyCondition,
+} from '../../../core/financial-runtime/types';
 
 interface CreateFinancialAgentInput {
     workspaceId: string;
@@ -14,12 +20,61 @@ interface CreateFinancialAgentInput {
 }
 
 interface AttachPolicyInput {
+    workspaceId: string;
     agentId: string;
     trigger: FinancialEventType;
     conditions: PolicyCondition[];
     actions: PolicyAction[];
     priority?: number;
 }
+
+const conditionSchema = z.object({
+    field: z.string().min(1),
+    op: z.enum(['eq', 'gt', 'gte', 'lt', 'lte', 'in']),
+    value: z.any(),
+});
+
+const splitFundsActionSchema = z.object({
+    type: z.literal('SPLIT_FUNDS'),
+    config: z.object({
+        reservePct: z.number().min(0).max(100),
+        investPct: z.number().min(0).max(100),
+        liquidPct: z.number().min(0).max(100),
+        asset: z.string().optional(),
+        chain: z.string().optional(),
+    }).refine((config) => (config.reservePct + config.investPct + config.liquidPct) === 100, {
+        message: 'SPLIT_FUNDS percentages must sum to 100',
+    }),
+});
+
+const transferFundsActionSchema = z.object({
+    type: z.literal('TRANSFER_FUNDS'),
+    config: z.object({
+        to: z.string().min(1),
+        amount: z.string().min(1),
+        asset: z.string().min(1),
+        chain: z.string().min(1),
+    }),
+});
+
+const investFundsActionSchema = z.object({
+    type: z.literal('INVEST_FUNDS'),
+    config: z.object({
+        strategy: z.string().min(1),
+        amount: z.string().min(1),
+        asset: z.string().min(1),
+        chain: z.string().min(1),
+    }),
+});
+
+const policySchema = z.object({
+    trigger: z.enum(FINANCIAL_EVENT_TYPES),
+    conditions: z.array(conditionSchema),
+    actions: z.array(z.union([splitFundsActionSchema, transferFundsActionSchema, investFundsActionSchema])).min(1),
+    priority: z.number().int().min(1).optional(),
+});
+
+type ParsedPolicy = z.infer<typeof policySchema>;
 
 export const FinancialAgentService = {
     async createAgent(input: CreateFinancialAgentInput) {
@@ -32,8 +87,7 @@ export const FinancialAgentService = {
             name: input.name,
             description: input.description,
             status: 'active',
-            subscribedEvents: input.subscribedEvents || ['FUNDS.RECEIVED'],
-            policyIds: [],
+            subscribedEvents: input.subscribedEvents,
             permissionConfig: input.permissionConfig || {},
             approvalConfig: input.approvalConfig || {},
         });
@@ -58,19 +112,19 @@ export const FinancialAgentService = {
         return FinancialAgentRepository.findManyByWorkspace(workspaceId);
     },
 
-    async getAgent(id: string) {
-        const agent = await FinancialAgentRepository.findById(id);
+    async getAgent(workspaceId: string, id: string) {
+        const agent = await FinancialAgentRepository.findByIdInWorkspace(id, workspaceId);
         if (!agent) return null;
         const state = await FinancialAgentStateRepository.findByAgentId(id);
         return { agent, state };
     },
 
-    async pauseAgent(id: string) {
-        return FinancialAgentRepository.updateStatus(id, 'paused');
+    async pauseAgent(workspaceId: string, id: string) {
+        return FinancialAgentRepository.updateStatusInWorkspace(id, workspaceId, 'paused');
     },
 
-    async activateAgent(id: string) {
-        return FinancialAgentRepository.updateStatus(id, 'active');
+    async activateAgent(workspaceId: string, id: string) {
+        return FinancialAgentRepository.updateStatusInWorkspace(id, workspaceId, 'active');
     },
 
     async attachPolicy(input: AttachPolicyInput) {
@@ -78,21 +132,31 @@ export const FinancialAgentService = {
             throw { code: 400, message: 'Invalid agent ID' };
         }
 
-        const policy = await FinancialPolicyRepository.create({
-            agentId: new mongoose.Types.ObjectId(input.agentId),
+        const agent = await FinancialAgentRepository.findByIdInWorkspace(input.agentId, input.workspaceId);
+        if (!agent) {
+            throw { code: 404, message: 'Financial agent not found' };
+        }
+
+        const parsed = policySchema.safeParse({
             trigger: input.trigger,
             conditions: input.conditions,
             actions: input.actions,
-            enabled: true,
-            priority: input.priority ?? 1,
+            priority: input.priority,
         });
 
-        const agent = await FinancialAgentRepository.findById(input.agentId);
-        if (agent) {
-            agent.policyIds = [...(agent.policyIds || []), policy._id as mongoose.Types.ObjectId];
-            await FinancialAgentRepository.save(agent);
+        if (!parsed.success) {
+            throw { code: 400, message: parsed.error.issues[0]?.message || 'Invalid policy payload' };
         }
 
-        return policy;
+        const policy: ParsedPolicy = parsed.data;
+
+        return FinancialPolicyRepository.create({
+            agentId: agent._id,
+            trigger: policy.trigger,
+            conditions: policy.conditions as PolicyCondition[],
+            actions: policy.actions,
+            enabled: true,
+            priority: policy.priority ?? 1,
+        });
     },
 };

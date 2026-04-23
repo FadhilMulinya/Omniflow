@@ -4,7 +4,6 @@ import { authRoutes } from '../../modules/auth';
 import { terminalAuthRoutes } from '../../modules/terminal-auth';
 import { userRoutes } from '../../modules/users';
 import { workspaceRoutes } from '../../modules/workspaces';
-import { agentRoutes } from '../../modules/agents';
 import { toolRoutes } from '../../modules/tools';
 import { paymentRoutes } from '../../modules/payments';
 import { supportRoutes } from '../../modules/support';
@@ -20,7 +19,6 @@ export async function registerRoutes(app: FastifyInstance) {
     app.register(terminalAuthRoutes, { prefix: '/terminal/auth' });
     app.register(userRoutes, { prefix: '/users' });
     app.register(workspaceRoutes, { prefix: '/workspaces' });
-    app.register(agentRoutes, { prefix: '/agents' });
     app.register(toolRoutes, { prefix: '/tools' });
     app.register(paymentRoutes, { prefix: '/payments' });
     app.register(financialAgentRoutes);

@@ -1,21 +1,23 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { FinancialEventType } from '../../../core/financial-runtime/types';
+import { FinancialEventType, FINANCIAL_EVENT_TYPES } from '../../../core/financial-runtime/types';
 
 export interface IFinancialEvent extends Document {
+    eventId: string;
     type: FinancialEventType;
     workspaceId: Types.ObjectId;
     agentId?: Types.ObjectId;
     source: string;
-    payload: Record<string, unknown>;
+    payload: unknown;
     createdAt: Date;
     updatedAt: Date;
 }
 
 const FinancialEventSchema = new Schema(
     {
+        eventId: { type: String, required: true, index: true },
         type: {
             type: String,
-            enum: ['PAYMENT_LINK.PAID', 'FUNDS.RECEIVED', 'TIME.MONTH_STARTED', 'APPROVAL.GRANTED', 'APPROVAL.REJECTED'],
+            enum: FINANCIAL_EVENT_TYPES,
             required: true,
             index: true,
         },

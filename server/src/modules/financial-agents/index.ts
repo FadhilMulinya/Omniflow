@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import { financialAgentController } from './financial-agent.controller';
+import { financialAgentController } from './financial-controllers/financial-agent.controller';
 import { createFinancialRuntimeWiring } from './financial-runtime.wiring';
 
 let runtimeWired = false;

@@ -26,14 +26,14 @@ const OllamaClient = {
 };
 
 export interface CompletionRequest {
-    provider?: 'gemini' | 'openai' | 'ollama';
+    provider?: 'gemini' | 'openai' | 'ollama' | 'anthropic';
     model?: string;
     messages: CompletionMessage[];
     temperature?: number;
     maxTokens?: number;
     character?: CharacterSchema;
     apiKey?: string;
-    baseUrl?: string;  
+    baseUrl?: string;
 }
 
 export interface CompletionResponse {

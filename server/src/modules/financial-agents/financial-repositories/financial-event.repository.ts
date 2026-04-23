@@ -6,8 +6,8 @@ export const FinancialEventRepository = {
         return FinancialEvent.create(data);
     },
 
-    async findRecentByAgent(agentId: string, limit = 25): Promise<IFinancialEvent[]> {
-        if (!mongoose.Types.ObjectId.isValid(agentId)) return [];
-        return FinancialEvent.find({ agentId }).sort({ createdAt: -1 }).limit(limit);
+    async findRecentByAgent(agentId: string, workspaceId: string, limit = 25): Promise<IFinancialEvent[]> {
+        if (!mongoose.Types.ObjectId.isValid(agentId) || !mongoose.Types.ObjectId.isValid(workspaceId)) return [];
+        return FinancialEvent.find({ agentId, workspaceId }).sort({ createdAt: -1 }).limit(limit);
     },
 };

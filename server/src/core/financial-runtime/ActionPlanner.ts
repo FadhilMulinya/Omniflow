@@ -1,27 +1,112 @@
-import { PolicyAction, RuntimeEvent } from './types';
+import { ExecutableAction, PolicyAction, RuntimeEvent } from './types';
 
 export class ActionPlanner {
-    plan(event: RuntimeEvent, actions: PolicyAction[]): PolicyAction[] {
-        return actions.map((action) => {
-            if (action.type !== 'SPLIT_FUNDS') return action;
+    plan(event: RuntimeEvent, actions: PolicyAction[]): ExecutableAction[] {
+        const baseAmount = this.toNumber((event.payload as { amount?: unknown }).amount);
 
-            const amount = this.toNumber(event.payload.amount);
-            if (amount === null) return action;
+        return actions.flatMap((action): ExecutableAction[] => {
+            if (action.type === 'TRANSFER_FUNDS') {
+                return [{
+                    type: 'TRANSFER_FUNDS',
+                    config: { ...action.config },
+                }];
+            }
 
-            const reserve = ((amount * action.config.reservePct) / 100).toFixed(8);
-            const invest = ((amount * action.config.investPct) / 100).toFixed(8);
-            const liquid = ((amount * action.config.liquidPct) / 100).toFixed(8);
+            if (action.type === 'SWAP_FUNDS') {
+                return [{
+                    type: 'SWAP_FUNDS',
+                    config: { ...action.config },
+                }];
+            }
 
-            return {
-                type: 'SPLIT_FUNDS',
-                config: {
-                    ...action.config,
-                    reservePct: Number(reserve),
-                    investPct: Number(invest),
-                    liquidPct: Number(liquid),
+            if (action.type === 'INVEST_FUNDS') {
+                return [{
+                    type: 'INVEST_FUNDS',
+                    config: { ...action.config },
+                }];
+            }
+
+            if (action.type === 'ALLOCATE_FUNDS') {
+                if (baseAmount === null) return [];
+                return action.config.allocations.flatMap((allocation): ExecutableAction[] => {
+                    const amount = this.percentAmount(baseAmount, allocation.percentage);
+
+                    if (allocation.kind === 'transfer') {
+                        const asset = allocation.asset ?? (event.payload as { asset?: string }).asset;
+                        const chain = allocation.chain ?? (event.payload as { chain?: string }).chain;
+                        if (!asset || !chain) return [];
+
+                        return [{
+                            type: 'TRANSFER_FUNDS',
+                            config: {
+                                to: allocation.to,
+                                amount,
+                                asset,
+                                chain,
+                                label: allocation.label,
+                            },
+                        }];
+                    }
+
+                    const fromAsset = allocation.fromAsset ?? (event.payload as { asset?: string }).asset;
+                    const chain = allocation.chain ?? (event.payload as { chain?: string }).chain;
+                    if (!fromAsset || !chain) return [];
+
+                    return [{
+                        type: 'SWAP_FUNDS',
+                        config: {
+                            amount,
+                            fromAsset,
+                            toAsset: allocation.toAsset,
+                            chain,
+                            strategy: allocation.strategy,
+                            label: allocation.label,
+                        },
+                    }];
+                });
+            }
+
+            if (baseAmount === null) return [];
+
+            const asset = action.config.asset ?? (event.payload as { asset?: string }).asset;
+            const chain = action.config.chain ?? (event.payload as { chain?: string }).chain;
+            if (!asset || !chain) return [];
+
+            return [
+                {
+                    type: 'TRANSFER_FUNDS',
+                    config: {
+                        bucket: 'reserve',
+                        amount: this.percentAmount(baseAmount, action.config.reservePct),
+                        asset,
+                        chain,
+                    },
                 },
-            };
+                {
+                    type: 'INVEST_FUNDS',
+                    config: {
+                        bucket: 'invest',
+                        strategy: 'default',
+                        amount: this.percentAmount(baseAmount, action.config.investPct),
+                        asset,
+                        chain,
+                    },
+                },
+                {
+                    type: 'TRANSFER_FUNDS',
+                    config: {
+                        bucket: 'liquid',
+                        amount: this.percentAmount(baseAmount, action.config.liquidPct),
+                        asset,
+                        chain,
+                    },
+                },
+            ];
         });
+    }
+
+    private percentAmount(baseAmount: number, percent: number): string {
+        return ((baseAmount * percent) / 100).toFixed(8);
     }
 
     private toNumber(value: unknown): number | null {

@@ -3,9 +3,9 @@ import { FinancialAgent, IFinancialAgent } from '../../../infrastructure/databas
 import { FinancialEventType, FinancialAgentStatus } from '../../../core/financial-runtime/types';
 
 export const FinancialAgentRepository = {
-    async findById(id: string) {
-        if (!mongoose.Types.ObjectId.isValid(id)) return null;
-        return FinancialAgent.findById(id);
+    async findByIdInWorkspace(id: string, workspaceId: string) {
+        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(workspaceId)) return null;
+        return FinancialAgent.findOne({ _id: id, workspaceId });
     },
 
     async findManyByWorkspace(workspaceId: string): Promise<IFinancialAgent[]> {
@@ -30,8 +30,8 @@ export const FinancialAgentRepository = {
         return agent.save();
     },
 
-    async updateStatus(id: string, status: FinancialAgentStatus) {
-        if (!mongoose.Types.ObjectId.isValid(id)) return null;
-        return FinancialAgent.findByIdAndUpdate(id, { status }, { new: true });
+    async updateStatusInWorkspace(id: string, workspaceId: string, status: FinancialAgentStatus) {
+        if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(workspaceId)) return null;
+        return FinancialAgent.findOneAndUpdate({ _id: id, workspaceId }, { status }, { new: true });
     },
 };

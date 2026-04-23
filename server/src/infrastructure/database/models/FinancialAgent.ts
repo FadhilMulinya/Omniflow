@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { FinancialAgentStatus, FinancialEventType } from '../../../core/financial-runtime/types';
+import {
+    FINANCIAL_EVENT_TYPES,
+    FinancialAgentStatus,
+    FinancialEventType,
+    FINANCIAL_POLICY_ACTION_TYPES,
+} from '../../../core/financial-runtime/types';
 
 export interface IFinancialAgent extends Document {
     workspaceId: Types.ObjectId;
@@ -7,15 +12,18 @@ export interface IFinancialAgent extends Document {
     description?: string;
     status: FinancialAgentStatus;
     subscribedEvents: FinancialEventType[];
-    policyIds: Types.ObjectId[];
     stateId?: Types.ObjectId;
     permissionConfig: {
         maxSpendPerTx?: string;
         maxSpendPerMonth?: string;
         allowedAssets?: string[];
         allowedChains?: string[];
+        blockedAssets?: string[];
+        blockedChains?: string[];
+        blockedRecipients?: string[];
         allowedRecipients?: string[];
-        allowedActions?: Array<'SPLIT_FUNDS' | 'TRANSFER_FUNDS' | 'INVEST_FUNDS' | 'REQUEST_APPROVAL'>;
+        allowedActions?: Array<(typeof FINANCIAL_POLICY_ACTION_TYPES)[number]>;
+        blockedActions?: Array<(typeof FINANCIAL_POLICY_ACTION_TYPES)[number]>;
     };
     approvalConfig: {
         requireApprovalAbove?: string;
@@ -34,18 +42,21 @@ const FinancialAgentSchema = new Schema(
         status: { type: String, enum: ['active', 'paused'], default: 'active', index: true },
         subscribedEvents: {
             type: [String],
-            enum: ['PAYMENT_LINK.PAID', 'FUNDS.RECEIVED', 'TIME.MONTH_STARTED', 'APPROVAL.GRANTED', 'APPROVAL.REJECTED'],
+            enum: FINANCIAL_EVENT_TYPES,
             default: [],
         },
-        policyIds: [{ type: Schema.Types.ObjectId, ref: 'FinancialPolicy' }],
         stateId: { type: Schema.Types.ObjectId, ref: 'FinancialAgentState' },
         permissionConfig: {
             maxSpendPerTx: { type: String },
             maxSpendPerMonth: { type: String },
             allowedAssets: [{ type: String }],
             allowedChains: [{ type: String }],
+            blockedAssets: [{ type: String }],
+            blockedChains: [{ type: String }],
+            blockedRecipients: [{ type: String }],
             allowedRecipients: [{ type: String }],
-            allowedActions: [{ type: String, enum: ['SPLIT_FUNDS', 'TRANSFER_FUNDS', 'INVEST_FUNDS', 'REQUEST_APPROVAL'] }],
+            allowedActions: [{ type: String, enum: FINANCIAL_POLICY_ACTION_TYPES }],
+            blockedActions: [{ type: String, enum: FINANCIAL_POLICY_ACTION_TYPES }],
         },
         approvalConfig: {
             requireApprovalAbove: { type: String },

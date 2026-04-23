@@ -1,9 +1,9 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { PolicyAction } from '../../../core/financial-runtime/types';
+import { ExecutableAction } from '../../../core/financial-runtime/types';
 
 export interface IApprovalRequest extends Document {
     agentId: Types.ObjectId;
-    action: PolicyAction;
+    action: ExecutableAction;
     reason: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: Date;

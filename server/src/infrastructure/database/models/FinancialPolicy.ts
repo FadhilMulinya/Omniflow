@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
-import { FinancialEventType, PolicyAction, PolicyCondition } from '../../../core/financial-runtime/types';
+import {
+    FINANCIAL_EVENT_TYPES,
+    FinancialEventType,
+    PolicyAction,
+    PolicyCondition,
+} from '../../../core/financial-runtime/types';
 
 export interface IFinancialPolicy extends Document {
     agentId: Types.ObjectId;
@@ -17,7 +22,7 @@ const FinancialPolicySchema = new Schema(
         agentId: { type: Schema.Types.ObjectId, ref: 'FinancialAgent', required: true, index: true },
         trigger: {
             type: String,
-            enum: ['PAYMENT_LINK.PAID', 'FUNDS.RECEIVED', 'TIME.MONTH_STARTED', 'APPROVAL.GRANTED', 'APPROVAL.REJECTED'],
+            enum: FINANCIAL_EVENT_TYPES,
             required: true,
             index: true,
         },

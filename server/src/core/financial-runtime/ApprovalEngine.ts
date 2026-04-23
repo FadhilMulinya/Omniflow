@@ -1,42 +1,22 @@
 import mongoose from 'mongoose';
-import { ApprovalConfig, PolicyAction } from './types';
+import { ApprovalConfig, ExecutableAction } from './types';
 import { ApprovalRequestRepository } from '../../modules/financial-agents/financial-repositories/approval.repository';
 
 export class ApprovalEngine {
     async requiresApproval(
         agentId: string,
-        action: PolicyAction,
+        action: ExecutableAction,
         approval: ApprovalConfig,
         knownRecipients: string[] = []
     ): Promise<{ required: boolean; requestId?: string }> {
-        if (action.type === 'REQUEST_APPROVAL') {
-            const request = await ApprovalRequestRepository.create({
-                agentId: new mongoose.Types.ObjectId(agentId),
-                action,
-                reason: action.config.reason,
-                status: 'pending',
-            });
-            return { required: true, requestId: String(request._id) };
-        }
-
         if (action.type === 'INVEST_FUNDS' && approval.requireApprovalForInvestments) {
-            const request = await ApprovalRequestRepository.create({
-                agentId: new mongoose.Types.ObjectId(agentId),
-                action,
-                reason: 'Investment action requires approval',
-                status: 'pending',
-            });
+            const request = await this.createRequest(agentId, action, 'Investment action requires approval');
             return { required: true, requestId: String(request._id) };
         }
 
-        if (action.type === 'TRANSFER_FUNDS') {
+        if (action.type === 'TRANSFER_FUNDS' && action.config.to) {
             if (approval.requireApprovalForNewRecipients && !knownRecipients.includes(action.config.to)) {
-                const request = await ApprovalRequestRepository.create({
-                    agentId: new mongoose.Types.ObjectId(agentId),
-                    action,
-                    reason: 'Transfer to a new recipient requires approval',
-                    status: 'pending',
-                });
+                const request = await this.createRequest(agentId, action, 'Transfer to a new recipient requires approval');
                 return { required: true, requestId: String(request._id) };
             }
 
@@ -44,18 +24,22 @@ export class ApprovalEngine {
                 const amount = this.toNumber(action.config.amount);
                 const threshold = this.toNumber(approval.requireApprovalAbove);
                 if (amount !== null && threshold !== null && amount > threshold) {
-                    const request = await ApprovalRequestRepository.create({
-                        agentId: new mongoose.Types.ObjectId(agentId),
-                        action,
-                        reason: 'Transfer amount exceeds approval threshold',
-                        status: 'pending',
-                    });
+                    const request = await this.createRequest(agentId, action, 'Transfer amount exceeds approval threshold');
                     return { required: true, requestId: String(request._id) };
                 }
             }
         }
 
         return { required: false };
+    }
+
+    private async createRequest(agentId: string, action: ExecutableAction, reason: string) {
+        return ApprovalRequestRepository.create({
+            agentId: new mongoose.Types.ObjectId(agentId),
+            action,
+            reason,
+            status: 'pending',
+        });
     }
 
     private toNumber(value: unknown): number | null {
