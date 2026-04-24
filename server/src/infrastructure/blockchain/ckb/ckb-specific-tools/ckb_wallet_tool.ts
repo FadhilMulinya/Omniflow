@@ -56,7 +56,7 @@ export async function validateCkbAddress(address: string): Promise<string> {
             throw new Error("Invalid CKB address: Missing script");
         }
         
-        return addr;
+        return address;
     } catch (error: any) {
         console.error("❌ Invalid CKB address:", error.message);
         throw new Error("Invalid CKB address");

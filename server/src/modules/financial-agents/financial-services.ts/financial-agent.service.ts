@@ -25,6 +25,7 @@ export interface CreateFinancialAgentStructuredInput {
 export interface DraftFinancialAgentPromptInput {
     mode: 'prompt';
     workspaceId: string;
+    name: string;
     prompt: string;
     preset?: FinancialAgentPreset;
 }
@@ -52,6 +53,7 @@ async function createManagedWalletForNetwork(network: SupportedNetwork) {
 export const FinancialAgentService = {
     async draftFromPrompt(input: DraftFinancialAgentPromptInput) {
         const drafted = await FinancialAgentDraftingService.draftFromPrompt({
+            name: input.name,
             prompt: input.prompt,
             preset: input.preset,
         });

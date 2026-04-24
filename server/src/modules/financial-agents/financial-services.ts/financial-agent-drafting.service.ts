@@ -109,6 +109,7 @@ function parseDraftFromModelOutput(content: string): DraftFinancialAgentInput {
 
 export const FinancialAgentDraftingService = {
   async draftFromPrompt(input: {
+    name: string;
     prompt: string;
     preset?: FinancialAgentPreset;
   }): Promise<DraftFinancialAgentInput> {
@@ -126,6 +127,7 @@ export const FinancialAgentDraftingService = {
         {
           role: 'user',
           content: buildFinancialAgentDraftPrompt({
+            name: input.name,
             prompt: input.prompt,
             preset,
           }),
@@ -134,6 +136,8 @@ export const FinancialAgentDraftingService = {
       temperature: 0.1,
     });
 
-    return parseDraftFromModelOutput(completion.content || '');
+    const draft = parseDraftFromModelOutput(completion.content || '');
+    draft.agent.name = input.name;
+    return draft;
   },
 };

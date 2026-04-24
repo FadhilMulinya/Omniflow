@@ -501,31 +501,33 @@ function validateDraftCrossFields(parsed: DraftFinancialAgentInput) {
   }
 }
 
-async function validateAndNormalizeCkbAddresses(parsed: DraftFinancialAgentInput) {
-  const normalizeOne = async (address: string) => validateCkbAddress(address);
+async function validateCkbAddressesInDraft(parsed: DraftFinancialAgentInput): Promise<void> {
+  const validateOne = async (address: string) => {
+    await validateCkbAddress(address);
+  };
 
   for (const cfg of parsed.agent.networkConfigs) {
     if (cfg.network !== 'CKB') continue;
 
     if (cfg.allowedRecipients?.length) {
-      cfg.allowedRecipients = await Promise.all(cfg.allowedRecipients.map(normalizeOne));
+      await Promise.all(cfg.allowedRecipients.map(validateOne));
     }
 
     if (cfg.blockedRecipients?.length) {
-      cfg.blockedRecipients = await Promise.all(cfg.blockedRecipients.map(normalizeOne));
+      await Promise.all(cfg.blockedRecipients.map(validateOne));
     }
   }
 
   for (const policy of parsed.policies) {
     for (const action of policy.actions) {
       if (action.type === 'TRANSFER_FUNDS' && action.config.chain === 'CKB') {
-        action.config.to = await normalizeOne(action.config.to);
+        await validateOne(action.config.to);
       }
 
       if (action.type === 'ALLOCATE_FUNDS') {
         for (const allocation of action.config.allocations) {
           if (allocation.kind === 'transfer' && allocation.chain === 'CKB') {
-            allocation.to = await normalizeOne(allocation.to);
+            await validateOne(allocation.to);
           }
         }
       }
@@ -537,7 +539,7 @@ export const FinancialAgentValidationService = {
   async validateDraft(draft: DraftFinancialAgentInput): Promise<DraftFinancialAgentInput> {
     const parsed = normalizeDraft(draftFinancialAgentInputSchema.parse(draft));
     validateDraftCrossFields(parsed);
-    await validateAndNormalizeCkbAddresses(parsed);
+    await validateCkbAddressesInDraft(parsed);
     return parsed;
   },
 };

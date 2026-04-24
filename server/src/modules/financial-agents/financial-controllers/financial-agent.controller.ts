@@ -31,10 +31,12 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             headers: workspaceHeaderSchema,
             body: {
                 type: 'object',
-                required: ['mode', 'prompt'],
+                required: ['mode', 'prompt', 'name'],
                 additionalProperties: false,
                 properties: {
                     mode: { type: 'string', const: 'prompt' },
+                    name: { type: 'string', minLength: 1, 
+                        description: 'Name of the financial agent' },
                     prompt: {
                         type: 'string',
                         minLength: 1,
@@ -87,6 +89,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
             const draft = await FinancialAgentService.draftFromPrompt({
                 mode: 'prompt',
                 workspaceId,
+                name: body.name,
                 prompt: body.prompt,
                 preset: body.preset,
             });

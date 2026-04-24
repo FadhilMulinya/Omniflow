@@ -1,6 +1,7 @@
 import type { FinancialAgentPreset } from './financial-agent-validation.service';
 
 export function buildFinancialAgentDraftPrompt(input: {
+  name: string;
   prompt: string;
   preset?: FinancialAgentPreset;
 }) {
@@ -18,11 +19,18 @@ You are designing:
 - per-network execution configuration
 - financial policies
 
+Agent Name (MANDATORY, DO NOT CHANGE): ${input.name}
+- The agent name is already provided externally.
+- You MUST use the provided agent name exactly as given.
+- Do NOT modify, infer, or generate a different name.
+
 Return exactly one valid JSON object.
 Do not include markdown fences.
 Do not include any text before or after JSON.
 
-Important: allowedActions and blockedActions are optional restriction fields. In the normal default case, omit them entirely.
+Important: agents must have explicit allowedActions. In the normal default case, use the full supported policy action set:
+["ALLOCATE_FUNDS", "TRANSFER_FUNDS", "SWAP_FUNDS", "INVEST_FUNDS"].
+Do not include "RETAIN_FUNDS" in allowedActions or blockedActions. "RETAIN_FUNDS" is an internal executable action only.
 
 The JSON must follow this exact shape:
 {
@@ -165,11 +173,13 @@ Critical drafting rules:
 16. If a network or asset is missing but can safely default, use CKB as the default network only. Do not invent asset symbols.
 17. Draft output should be safe to pass into create after validation. Do not output vague transfer destinations.
 18. Agents must have explicit allowedActions.
-19. By default, if the user does not explicitly restrict actions, set allowedActions to the full supported set:
-["ALLOCATE_FUNDS", "TRANSFER_FUNDS", "SWAP_FUNDS", "INVEST_FUNDS", "RETAIN_FUNDS"].
+19. By default, if the user does not explicitly restrict actions, set allowedActions to the full supported policy action set:
+["ALLOCATE_FUNDS", "TRANSFER_FUNDS", "SWAP_FUNDS", "INVEST_FUNDS"].
 20. Only generate narrower allowedActions or blockedActions when the user explicitly asks to restrict actions.
 21. If a policy uses ALLOCATE_FUNDS, allowedActions must still include any concrete actions that allocation may produce, especially TRANSFER_FUNDS and SWAP_FUNDS.
 22. Do not create overly narrow action allowlists by default.
+23.If the user does not explicitly restrict actions, set both global and network allowedActions to the full supported set and do not narrow them based on preset alone.
+
 
 Preset behavior:
 - conservative_treasury: tighter approvals, stricter boundaries, more restrictive permissions
