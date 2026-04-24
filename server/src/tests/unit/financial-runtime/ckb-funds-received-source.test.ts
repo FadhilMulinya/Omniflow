@@ -4,11 +4,17 @@ import { FinancialAgentRepository } from '../../../modules/financial-agents/fina
 import { FinancialAgentStateRepository } from '../../../modules/financial-agents/financial-repositories/financial-agent-state.repository';
 import { MonitorTransactionsTool } from '../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_indexer_monitor_transactions';
 import { eventBus } from '../../../infrastructure/events/eventBus';
+import { IdempotencyService } from '../../../infrastructure/idempotency/idempotency.service';
 
 describe('CkbFundsReceivedSource', () => {
     beforeEach(() => {
         vi.spyOn(eventBus, 'emit').mockImplementation(() => true);
         vi.spyOn(FinancialAgentStateRepository, 'save').mockResolvedValue(true as any);
+
+        vi.spyOn(IdempotencyService, 'acquire').mockResolvedValue({ acquired: true });
+        vi.spyOn(IdempotencyService, 'complete').mockResolvedValue(undefined);
+        vi.spyOn(IdempotencyService, 'fail').mockResolvedValue(undefined);
+
         // Turn off console output inside test bounds
         vi.spyOn(console, 'warn').mockImplementation(() => { });
         vi.spyOn(console, 'log').mockImplementation(() => { });
@@ -19,10 +25,9 @@ describe('CkbFundsReceivedSource', () => {
         vi.restoreAllMocks();
     });
 
-    it('emits FUNDS.RECEIVED for new transactions and updates the block cursor', async () => {
+    it('emits FUNDS.RECEIVED for new transactions, passes idempotency, and updates the block cursor', async () => {
         const source = new CkbFundsReceivedSource();
 
-        // 1. Mock repository to return one active CKB agent
         const mockAgent = {
             _id: 'agent_1',
             workspaceId: 'workspace_1',
@@ -37,7 +42,6 @@ describe('CkbFundsReceivedSource', () => {
 
         vi.spyOn(FinancialAgentRepository, 'findActiveWithNetwork').mockResolvedValue([mockAgent]);
 
-        // 2. Mock state repository to return an agent state with an existing cursor
         const mockState = {
             agentId: 'agent_1',
             metadata: {
@@ -50,7 +54,6 @@ describe('CkbFundsReceivedSource', () => {
         } as any;
         vi.spyOn(FinancialAgentStateRepository, 'findByAgentId').mockResolvedValue(mockState);
 
-        // 3. Mock MonitorTransactionsTool to return 1 transaction
         vi.spyOn(MonitorTransactionsTool, 'execute').mockResolvedValue({
             address: 'ckb1qqmockaddress',
             scannedRange: { from: '0x1000', to: '0x100a' },
@@ -67,10 +70,13 @@ describe('CkbFundsReceivedSource', () => {
             nextFromBlock: '0x100b'
         } as any);
 
-        // Run the poll loop
         await source.pollOnce();
 
-        // Verify emit was called correctly
+        expect(IdempotencyService.acquire).toHaveBeenCalledWith(expect.objectContaining({
+            scope: 'financial-runtime:event-source',
+            key: 'FUNDS.RECEIVED:CKB:workspace_1:agent_1:0xtesttxhash:0'
+        }));
+
         expect(eventBus.emit).toHaveBeenCalledWith('FUNDS.RECEIVED', expect.objectContaining({
             agentId: 'agent_1',
             workspaceId: 'workspace_1',
@@ -81,9 +87,62 @@ describe('CkbFundsReceivedSource', () => {
             txHash: '0xtesttxhash'
         }));
 
+        expect(IdempotencyService.complete).toHaveBeenCalled();
+
         // Verify state was saved with the new cursor
         expect(FinancialAgentStateRepository.save).toHaveBeenCalled();
         expect(mockState.metadata.watchers.ckb.nextFromBlock).toBe('0x100b');
+    });
+
+    it('does not emit FUNDS.RECEIVED and updates cursor if acquire returns false', async () => {
+        const source = new CkbFundsReceivedSource();
+
+        const mockAgent = { _id: 'a', workspaceId: 'w', networkConfigs: [{ network: 'CKB', enabled: true, wallet: { address: 'ckbaddr' } }] } as any;
+        vi.spyOn(FinancialAgentRepository, 'findActiveWithNetwork').mockResolvedValue([mockAgent]);
+
+        const mockState = { metadata: {} } as any;
+        vi.spyOn(FinancialAgentStateRepository, 'findByAgentId').mockResolvedValue(mockState);
+
+        vi.spyOn(MonitorTransactionsTool, 'execute').mockResolvedValue({
+            address: 'ckbaddr',
+            scannedRange: { from: '0x0', to: '0x1' },
+            newTransactionCount: 1,
+            transactions: [{ txHash: '0xdupetx', amountCkb: '10' } as any],
+            nextFromBlock: '0x2'
+        } as any);
+
+        vi.spyOn(IdempotencyService, 'acquire').mockResolvedValue({ acquired: false, status: 'completed' });
+
+        await source.pollOnce();
+
+        expect(IdempotencyService.acquire).toHaveBeenCalled();
+        expect(eventBus.emit).not.toHaveBeenCalled(); // Duplicate! Skip emit.
+        expect(mockState.metadata.watchers.ckb.nextFromBlock).toBe('0x2'); // Cursor still updates!
+    });
+
+    it('calls fail if processing throws', async () => {
+        const source = new CkbFundsReceivedSource();
+
+        const mockAgent = { _id: 'a', workspaceId: 'w', networkConfigs: [{ network: 'CKB', enabled: true, wallet: { address: 'ckbaddr' } }] } as any;
+        vi.spyOn(FinancialAgentRepository, 'findActiveWithNetwork').mockResolvedValue([mockAgent]);
+
+        const mockState = { metadata: {} } as any;
+        vi.spyOn(FinancialAgentStateRepository, 'findByAgentId').mockResolvedValue(mockState);
+
+        vi.spyOn(MonitorTransactionsTool, 'execute').mockResolvedValue({
+            address: 'ckbaddr',
+            scannedRange: { from: '0x0', to: '0x1' },
+            newTransactionCount: 1,
+            transactions: [{ txHash: '0xerrortx', amountCkb: '10' } as any],
+            nextFromBlock: '0x2'
+        } as any);
+
+        vi.spyOn(eventBus, 'emit').mockImplementation(() => { throw new Error('Emit boom'); });
+
+        await source.pollOnce();
+
+        expect(IdempotencyService.acquire).toHaveBeenCalled();
+        expect(IdempotencyService.fail).toHaveBeenCalledWith(expect.objectContaining({ error: 'Emit boom' }));
     });
 
     it('skips agent if no CKB config is enabled', async () => {

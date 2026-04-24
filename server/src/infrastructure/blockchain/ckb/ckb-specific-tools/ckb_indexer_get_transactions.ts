@@ -76,12 +76,9 @@ export const GetAllTransactionsTool: BlockchainTool<GetAllTransactionsInput, any
         const { script: lockScript } = await ccc.Address.fromString(input.address, cccClient);
 
         const transactions: any[] = [];
-        for await (const txRecord of cccClient.findTransactions(
-            {
-                script: lockScript,
-                scriptType: "lock",
-                scriptSearchMode: "exact",
-            },
+        for await (const txRecord of cccClient.findTransactionsByLock(
+            lockScript,
+            undefined,
             false,
             "desc",
             100

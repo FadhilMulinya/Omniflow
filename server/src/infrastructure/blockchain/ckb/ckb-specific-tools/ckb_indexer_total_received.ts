@@ -20,12 +20,9 @@ export const GetTotalReceivedTool: BlockchainTool<GetTotalReceivedInput, any> = 
         let totalShannons = ccc.numFrom(0);
         let txCount = 0;
 
-        for await (const txRecord of cccClient.findTransactions(
-            {
-                script: lockScript,
-                scriptType: "lock",
-                scriptSearchMode: "exact",
-            },
+        for await (const txRecord of cccClient.findTransactionsByLock(
+            lockScript,
+            undefined,
             false,
             "asc",
             200

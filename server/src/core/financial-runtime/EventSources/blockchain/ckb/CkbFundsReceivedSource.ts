@@ -3,6 +3,7 @@ import { FinancialAgentRepository } from '../../../../../modules/financial-agent
 import { FinancialAgentStateRepository } from '../../../../../modules/financial-agents/financial-repositories/financial-agent-state.repository';
 import { MonitorTransactionsTool } from '../../../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_indexer_monitor_transactions';
 import { eventBus } from '../../../../../infrastructure/events/eventBus';
+import { IdempotencyService, buildIdempotencyKey } from '../../../../../infrastructure/idempotency/idempotency.service';
 
 export class CkbFundsReceivedSource {
     /**
@@ -15,6 +16,7 @@ export class CkbFundsReceivedSource {
         for (const agent of agents) {
             try {
                 await this.pollAgent(agent);
+
             } catch (error) {
                 console.error(
                     `[CkbFundsReceivedSource] Failed to poll agent ${agent._id}:`,
@@ -55,19 +57,69 @@ export class CkbFundsReceivedSource {
             fromBlock,
             limit: 50,
         });
+        console.log('[CkbFundsReceivedSource] scanning:', result.scannedRange);
+        console.log('[CkbFundsReceivedSource] found txs:', result.newTransactionCount);
+        console.log('[CkbFundsReceivedSource] txs:', result.transactions);
+        console.log('[CkbFundsReceivedSource] state:', state);
+        console.log('[CkbFundsReceivedSource] agentWalletAddress:', walletAddress);
+        console.log('[CkbFundsReceivedSource] next cursor:', result.nextFromBlock);
 
         // Emit FUNDS.RECEIVED for every new incoming transaction
         for (const tx of result.transactions) {
-            eventBus.emit('FUNDS.RECEIVED', {
-                workspaceId: String(agent.workspaceId),
-                agentId: String(agent._id),
-                amount: tx.amountCkb,
-                asset: 'CKB',
-                chain: 'CKB',
-                recipientAddress: tx.toAddress,
-                payerAddress: tx.fromAddress || undefined,
-                txHash: tx.txHash,
+            const key = buildIdempotencyKey([
+                'FUNDS.RECEIVED',
+                'CKB',
+                String(agent.workspaceId),
+                String(agent._id),
+                tx.txHash,
+                tx.ioIndex ?? '0',
+            ]);
+
+            const acquired = await IdempotencyService.acquire({
+                scope: 'financial-runtime:event-source',
+                key,
+                metadata: {
+                    chain: 'CKB',
+                    txHash: tx.txHash,
+                    agentId: String(agent._id),
+                    workspaceId: String(agent.workspaceId),
+                    source: 'CkbFundsReceivedSource',
+                },
+                lockMs: 60_000,
             });
+
+            if (!acquired.acquired) {
+                console.log(`[CkbFundsReceivedSource] Skipping duplicate tx ${tx.txHash}`);
+                continue;
+            }
+
+            try {
+                eventBus.emit('FUNDS.RECEIVED', {
+                    workspaceId: String(agent.workspaceId),
+                    agentId: String(agent._id),
+                    amount: tx.amountCkb,
+                    asset: 'CKB',
+                    chain: 'CKB',
+                    recipientAddress: tx.toAddress,
+                    payerAddress: tx.fromAddress || undefined,
+                    txHash: tx.txHash,
+                });
+
+                await IdempotencyService.complete({
+                    scope: 'financial-runtime:event-source',
+                    key,
+                    metadata: {
+                        emittedEvent: 'FUNDS.RECEIVED',
+                    },
+                });
+            } catch (error: any) {
+                await IdempotencyService.fail({
+                    scope: 'financial-runtime:event-source',
+                    key,
+                    error: error?.message || String(error),
+                });
+                throw error;
+            }
         }
 
         // Persist the new cursor so we don't re-scan the same block range on restart
