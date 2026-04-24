@@ -41,15 +41,6 @@ export const MonitorTransactionsTool: BlockchainTool<MonitorTransactionsInput, a
             "desc",
             input.limit ?? 50
         )) {
-            console.log('[MonitorTransactionsTool] RAW TX', {
-                txHash: tx.txHash,
-                ioType: tx.ioType,
-                ioIndex: tx.ioIndex?.toString(),
-                blockNumber: tx.blockNumber?.toString(),
-            });
-
-            // NOTE: findTransactionsByLock does NOT return ioType/ioIndex — they come back undefined.
-            // Do NOT filter by ioType here. Process all records returned for this lock script.
             if (seen.has(tx.txHash)) continue;
             seen.add(tx.txHash);
 
@@ -60,10 +51,18 @@ export const MonitorTransactionsTool: BlockchainTool<MonitorTransactionsInput, a
                     continue;
                 }
 
-                // Playground-style: sum all outputs. ioIndex is unavailable from findTransactionsByLock.
+                // Filter and sum only the outputs whose lock script matches the monitored address
+                const targetLock = script;
                 const outputs = txData.transaction.outputs;
                 const totalAmount = outputs.reduce(
-                    (sum: bigint, output: any) => sum + output.capacity,
+                    (sum: bigint, output: any) => {
+                        const isMatch =
+                            output.lock.codeHash === targetLock.codeHash &&
+                            output.lock.hashType === targetLock.hashType &&
+                            output.lock.args === targetLock.args;
+
+                        return isMatch ? sum + output.capacity : sum;
+                    },
                     0n
                 );
 

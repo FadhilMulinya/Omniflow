@@ -57,12 +57,7 @@ export class CkbFundsReceivedSource {
             fromBlock,
             limit: 50,
         });
-        console.log('[CkbFundsReceivedSource] scanning:', result.scannedRange);
-        console.log('[CkbFundsReceivedSource] found txs:', result.newTransactionCount);
-        console.log('[CkbFundsReceivedSource] txs:', result.transactions);
-        console.log('[CkbFundsReceivedSource] state:', state);
-        console.log('[CkbFundsReceivedSource] agentWalletAddress:', walletAddress);
-        console.log('[CkbFundsReceivedSource] next cursor:', result.nextFromBlock);
+        console.log('[CkbFundsReceivedSource] scanning:', result.scannedRange, '| found:', result.newTransactionCount);
 
         // Emit FUNDS.RECEIVED for every new incoming transaction
         let emittedCount = 0;
