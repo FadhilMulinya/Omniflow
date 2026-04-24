@@ -22,6 +22,14 @@ export const FinancialAgentRepository = {
         });
     },
 
+    async findActiveWithNetwork(network: string): Promise<IFinancialAgent[]> {
+        return FinancialAgent.find({
+            status: 'active',
+            'networkConfigs.network': network,
+            'networkConfigs.enabled': true,
+        });
+    },
+
     async create(data: Partial<IFinancialAgent>) {
         return FinancialAgent.create(data);
     },

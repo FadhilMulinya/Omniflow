@@ -9,6 +9,10 @@ export type CreateSignatureInput = z.infer<typeof CreateSignatureSchema>;
 export type VerifySignatureInput = z.infer<typeof VerifySignatureSchema>;
 export type GetAddressInput = z.infer<typeof GetAddressSchema>;
 export type GenerateWalletInput = z.infer<typeof GenerateWalletSchema>;
+export type FindTransactionsInput = z.infer<typeof FindTransactionsSchema>;
+export type GetAllTransactionsInput = z.infer<typeof GetAllTransactionsSchema>;
+export type GetTotalReceivedInput = z.infer<typeof GetTotalReceivedSchema>;
+export type MonitorTransactionsInput = z.infer<typeof MonitorTransactionsSchema>;
 
 
 const OutPointSchema = z.object({
@@ -95,5 +99,25 @@ export const GetAddressSchema = z.object({
 });
 
 export const GenerateWalletSchema = z.object({}).describe("Generates a new CKB wallet (private key and address)");
+
+export const FindTransactionsSchema = z.object({
+    address: z.string().describe("The CKB address to query transactions for"),
+    order: z.enum(["asc", "desc"]).optional().describe("Sort order of results (default: desc)"),
+    limit: z.number().optional().describe("Maximum number of transactions to return (default: 50)"),
+});
+
+export const GetAllTransactionsSchema = z.object({
+    address: z.string().describe("The CKB address to fetch all historical transactions for"),
+});
+
+export const GetTotalReceivedSchema = z.object({
+    address: z.string().describe("The CKB address to calculate total received CKB for"),
+});
+
+export const MonitorTransactionsSchema = z.object({
+    address: z.string().describe("The CKB address to monitor for new incoming transactions"),
+    fromBlock: z.string().optional().describe("Hex block number to start scanning from (e.g. '0x100'). Defaults to latest tip."),
+    limit: z.number().optional().describe("Max transactions to return per poll cycle (default 50)"),
+});
 
 const ckbContractsTools = [];

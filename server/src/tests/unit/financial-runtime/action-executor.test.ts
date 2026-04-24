@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ActionExecutor } from '../../../core/financial-runtime/ActionExecutors/CKBActionExecutor';
+import { ActionExecutor } from '../../../core/financial-runtime/ActionExecutors';
 import { eventBus } from '../../../infrastructure/events/eventBus';
+import { TransferTool } from '../../../infrastructure/blockchain/ckb';
 import type { ExecutableAction, RuntimeEvent } from '../../../core/financial-runtime/types';
 
 describe('ActionExecutor', () => {
@@ -11,6 +12,9 @@ describe('ActionExecutor', () => {
   it('emits transfer lifecycle and transfer-requested events for TRANSFER_FUNDS', async () => {
     const emitSpy = vi.spyOn(eventBus, 'emit');
     const executor = new ActionExecutor();
+
+    // Mock TransferTool execution
+    vi.spyOn(TransferTool, 'execute').mockResolvedValue('0xmock_tx_hash');
 
     const event: RuntimeEvent<'FUNDS.RECEIVED'> = {
       id: 'evt_transfer',
@@ -36,7 +40,15 @@ describe('ActionExecutor', () => {
       },
     };
 
-    await executor.execute('agent_1', action, event);
+    const mockAgent = {
+      _id: 'agent_1',
+      networkConfigs: [{
+        network: 'CKB',
+        wallet: { address: 'mock_addr', privateKey: 'mock_key' }
+      }]
+    } as any;
+
+    await executor.execute(mockAgent, action, event);
 
     expect(emitSpy).toHaveBeenCalledWith(
       'FINANCIAL_ACTION.STARTED',
