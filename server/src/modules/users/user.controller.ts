@@ -29,7 +29,7 @@ export async function userController(fastify: FastifyInstance) {
         },
     }, async (request) => UserService.getNotifications(request.user.id));
 
-    fastify.put<{ Body: { telegram?: boolean; dailySummaries?: boolean; email?: boolean } }>(
+    fastify.put<{ Body: { telegram?: boolean; whatsapp?: boolean; dailySummaries?: boolean; email?: boolean } }>(
         '/notifications', {
         onRequest: [fastify.authenticate],
         schema: {

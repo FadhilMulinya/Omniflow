@@ -75,7 +75,16 @@ export const agentApi = {
     verifyCryptoPurchase: async (purchaseId: string) =>
         apiFetch(`/payments/crypto/verify/${purchaseId}`, { method: 'POST', body: JSON.stringify({}) }),
 
+
     getCryptoNetworks: async () => apiFetch('/payments/crypto/networks'),
+
+    getMarketplace: async (params: any) => {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => { if (v !== undefined) qs.set(k, String(v)); });
+        return apiFetch(`/marketplace?${qs.toString()}`);
+    },
+
+    getMarketplaceAgent: async (id: string) => apiFetch(`/marketplace/agent/${id}`),
 };
 
 export const agentControlApi = {

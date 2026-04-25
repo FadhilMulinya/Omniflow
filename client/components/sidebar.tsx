@@ -12,14 +12,29 @@ import {
 import { Button } from '@/components/ui/buttons/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/overlays/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { 
+  Building, 
+  Check, 
+  ChevronsUpDown, 
+  PlusCircle,
+  Gem,
+  LayoutGrid
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/menus/dropdown-menu";
 
 const navItems = [
-  { name: 'Home', href: '/', icon: Home },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Revenue', href: '/dashboard/revenue', icon: TrendingUp },
+  { name: 'Assets', href: '/dashboard/assets', icon: Gem },
   { name: 'Sandbox', href: '/sandbox', icon: Box },
   { name: 'Marketplace', href: '/marketplace', icon: Store },
-  { name: 'Support', href: '/support', icon: Headphones },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -44,6 +59,7 @@ const SidebarContent = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { workspaces, activeWorkspace, setActiveWorkspaceId } = useWorkspace();
 
   return (
     <div className={cn(
@@ -51,9 +67,61 @@ const SidebarContent = ({
       collapsed ? 'w-[60px]' : 'w-[220px]'
     )}>
       {/* ── User identity — top of sidebar ── */}
+      {/* ── Workspace Selector ── */}
+      <div className={cn('px-2 py-2', collapsed && 'flex justify-center')}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={cn(
+              "flex items-center gap-2 rounded-lg hover:bg-accent/40 transition-all duration-200 group text-left",
+              collapsed ? "w-9 h-9 justify-center" : "w-full p-2"
+            )}>
+              <div className="w-8 h-8 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <Building className="w-4 h-4 text-primary" />
+              </div>
+              {!collapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate uppercase tracking-wider">
+                      {activeWorkspace?.name || 'My Studio'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate uppercase tracking-widest font-medium">Workspace</p>
+                  </div>
+                  <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 rounded-xl border-border/40 p-1.5 shadow-2xl backdrop-blur-xl">
+            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 py-1.5">
+              Workspaces
+            </DropdownMenuLabel>
+            {workspaces.map((ws) => (
+              <DropdownMenuItem
+                key={ws._id}
+                onClick={() => setActiveWorkspaceId(ws._id)}
+                className="flex items-center justify-between rounded-lg px-2 py-2 text-sm font-medium focus:bg-primary/10 focus:text-primary cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded bg-muted flex items-center justify-center text-[10px] font-bold group-focus:bg-primary/20">
+                    {ws.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <span className="truncate max-w-[120px]">{ws.name}</span>
+                </div>
+                {activeWorkspace?._id === ws._id && <Check className="w-3.5 h-3.5" />}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator className="bg-border/40" />
+            <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium focus:bg-primary/10 focus:text-primary cursor-pointer">
+              <PlusCircle className="w-4 h-4" />
+              <span>Create Workspace</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className={cn(
         'flex items-center border-b border-border/60 h-14 px-3 gap-3',
-        collapsed ? 'justify-center' : 'justify-between'
+        collapsed ? 'justify-center focus:outline-none' : 'justify-between'
       )}>
         <Link href="/settings" className="flex items-center gap-2.5 min-w-0 overflow-hidden flex-1">
           <Avatar url={avatarUrl} name={userName} className="w-8 h-8 flex-shrink-0" />

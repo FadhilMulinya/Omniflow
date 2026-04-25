@@ -121,6 +121,7 @@ export const notificationSettingsSchema = {
     type: 'object' as const,
     properties: {
         telegram: { type: 'boolean' as const },
+        whatsapp: { type: 'boolean' as const },
         dailySummaries: { type: 'boolean' as const },
         email: { type: 'boolean' as const },
     },

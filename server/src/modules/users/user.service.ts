@@ -8,12 +8,13 @@ function mask(key?: string): string | null {
 export const UserService = {
     async getNotifications(userId: string) {
         const record = await UserRepository.findById(userId, 'notifications');
-        return (record as any)?.notifications ?? { telegram: false, dailySummaries: false, email: true };
+        return (record as any)?.notifications ?? { telegram: false, whatsapp: false, dailySummaries: false, email: true };
     },
 
-    async updateNotifications(userId: string, updates: { telegram?: boolean; dailySummaries?: boolean; email?: boolean }) {
+    async updateNotifications(userId: string, updates: { telegram?: boolean; whatsapp?: boolean; dailySummaries?: boolean; email?: boolean }) {
         const update: Record<string, unknown> = {};
         if (updates.telegram !== undefined) update['notifications.telegram'] = updates.telegram;
+        if (updates.whatsapp !== undefined) update['notifications.whatsapp'] = updates.whatsapp;
         if (updates.dailySummaries !== undefined) update['notifications.dailySummaries'] = updates.dailySummaries;
         if (updates.email !== undefined) update['notifications.email'] = updates.email;
         await UserRepository.findByIdAndUpdate(userId, { $set: update });

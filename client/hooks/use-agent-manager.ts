@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { useToast } from '@/components/ui';
 import { useFlow } from '@/contexts/FlowContext';
-import { agentApi } from '@/api';
+import { agentApi, financialAgentApi } from '@/api';
 
 export const useAgentManager = () => {
     const { nodes, edges, reactFlowInstance, setNodes, setEdges } = useFlow();
@@ -71,7 +71,15 @@ export const useAgentManager = () => {
 
     const loadAgentById = useCallback(async (id: string) => {
         try {
-            const agent = await agentApi.getAgent(id);
+            let agent;
+            // Try loading as financial agent first
+            try {
+                agent = await financialAgentApi.getAgent(id);
+            } catch (e) {
+                // Fallback to regular agent
+                agent = await agentApi.getAgent(id);
+            }
+
             if (agent && agent.graph) {
                 setNodes(agent.graph.nodes || []);
                 setEdges(agent.graph.edges || []);

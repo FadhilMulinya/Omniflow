@@ -5,12 +5,12 @@ import { FinancialEventType, FinancialAgentStatus } from '../../../core/financia
 export const FinancialAgentRepository = {
     async findByIdInWorkspace(id: string, workspaceId: string) {
         if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(workspaceId)) return null;
-        return FinancialAgent.findOne({ _id: id, workspaceId });
+        return FinancialAgent.findOne({ _id: id, workspaceId }).populate('stateId');
     },
 
     async findManyByWorkspace(workspaceId: string): Promise<IFinancialAgent[]> {
         if (!mongoose.Types.ObjectId.isValid(workspaceId)) return [];
-        return FinancialAgent.find({ workspaceId }).sort({ updatedAt: -1 });
+        return FinancialAgent.find({ workspaceId }).sort({ updatedAt: -1 }).populate('stateId');
     },
 
     async findSubscribedToEvent(workspaceId: string, eventType: FinancialEventType): Promise<IFinancialAgent[]> {

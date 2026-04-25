@@ -1,34 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api-client';
+import { financialAgentApi } from '@/api/financial-agent-api';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import CreateAgentModal from '@/components/create-agent-modal';
 import EditAgentModal from '@/components/edit-agent-modal';
 import { UpgradePricingModal } from '@/components/modals/upgrade-pricing-modal';
 import { Button } from '@/components/ui/buttons/button';
-import Link from 'next/link';
 import { AgentCard } from './components/AgentCard';
 import {
-  Plus, Activity, TrendingUp, Circle, Coins, Sparkles, Crown, Info, ArrowRight,
+  Plus, Coins, Sparkles, Crown, Info, ArrowRight,
+  LayoutGrid, List, Search, RefreshCw
 } from 'lucide-react';
-import { IconBusinessplan, IconRun, IconHexagonPlusFilled, IconFriends, IconCircleDashedCheck, IconSubtitlesEdit } from "@tabler/icons-react";
+import { IconCpu, IconChartBar, IconShieldCheck, IconWallet } from "@tabler/icons-react";
+import { cn } from '@/lib/utils';
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const planMeta: Record<string, { label: string; color: string }> = {
-  free:       { label: 'Free',       color: 'bg-muted/60 text-muted-foreground border-border/40' },
-  starter:    { label: 'Starter',    color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-  pro:        { label: 'Pro',        color: 'bg-primary/10 text-primary border-primary/20' },
-  max:        { label: 'Max',        color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
-  enterprise: { label: 'Enterprise', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
-  unlimited:  { label: 'Unlimited',  color: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
+const planMeta: Record<string, { label: string; color: string; gradient: string }> = {
+  free:       { label: 'Free',       color: 'text-muted-foreground', gradient: 'from-muted/20 to-muted/5' },
+  starter:    { label: 'Starter',    color: 'text-emerald-500',      gradient: 'from-emerald-500/10 to-emerald-500/5' },
+  pro:        { label: 'Pro',        color: 'text-primary',          gradient: 'from-primary/10 to-primary/5' },
+  max:        { label: 'Max',        color: 'text-violet-500',       gradient: 'from-violet-500/10 to-violet-500/5' },
+  enterprise: { label: 'Enterprise', color: 'text-amber-500',        gradient: 'from-amber-500/10 to-amber-500/5' },
+  unlimited:  { label: 'Unlimited',  color: 'text-violet-500',       gradient: 'from-violet-500/10 to-violet-500/5' },
 };
 
 function PlanBadge({ plan }: { plan: string }) {
   const meta = planMeta[plan] ?? planMeta.free;
   return (
-    <span className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold border px-3 py-1.5 rounded-full ${meta.color}`}>
+    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border px-3 py-1 rounded-full bg-background/50 backdrop-blur-sm shadow-sm", meta.color.replace('text-', 'border-').replace('500', '500/30'), meta.color)}>
       <Sparkles className="w-3 h-3" />
       {meta.label}
     </span>
@@ -40,39 +43,50 @@ function StatCard({
   label,
   value,
   sub,
-  accent,
+  color,
   delay,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   sub?: string;
-  accent: string;
+  color: 'primary' | 'violet' | 'emerald' | 'amber';
   delay: number;
 }) {
+  const colorMap = {
+    primary: 'text-primary bg-primary/10 border-primary/20 hover:border-primary/40 shadow-primary/5',
+    violet: 'text-violet-500 bg-violet-500/10 border-violet-500/20 hover:border-violet-500/40 shadow-violet-500/5',
+    emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40 shadow-emerald-500/5',
+    amber: 'text-amber-500 bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 shadow-amber-500/5',
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease }}
-      className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-5 group hover:border-primary/20 transition-colors duration-200"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay, ease }}
+      className={cn(
+        "relative group p-5 rounded-2xl border bg-card/50 backdrop-blur-md transition-all duration-300 hover:shadow-2xl",
+        colorMap[color]
+      )}
     >
-      <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${accent}`} />
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accent.replace('bg-', 'bg-').replace('/60', '/15')}`}>
-          <Icon className={`w-6 h-6 ${accent.includes('primary') ? 'text-primary' : accent.includes('violet') ? 'text-violet-500' : accent.includes('emerald') ? 'text-emerald-500' : 'text-amber-500'}`} />
+      <div className="flex items-center justify-between mb-4">
+        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110", colorMap[color].split(' ')[1])}>
+          <Icon className="w-5 h-5" />
         </div>
+        {sub && <span className="text-[10px] font-bold text-muted-foreground/60">{sub}</span>}
       </div>
-      <div className="text-2xl font-extrabold tracking-tight mb-0.5">{value}</div>
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      {sub && <div className="text-[11px] text-muted-foreground/60 mt-1">{sub}</div>}
+      <div className="space-y-0.5">
+        <div className="text-2xl font-black tracking-tight">{value}</div>
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/80">{label}</div>
+      </div>
     </motion.div>
   );
 }
 
 export default function DashboardPage() {
   const [agents, setAgents] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'all' | 'published' | 'drafts'>('all');
+  const { workspaces, activeWorkspace, isLoading: wsLoading } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -80,207 +94,272 @@ export default function DashboardPage() {
   const [editingAgent, setEditingAgent] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<{ plan: string; tokens: number } | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const refreshAgents = async () => {
+    if (!activeWorkspace) return;
+    setLoading(true);
+    try {
+      const agList = await financialAgentApi.listAgents();
+      setAgents(agList);
+      
+      const profile = await apiFetch('/auth/me');
+      setUserPlan({ plan: profile.plan ?? 'free', tokens: profile.tokens ?? 0 });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    apiFetch('/agents')
-      .then(setAgents)
-      .catch((e: any) => setError(e.message))
-      .finally(() => setLoading(false));
-    apiFetch('/auth/me')
-      .then((u) => setUserPlan({ plan: u.plan ?? 'free', tokens: u.tokens ?? 0 }))
-      .catch(() => {});
-  }, []);
+    refreshAgents();
+  }, [activeWorkspace]);
 
   const handleEditSuccess = (updated: any) =>
     setAgents((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
 
-  const filtered = agents.filter((a) => {
-    if (activeTab === 'published') return !a.isDraft;
-    if (activeTab === 'drafts') return a.isDraft;
-    return true;
-  });
+  const filteredAgents = agents.filter(a => 
+    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const published = agents.filter((a) => !a.isDraft).length;
-  const drafts = agents.filter((a) => a.isDraft).length;
+  const activeAgents = agents.filter(a => a.status === 'active').length;
+
+  const totalAssets = agents.reduce((acc, a) => {
+    const bal = a.stateId?.balances?.CKB || '0';
+    return acc + parseFloat(bal);
+  }, 0);
+
+  const totalPolicyHits = agents.reduce((acc, a) => {
+    return acc + (parseInt(a.stateId?.counters?.totalReceived || '0'));
+  }, 0);
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="max-w-7xl mx-auto px-4 md:px-5 py-5 md:py-7">
+    <div className="min-h-full bg-background selection:bg-primary/20">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-violet-500/5 blur-[120px]" />
+      </div>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease }}
-          className="flex items-center justify-between mb-5"
-        >
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">Agent Studio</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {agents.length} agent{agents.length !== 1 ? 's' : ''} in your workspace
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Token balance pill */}
-            {userPlan && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 px-3 py-1.5 rounded-full">
-                <Coins className="w-3.5 h-3.5" />
-                {userPlan.tokens.toLocaleString()} tokens
+      <div className="relative max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease }}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25">
+                <IconCpu className="w-6 h-6 text-primary-foreground" />
               </div>
-            )}
-            {/* Plan badge */}
-            {userPlan && (
-              <PlanBadge plan={userPlan.plan} />
-            )}
-            {/* Upgrade button — shown for free & starter plans */}
-            {userPlan && ['free', 'starter'].includes(userPlan.plan) && (
-              <button
-                onClick={() => setUpgradeOpen(true)}
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold bg-gradient-to-r from-amber-500/15 to-primary/15 text-amber-500 border border-amber-500/30 px-3 py-1.5 rounded-full hover:from-amber-500/25 hover:to-primary/25 transition-all cursor-pointer"
+              <div>
+                <h1 className="text-3xl font-black tracking-tight text-foreground">Financial Studio</h1>
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                  <LayoutGrid className="w-3 h-3" />
+                  {activeWorkspace?.name || 'Loading Workspace...'}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease }}
+            className="flex flex-wrap items-center gap-4"
+          >
+            <div className="hidden sm:flex flex-col items-end gap-1">
+              {userPlan && <PlanBadge plan={userPlan.plan} />}
+              {userPlan && (
+                <div className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
+                  <Coins className="w-3 h-3" />
+                  {userPlan.tokens.toLocaleString()} CREDITS
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={refreshAgents}
+                disabled={loading}
+                className="rounded-xl border-border/40 hover:bg-muted/50"
               >
-                <Crown className="w-3 h-3" />
-                Upgrade
-              </button>
-            )}
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/25 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              New Agent
-            </Button>
-          </div>
-        </motion.div>
+                <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+              </Button>
+              {userPlan && ['free', 'starter'].includes(userPlan.plan) && (
+                <Button
+                  onClick={() => setUpgradeOpen(true)}
+                  variant="outline"
+                  className="hidden sm:flex items-center gap-2 rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500/5 font-bold text-xs uppercase tracking-wider"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  Upgrade
+                </Button>
+              )}
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
+              >
+                <Plus className="w-4 h-4" />
+                NEW AGENT
+              </Button>
+            </div>
+          </motion.div>
+        </div>
 
-
-        {/* Free plan info banner */}
         {userPlan?.plan === 'free' && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05, ease }}
-            className="mb-6 rounded-2xl border border-border/50 bg-muted/20 px-5 py-4"
+            transition={{ delay: 0.2 }}
+            className="mb-8 p-1 rounded-2xl bg-gradient-to-r from-primary/20 via-border/50 to-violet-500/20"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <Info className="w-4 h-4 text-primary" />
+            <div className="bg-card/80 backdrop-blur-xl rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <Info className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-1">Free Plan includes</p>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <IconFriends className="w-3 h-3 text-primary" />
-                      Up to <strong className="text-foreground">3 agents</strong>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <IconHexagonPlusFilled className="w-5 h-5 text-amber-500" />
-                      Max <strong className="text-foreground">5 connected nodes</strong> per agent
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <IconBusinessplan className="w-5 h-5 text-amber-500" />
-                      <strong className="text-foreground">50 tokens</strong> per node executed
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <TrendingUp className="w-3 h-3 text-emerald-500" />
-                      <strong className="text-foreground">500 tokens</strong> / month
-                    </span>
-                  </div>
+                  <h4 className="text-sm font-bold text-foreground">You're on the Explorer Tier</h4>
+                  <p className="text-xs text-muted-foreground">Unlock advanced financial presets and multi-chain support with Pro.</p>
                 </div>
               </div>
-              <button
+              <button 
                 onClick={() => setUpgradeOpen(true)}
-                className="shrink-0 inline-flex items-center gap-2 text-xs font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-xl hover:bg-primary/90 transition-colors cursor-pointer shadow-md shadow-primary/20 whitespace-nowrap"
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1 uppercase tracking-widest"
               >
-                <Crown className="w-3.5 h-3.5" />
-                Upgrade Plan
+                Learn More <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </motion.div>
         )}
 
-        {/* Stats strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-          <StatCard icon={IconFriends}       label="Total Agents"   value={String(agents.length)}   accent="bg-primary/60"   delay={0}    />
-          <StatCard icon={IconCircleDashedCheck} label="Published"   value={String(published)}        accent="bg-emerald-500/60" delay={0.05} />
-          <StatCard icon={IconSubtitlesEdit}        label="Drafts"        value={String(drafts)}           accent="bg-amber-500/60" delay={0.1}  />
-          <StatCard icon={IconRun} label="Executions"    value="—"  sub="Connect API to track" accent="bg-violet-500/60" delay={0.15} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard icon={IconCpu} label="Total Agents" value={String(agents.length)} color="primary" delay={0.1} />
+          <StatCard icon={IconShieldCheck} label="Secured Agents" value={String(activeAgents)} color="emerald" delay={0.2} />
+          <StatCard 
+            icon={IconWallet} 
+            label="Total Assets" 
+            value={totalAssets > 0 ? `${totalAssets.toLocaleString()} CKB` : '0.00'} 
+            sub="CKB Network" 
+            color="violet" 
+            delay={0.3} 
+          />
+          <StatCard 
+            icon={IconChartBar} 
+            label="Policy Hits" 
+            value={String(totalPolicyHits)} 
+            sub="Last 24h" 
+            color="amber" 
+            delay={0.4} 
+          />
         </div>
 
-        {/* Tabs + actions */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex gap-0.5 bg-muted/30 p-1 rounded-xl border border-border/40">
-            {(['all', 'published', 'drafts'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-1.5 text-xs font-semibold rounded-lg capitalize transition-all cursor-pointer ${
-                  activeTab === tab
-                    ? 'bg-card text-foreground shadow-sm border border-border/40'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+          <div className="relative w-full sm:w-96 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search by name or policy..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-11 pr-4 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border border-border/40">
+            <Button variant="ghost" size="sm" className="h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-card text-foreground shadow-sm">
+              <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Grid
+            </Button>
+            <Button variant="ghost" size="sm" className="h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+              <List className="w-3.5 h-3.5 mr-1.5" /> List
+            </Button>
           </div>
         </div>
 
-        {/* States */}
-        {loading && (
-          <div className="flex items-center justify-center py-24 gap-3">
-            <Activity className="w-5 h-5 text-primary animate-pulse" />
-            <span className="text-sm text-muted-foreground font-medium">Loading agents…</span>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div 
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-32 gap-4"
+            >
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full border-2 border-primary/20" />
+                <div className="absolute inset-0 w-12 h-12 rounded-full border-t-2 border-primary animate-spin" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground animate-pulse uppercase tracking-widest">Synchronizing Studio...</p>
+            </motion.div>
+          ) : filteredAgents.length === 0 ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-24 rounded-3xl border border-dashed border-border/60 bg-muted/5 relative overflow-hidden"
+            >
+               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 opacity-50" />
+               <div className="relative z-10">
+                <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6 text-primary">
+                  <IconCpu className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No Financial Agents Found</h3>
+                <p className="text-muted-foreground mb-8 max-w-sm mx-auto text-sm">
+                  Your workspace is ready for its first autonomous financial agent. Start with a simple prompt.
+                </p>
+                <Button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="rounded-xl bg-primary px-8 font-bold text-sm tracking-wide shadow-xl shadow-primary/20"
+                >
+                  INITIALIZE AGENT
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {filteredAgents.map((agent, i) => (
+                <AgentCard
+                  key={agent._id}
+                  agent={agent}
+                  index={i}
+                  onEdit={(a) => { setEditingAgent(a); setIsEditModalOpen(true); }}
+                  onControlChange={(id, status) => setAgents(prev => prev.map(a => a._id === id ? { ...a, status } : a))}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {error && (
-          <div className="mb-6 px-4 py-3 rounded-xl bg-destructive/8 border border-destructive/20 text-sm text-destructive">
+          <div className="mt-8 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive font-medium flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-destructive animate-ping" />
             {error}
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-24 border border-dashed border-border/60 rounded-2xl bg-muted/5">
-            <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto mb-4">
-              <IconFriends className="w-6 h-6 text-primary" />
-            </div>
-            <p className="font-semibold text-[15px] mb-1">No agents yet</p>
-            <p className="text-sm text-muted-foreground mb-5">
-              Create your first AI agent to get started.
-            </p>
-            <Link href="/sandbox">
-              <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl cursor-pointer hover:bg-primary/90 transition-colors">
-                Open Sandbox
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-          </div>
-        )}
-
-        {/* Agent grid */}
-        {!loading && filtered.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((agent, i) => (
-              <AgentCard
-                key={agent._id}
-                agent={agent}
-                index={i}
-                onEdit={(a) => { setEditingAgent(a); setIsEditModalOpen(true); }}
-                onControlChange={(id, status) => setAgents(prev => prev.map(a => a._id === id ? { ...a, status } : a))}
-              />
-            ))}
           </div>
         )}
       </div>
 
-      <CreateAgentModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateAgentModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        onComplete={() => refreshAgents()}
+      />
+      
       <EditAgentModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         agent={editingAgent}
         onSuccess={handleEditSuccess}
       />
+
       <UpgradePricingModal
         isOpen={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
