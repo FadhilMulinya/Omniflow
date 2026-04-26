@@ -2,7 +2,7 @@ import type React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Figtree, JetBrains_Mono } from 'next/font/google';
 import '@/styles/globals.css';
-import { FloatingBot } from '@/components/floating-bot';
+
 
 const figtree = Figtree({
   subsets: ['latin'],
@@ -40,7 +40,6 @@ export default function RootLayout({
         className={`${figtree.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
-        <FloatingBot />
       </body>
     </html>
   );

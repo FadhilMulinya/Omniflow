@@ -18,7 +18,7 @@ interface IUser extends Document {
     plan: PlanId;
     planExpiry?: Date;
     planBillingCycle?: BillingCycle;
-    notifications?: { telegram: boolean; dailySummaries: boolean; email: boolean };
+    notifications?: { telegram: boolean; whatsapp: boolean; dailySummaries: boolean; email: boolean };
     savedPaymentMethods?: {
         crypto: Array<{ label: string; network: string; walletAddress: string; asset: string }>;
     };
@@ -54,6 +54,7 @@ const UserSchema: Schema = new Schema(
         planBillingCycle: { type: String, enum: ['monthly', 'quarterly', 'yearly'] },
         notifications: {
             telegram: { type: Boolean, default: false },
+            whatsapp: { type: Boolean, default: false },
             dailySummaries: { type: Boolean, default: false },
             email: { type: Boolean, default: true },
         },

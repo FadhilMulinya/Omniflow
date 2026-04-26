@@ -50,7 +50,7 @@ export function WaitlistFormColumn({
       ) : (
         <form className="space-y-5" onSubmit={onSubmit}>
           <div>
-            <label htmlFor="wl-name" className="block text-[11px] uppercase tracking-[0.06em] text-fl-ink-3 mb-2">
+            <label htmlFor="wl-name" className="block text-[11px] uppercase tracking-[0.06em] text-fl-ink-inv opacity-50 mb-2">
               Full Name
             </label>
             <input
@@ -59,12 +59,12 @@ export function WaitlistFormColumn({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-[4px] border border-fl-line-dark bg-fl-dark text-fl-ink-inv placeholder:text-fl-ink-3 focus:outline-none focus:border-fl-accent/60 transition-colors text-[14px]"
+              className="w-full px-3 py-2.5 rounded-[4px] border border-fl-line-dark bg-fl-dark text-fl-ink-inv placeholder:text-fl-ink-inv/30 focus:outline-none focus:border-fl-accent/60 transition-colors text-[14px]"
               placeholder="John Doe"
             />
           </div>
           <div>
-            <label htmlFor="wl-email" className="block text-[11px] uppercase tracking-[0.06em] text-fl-ink-3 mb-2">
+            <label htmlFor="wl-email" className="block text-[11px] uppercase tracking-[0.06em] text-fl-ink-inv opacity-50 mb-2">
               Email Address
             </label>
             <input
@@ -76,7 +76,7 @@ export function WaitlistFormColumn({
                 setEmail(e.target.value);
                 onClearError();
               }}
-              className="w-full px-3 py-2.5 rounded-[4px] border border-fl-line-dark bg-fl-dark text-fl-ink-inv placeholder:text-fl-ink-3 focus:outline-none focus:border-fl-accent/60 transition-colors text-[14px]"
+              className="w-full px-3 py-2.5 rounded-[4px] border border-fl-line-dark bg-fl-dark text-fl-ink-inv placeholder:text-fl-ink-inv/30 focus:outline-none focus:border-fl-accent/60 transition-colors text-[14px]"
               placeholder="john@example.com"
             />
           </div>
@@ -97,7 +97,7 @@ export function WaitlistFormColumn({
               </>
             )}
           </button>
-          <p className="text-[11px] text-fl-ink-3 text-center">No spam, unsubscribe at any time.</p>
+          <p className="text-[11px] text-fl-ink-inv opacity-40 text-center">No spam, unsubscribe at any time.</p>
         </form>
       )}
     </motion.div>

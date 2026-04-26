@@ -4,6 +4,7 @@ import {
     DraftFinancialAgentPromptInput,
     FinancialAgentService,
 } from '../financial-services.ts/financial-agent.service';
+import { FinancialEventRepository } from '../financial-repositories/financial-event.repository';
 import {
     cookieAuthSecurity,
     standardErrorResponses,
@@ -460,5 +461,29 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
         }
 
         return updated;
+    });
+
+    fastify.get('/financial-agents/events', {
+        onRequest: [fastify.authenticate],
+        schema: {
+            tags: ['Financial Agents'],
+            summary: 'Get recent financial events for the workspace',
+            security: [cookieAuthSecurity],
+            headers: workspaceHeaderSchema,
+            response: {
+                200: {
+                    type: 'array',
+                    items: { type: 'object', additionalProperties: true },
+                },
+                ...standardErrorResponses([400, 401, 500]),
+            },
+        },
+    }, async (request, reply) => {
+        const workspaceId = request.headers['x-workspace-id'] as string;
+        if (!workspaceId) {
+            return reply.code(400).send({ error: 'Missing x-workspace-id header' });
+        }
+
+        return FinancialEventRepository.findRecentByWorkspace(workspaceId);
     });
 };

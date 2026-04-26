@@ -9,7 +9,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export const ENV = {
     NODE_ENV,
-    MONGO_URI: process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/onhandl',
+    MONGO_URI: process.env.MONGO_URI || process.env.LOCAL_MONGO_URI || 'mongodb://127.0.0.1:27017/onhandl',
     JWT_SECRET: process.env.JWT_SECRET || 'supersecret_faev',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY as string,
     GEMINI_BASE_URL: process.env.GEMINI_BASE_URL as string,
@@ -55,3 +55,4 @@ if (NODE_ENV !== 'production') {
 }
 
 console.log(`[ENV] NODE_ENV=${NODE_ENV} | Allowed origins: ${ENV.ALLOWED_ORIGINS.join(', ')}`);
+console.log(`[ENV] MONGO_URI: ${ENV.MONGO_URI.replace(/:([^@]+)@/, ':****@')}`); // Masking password

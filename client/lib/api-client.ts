@@ -10,6 +10,14 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
         ...options.headers,
     };
 
+    // Inject Workspace ID if present in localStorage
+    if (typeof window !== 'undefined') {
+        const workspaceId = localStorage.getItem('active_workspace_id');
+        if (workspaceId) {
+            headers['x-workspace-id'] = workspaceId;
+        }
+    }
+
     if (typeof window !== 'undefined' && (endpoint.includes('/ai/') || endpoint.includes('/test-connection'))) {
         try {
             const body = options.body ? JSON.parse(options.body as string) : {};
@@ -30,8 +38,14 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || body.message || response.statusText || 'An error occurred');
+        let errorMsg = response.statusText || 'An error occurred';
+        try {
+            const body = await response.json();
+            errorMsg = body.error || body.message || errorMsg;
+        } catch (e) {
+            // response not json
+        }
+        throw new Error(errorMsg);
     }
 
     return response.json();
