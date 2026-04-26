@@ -94,11 +94,9 @@ export {
   Dialog,
   DialogPortal,
   DialogOverlay,
-  DialogClose,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
   DialogFooter,
+  DialogHeader,
+  DialogContent,
   DialogTitle,
   DialogDescription,
 };

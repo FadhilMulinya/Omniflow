@@ -51,7 +51,7 @@ const sheetVariants = cva(
 
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {
+  VariantProps<typeof sheetVariants> {
   /** Set to true when the consumer renders its own close button */
   hideClose?: boolean;
 }
@@ -117,7 +117,6 @@ export {
   SheetPortal,
   SheetOverlay,
   SheetTrigger,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetFooter,
