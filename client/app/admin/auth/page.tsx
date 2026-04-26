@@ -31,7 +31,7 @@ export default async function AdminAuthPage() {
       fetchJson('/admin/executions', cookieHeader),
       fetchJson('/admin/support-tickets', cookieHeader),
       fetchJson('/admin/blog', cookieHeader),
-      fetchJson('/blog/settings', cookieHeader),
+      fetchJson('/blog/blog/settings', cookieHeader),
     ]);
 
   return (

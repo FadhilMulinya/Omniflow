@@ -7,12 +7,15 @@ import { cn } from '@/lib/utils';
 import {
   Home, LayoutDashboard, Box, Settings,
   ChevronLeft, ChevronRight,
-  LogOut, Menu, User, Headphones, Shield,
+  LogOut, Menu, User, Headphones, Shield, SlidersHorizontal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/overlays/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useUXMode } from '@/contexts/UXModeContext';
+import { Switch } from '@/components/ui/selection/switch';
+import { toast } from 'sonner';
 import {
   Building,
   Check,
@@ -55,7 +58,8 @@ const SidebarContent = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { workspaces, activeWorkspace, setActiveWorkspaceId } = useWorkspace();
+  const { workspaces, activeWorkspace, setActiveWorkspaceId, createWorkspace } = useWorkspace();
+  const { mode, isPro, toggleMode } = useUXMode();
 
   return (
     <div className={cn(
@@ -107,7 +111,20 @@ const SidebarContent = ({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator className="bg-border/40" />
-            <DropdownMenuItem className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium focus:bg-primary/10 focus:text-primary cursor-pointer">
+            <DropdownMenuItem
+              onClick={async () => {
+                const name = window.prompt('Workspace name');
+                if (!name?.trim()) return;
+                try {
+                  await createWorkspace(name.trim());
+                } catch (err: any) {
+                  toast.error('Failed to create workspace', {
+                    description: err.message || err.error || 'Unknown error',
+                  });
+                }
+              }}
+              className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium focus:bg-primary/10 focus:text-primary cursor-pointer"
+            >
               <PlusCircle className="w-4 h-4" />
               <span>Create Workspace</span>
             </DropdownMenuItem>
@@ -210,6 +227,41 @@ const SidebarContent = ({
 
       {/* ── Bottom ── */}
       <div className="border-t border-border/60 p-2 space-y-0.5">
+        <div
+          className={cn(
+            'flex items-center rounded-lg text-sm font-medium text-muted-foreground transition-all duration-150',
+            collapsed ? 'h-9 w-9 justify-center mx-auto' : 'px-3 py-2 gap-3'
+          )}
+          title={collapsed ? `${mode === 'lite' ? 'Lite' : 'Pro'} mode` : undefined}
+        >
+          {collapsed ? (
+            <button
+              onClick={toggleMode}
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:text-foreground hover:bg-accent/40 transition-colors"
+              aria-label={`Switch to ${isPro ? 'Lite' : 'Pro'} mode`}
+            >
+              <SlidersHorizontal className="w-[17px] h-[17px]" />
+            </button>
+          ) : (
+            <>
+              <SlidersHorizontal className="w-[17px] h-[17px] shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground truncate">
+                  {isPro ? 'Pro Mode' : 'Lite Mode'}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {isPro ? 'Full controls' : 'Simple setup'}
+                </p>
+              </div>
+              <Switch
+                checked={isPro}
+                onCheckedChange={toggleMode}
+                aria-label={`Switch to ${isPro ? 'Lite' : 'Pro'} mode`}
+              />
+            </>
+          )}
+        </div>
+
         {/* Admin link — only shown to admins */}
         {isAdmin && (
           <Link

@@ -4,17 +4,21 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { financialAgentApi } from '@/api/financial-agent-api';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useUXMode } from '@/contexts/UXModeContext';
 import CreateAgentModal from '@/components/create-agent-modal';
 import { Button } from '@/components/ui/buttons/button';
 import { AgentCard } from './components/AgentCard';
+import Link from 'next/link';
 import {
-  Plus, Sparkles, Info, ArrowRight,
-  LayoutGrid, List, Search, RefreshCw
+  Plus, Sparkles, ArrowRight,
+  LayoutGrid, List, Search, RefreshCw, X
 } from 'lucide-react';
-import { IconCpu, IconChartBar, IconShieldCheck, IconWallet } from "@tabler/icons-react";
+import { IconActivity, IconChartBar, IconClock, IconCpu, IconShieldCheck, IconWallet } from "@tabler/icons-react";
 import { cn } from '@/lib/utils';
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
+
+type ViewMode = 'grid' | 'list';
 
 
 function StatCard({
@@ -65,11 +69,13 @@ function StatCard({
 
 export default function DashboardPage() {
   const [agents, setAgents] = useState<any[]>([]);
-  const { workspaces, activeWorkspace, isLoading: wsLoading } = useWorkspace();
+  const { activeWorkspace } = useWorkspace();
+  const { isLite } = useUXMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const refreshAgents = async () => {
     if (!activeWorkspace) return;
@@ -88,13 +94,24 @@ export default function DashboardPage() {
     refreshAgents();
   }, [activeWorkspace]);
 
-  const handleEditSuccess = (updated: any) =>
-    setAgents((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
+  const filteredAgents = agents.filter((agent) => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
 
-  const filteredAgents = agents.filter(a =>
-    a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const searchable = [
+      agent.name,
+      agent.description,
+      agent.status,
+      agent.networkConfigs?.[0]?.network,
+      agent.networkConfigs?.[0]?.wallet?.address,
+      ...(agent.subscribedEvents || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return searchable.includes(query);
+  });
 
   const activeAgents = agents.filter(a => a.status === 'active').length;
 
@@ -157,51 +174,124 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
               >
                 <Plus className="w-4 h-4" />
-                NEW AGENT
+                {isLite ? 'QUICK DRAFT' : 'NEW AGENT'}
               </Button>
             </div>
           </motion.div>
         </div>
 
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <StatCard icon={IconCpu} label="Total Agents" value={String(agents.length)} color="primary" delay={0.1} />
-          <StatCard icon={IconShieldCheck} label="Secured Agents" value={String(activeAgents)} color="emerald" delay={0.2} />
-          <StatCard
-            icon={IconWallet}
-            label="Total Assets"
-            value={totalAssets > 0 ? `${totalAssets.toLocaleString()} CKB` : '0.00'}
-            sub="CKB Network"
-            color="violet"
-            delay={0.3}
-          />
-          <StatCard
-            icon={IconChartBar}
-            label="Policy Hits"
-            value={String(totalPolicyHits)}
-            sub="Last 24h"
-            color="amber"
-            delay={0.4}
-          />
-        </div>
+        {isLite ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease }}
+            className="mb-10 rounded-3xl border border-border/50 bg-background/85 p-6 shadow-xl shadow-black/5 backdrop-blur-2xl"
+          >
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Status Overview</p>
+                  <h2 className="text-xl font-black tracking-tight">
+                    {agents.length === 0 ? 'No agents yet' : `${activeAgents} of ${agents.length} agents active`}
+                  </h2>
+                  <p className="mt-1 text-sm font-medium text-muted-foreground">
+                    Create or adjust agents using plain language.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground shadow-xl shadow-primary/20"
+                >
+                  <Plus className="h-4 w-4" />
+                  Quick Draft
+                </Button>
+                <Button asChild variant="outline" className="inline-flex items-center gap-2 rounded-xl border-border/50 bg-card/70 backdrop-blur-sm">
+                  <Link href="/bot">
+                    Start with Assistant
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <StatCard icon={IconCpu} label="Total Agents" value={String(agents.length)} color="primary" delay={0.1} />
+            <StatCard icon={IconShieldCheck} label="Secured Agents" value={String(activeAgents)} color="emerald" delay={0.2} />
+            <StatCard
+              icon={IconWallet}
+              label="Total Assets"
+              value={totalAssets > 0 ? `${totalAssets.toLocaleString()} CKB` : '0.00'}
+              sub="CKB Network"
+              color="violet"
+              delay={0.3}
+            />
+            <StatCard
+              icon={IconChartBar}
+              label="Policy Hits"
+              value={String(totalPolicyHits)}
+              sub="Last 24h"
+              color="amber"
+              delay={0.4}
+            />
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
           <div className="relative w-full sm:w-96 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Search by name or policy..."
+              placeholder="Search agents, status, network, policy..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-11 pr-4 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all text-sm"
+              className="w-full h-11 pl-11 pr-10 rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all text-sm"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 bg-muted/30 p-1 rounded-xl border border-border/40">
-            <Button variant="ghost" size="sm" className="h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest bg-card text-foreground shadow-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              aria-pressed={viewMode === 'grid'}
+              className={cn(
+                "h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest",
+                viewMode === 'grid'
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
               <LayoutGrid className="w-3.5 h-3.5 mr-1.5" /> Grid
             </Button>
-            <Button variant="ghost" size="sm" className="h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              aria-pressed={viewMode === 'list'}
+              className={cn(
+                "h-8 rounded-lg text-[11px] font-bold uppercase tracking-widest",
+                viewMode === 'list'
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
               <List className="w-3.5 h-3.5 mr-1.5" /> List
             </Button>
           </div>
@@ -248,19 +338,82 @@ export default function DashboardPage() {
             </motion.div>
           ) : (
             <motion.div
-              key="grid"
+              key={viewMode}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-3"}
             >
-              {filteredAgents.map((agent, i) => (
-                <AgentCard
-                  key={agent._id}
-                  agent={agent}
-                  index={i}
-                  onControlChange={(id, status) => setAgents(prev => prev.map(a => a._id === id ? { ...a, status } : a))}
-                />
-              ))}
+              {viewMode === 'grid'
+                ? filteredAgents.map((agent, i) => (
+                  <AgentCard
+                    key={agent._id}
+                    agent={agent}
+                    index={i}
+                    compact={isLite}
+                    onControlChange={(id, status) => setAgents(prev => prev.map(a => a._id === id ? { ...a, status } : a))}
+                  />
+                ))
+                : filteredAgents.map((agent, i) => {
+                  const isActive = agent.status === 'active';
+                  const network = agent.networkConfigs?.[0]?.network || 'CKB';
+                  const policyCount = agent.subscribedEvents?.length || 0;
+                  const updatedAt = agent.updatedAt
+                    ? new Date(agent.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : 'New';
+
+                  return (
+                    <motion.div
+                      key={agent._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25, delay: i * 0.03 }}
+                      className="grid gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-xl transition-colors hover:border-primary/30 md:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)] md:items-center"
+                    >
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className={cn(
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border",
+                          isActive
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                            : "border-amber-500/20 bg-amber-500/10 text-amber-500"
+                        )}>
+                          <IconActivity className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 md:max-w-[66%] lg:max-w-none">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-sm font-black tracking-tight text-foreground">{agent.name}</h3>
+                            <span className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-widest",
+                              isActive ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                            )}>
+                              {isActive ? 'Active' : 'Paused'}
+                            </span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 max-w-full break-words text-xs font-medium leading-relaxed text-muted-foreground md:max-w-[38rem]">
+                            {agent.description || 'Managed financial agent'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid min-w-0 grid-cols-3 gap-3 text-xs md:justify-self-end md:w-full">
+                        <div>
+                          <p className="font-black uppercase tracking-widest text-muted-foreground/70">Network</p>
+                          <p className="mt-1 font-bold">{network}</p>
+                        </div>
+                        <div>
+                          <p className="font-black uppercase tracking-widest text-muted-foreground/70">Policies</p>
+                          <p className="mt-1 font-bold">{policyCount}</p>
+                        </div>
+                        <div>
+                          <p className="font-black uppercase tracking-widest text-muted-foreground/70">Updated</p>
+                          <p className="mt-1 flex items-center gap-1 font-bold">
+                            <IconClock className="h-3.5 w-3.5 text-muted-foreground" />
+                            {updatedAt}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
             </motion.div>
           )}
         </AnimatePresence>

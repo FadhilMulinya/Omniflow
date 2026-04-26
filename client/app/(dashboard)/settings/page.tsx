@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api-client';
 import { Loader2, User, KeyRound, CreditCard, Bell, Coins, ChevronRight } from 'lucide-react';
 import { ProfileSection } from './components/profile-section';
 import { ApiKeysCard } from './components/api-keys-card';
+import { toast } from 'sonner';
 
 type Section = 'profile' | 'api-keys';
 
@@ -25,7 +26,7 @@ export default function SettingsPage() {
     apiFetch('/auth/me').then((data: any) => {
       setUser({ username: data.username || '', email: data.email || '', whatsapp: data.whatsapp || '', telegramUsername: data.telegramUsername || '', avatarUrl: data.avatarUrl || '' });
       setTokenInfo({ tokens: data.tokens ?? 0, plan: data.plan ?? 'free' });
-    }).catch(() => alert('Error: Failed to load profile.'))
+    }).catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
   }, []);
 

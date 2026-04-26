@@ -10,6 +10,7 @@ import {
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/overlays/alert-dialog';
 import { Loader2, Save, CheckCircle2, User, Mail, Phone, MessageCircle, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   user: { username: string; email: string; whatsapp: string; telegramUsername: string; avatarUrl: string };
@@ -31,10 +32,12 @@ export function ProfileSection({ user, setUser }: Props) {
     try {
       await apiFetch('/auth/me', { method: 'POST', body: JSON.stringify(user) });
       setSaved(true);
-      alert('Profile updated!');
+      toast.success('Profile updated');
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
-      alert('Error: ' + (err.message || 'Failed to update profile.'));
+      toast.error('Failed to update profile', {
+        description: err.message || 'Please try again.',
+      });
     } finally {
       setSaving(false);
     }
@@ -62,10 +65,12 @@ export function ProfileSection({ user, setUser }: Props) {
       setAvatarPreview(cloudUrl);
       await apiFetch('/auth/me', { method: 'POST', body: JSON.stringify({ avatarUrl: cloudUrl }) });
       setUser({ ...user, avatarUrl: cloudUrl });
-      alert('Profile picture updated!');
+      toast.success('Profile picture updated');
     } catch (err: any) {
       setAvatarPreview(null);
-      alert('Upload failed: ' + (err.message || 'Could not save picture.'));
+      toast.error('Upload failed', {
+        description: err.message || 'Could not save picture.',
+      });
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -78,9 +83,11 @@ export function ProfileSection({ user, setUser }: Props) {
       await apiFetch('/auth/me', { method: 'POST', body: JSON.stringify({ avatarUrl: '' }) });
       setUser({ ...user, avatarUrl: '' });
       setAvatarPreview(null);
-      alert('Profile picture removed.');
+      toast.success('Profile picture removed');
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      toast.error('Failed to remove profile picture', {
+        description: err.message,
+      });
     } finally {
       setAvatarUploading(false);
     }

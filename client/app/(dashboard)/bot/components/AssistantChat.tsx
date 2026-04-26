@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Send, Trash2, Zap, Sparkles } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Send, Trash2, Zap, Sparkles, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api-client';
+import CreateAgentModal from '@/components/create-agent-modal';
 
 type Message = { id: string; content: string; role: 'user' | 'assistant' };
 
@@ -18,6 +19,7 @@ export function AssistantChat() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +37,7 @@ export function AssistantChat() {
         setLoading(true);
 
         try {
-            const data = await apiFetch('/bot/chat', { method: 'POST', body: JSON.stringify({ message: trimmed, history }) });
+            const data = await apiFetch('/bots/chat', { method: 'POST', body: JSON.stringify({ message: trimmed, history }) });
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), content: data.reply || 'No response.', role: 'assistant' }]);
         } catch (err: any) {
             setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), content: err.message || 'Something went wrong.', role: 'assistant' }]);
@@ -46,10 +48,25 @@ export function AssistantChat() {
     };
 
     const isEmpty = messages.length === 0;
+    const agentPrompt = useMemo(() => {
+        return messages
+            .map((message) => `${message.role === 'user' ? 'User' : 'Assistant'}: ${message.content}`)
+            .join('\n\n')
+            .slice(0, 4000);
+    }, [messages]);
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                {!isEmpty && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-3 py-2 text-xs font-bold text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5"
+                    >
+                        <Bot className="h-3.5 w-3.5 text-primary" />
+                        Convert to Agent
+                    </button>
+                )}
                 {!isEmpty && (
                     <button onClick={() => setMessages([])} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto">
                         <Trash2 className="w-3.5 h-3.5" /> Clear
@@ -119,6 +136,12 @@ export function AssistantChat() {
                     <Send className="w-3.5 h-3.5" />
                 </button>
             </form>
+
+            <CreateAgentModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                initialPrompt={agentPrompt}
+            />
         </div>
     );
 }

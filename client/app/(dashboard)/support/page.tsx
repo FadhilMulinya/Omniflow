@@ -145,7 +145,7 @@ export default function SupportPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    apiFetch('/support/tickets')
+    apiFetch('/support/support')
       .then(setTickets)
       .catch(() => {})
       .finally(() => setLoading(false));

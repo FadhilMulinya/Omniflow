@@ -15,9 +15,10 @@ interface AgentCardProps {
     agent: any;
     onControlChange?: (id: string, newStatus: string) => void;
     index: number;
+    compact?: boolean;
 }
 
-export function AgentCard({ agent, onControlChange, index }: AgentCardProps) {
+export function AgentCard({ agent, onControlChange, index, compact = false }: AgentCardProps) {
     const isActive = agent.status === 'active';
     const network = agent.networkConfigs?.[0]?.network || 'CKB';
     const address = agent.networkConfigs?.[0]?.wallet?.address;
@@ -96,6 +97,27 @@ export function AgentCard({ agent, onControlChange, index }: AgentCardProps) {
                     {agent.description || 'Ensuring financial integrity and autonomous decision making on the network.'}
                 </p>
 
+                {compact ? (
+                    <div className="pt-5 border-t border-border/40 flex items-center justify-between">
+                        <span className={cn(
+                            "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest border",
+                            isActive
+                                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                : "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                        )}>
+                            <span className={cn("h-2 w-2 rounded-full", isActive ? "bg-emerald-500" : "bg-amber-500")} />
+                            {isActive ? 'Active' : 'Paused'}
+                        </span>
+                        <Link
+                            href="/bot"
+                            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-widest text-primary-foreground transition-all hover:bg-primary/90"
+                        >
+                            Open Chat
+                            <IconArrowRight size={14} />
+                        </Link>
+                    </div>
+                ) : (
+                    <>
                 {/* Metadata tokens */}
                 <div className="flex flex-wrap gap-2 mb-6">
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/30 border border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -125,6 +147,8 @@ export function AgentCard({ agent, onControlChange, index }: AgentCardProps) {
                         {new Date(agent.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                 </div>
+                    </>
+                )}
             </div>
 
             {/* Premium hover highlight */}

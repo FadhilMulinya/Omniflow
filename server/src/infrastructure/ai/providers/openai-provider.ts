@@ -19,8 +19,18 @@ export class OpenAIProvider implements IAIProvider {
 
     async generateCompletion(request: CompletionRequest): Promise<CompletionResponse> {
         const model = request.model || this.defaultModel;
+        const client = request.apiKey || request.baseUrl
+            ? new OpenAI({
+                apiKey: request.apiKey || ENV.OPENAI_API_KEY,
+                baseURL: request.baseUrl || ENV.OPENAI_BASE_URL,
+            })
+            : this.client;
         
-        const response = await this.client.responses.create({
+        if (!request.apiKey && !ENV.OPENAI_API_KEY) {
+            throw Object.assign(new Error('OpenAI API key is missing. Configure one on the server or save an OpenAI key in settings.'), { code: 400 });
+        }
+
+        const response = await client.responses.create({
             model: model,
             input: this.buildMessages(request) as any,
             temperature: request.temperature ?? 0.7,

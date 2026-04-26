@@ -18,6 +18,29 @@ import {
     RECIPIENT_POLICIES,
 } from '../financial-services.ts/financial-agent-validation.service';
 
+type FinancialAgentPreset = typeof FINANCIAL_AGENT_PRESETS[number];
+
+const LEGACY_FINANCIAL_AGENT_PRESETS = [
+    'conservative',
+    'balanced',
+    'custom',
+    'aggressive',
+] as const;
+
+function normalizeFinancialAgentPreset(preset?: string): FinancialAgentPreset | undefined {
+    if (!preset) return undefined;
+    if ((FINANCIAL_AGENT_PRESETS as readonly string[]).includes(preset)) return preset as FinancialAgentPreset;
+
+    const legacyMap: Record<string, FinancialAgentPreset> = {
+        conservative: 'conservative_treasury',
+        balanced: 'balanced_allocator',
+        custom: 'balanced_allocator',
+        aggressive: 'aggressive_allocator',
+    };
+
+    return legacyMap[preset];
+}
+
 export const financialAgentController: FastifyPluginAsync = async (fastify) => {
     fastify.post<{
         Body: Omit<DraftFinancialAgentPromptInput, 'workspaceId'>;
@@ -46,7 +69,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
                     },
                     preset: {
                         type: 'string',
-                        enum: FINANCIAL_AGENT_PRESETS,
+                        enum: [...FINANCIAL_AGENT_PRESETS, ...LEGACY_FINANCIAL_AGENT_PRESETS],
                         description: 'Optional drafting preset used to bias the generated configuration.',
                     },
                 },
@@ -92,7 +115,7 @@ export const financialAgentController: FastifyPluginAsync = async (fastify) => {
                 workspaceId,
                 name: body.name,
                 prompt: body.prompt,
-                preset: body.preset,
+                preset: normalizeFinancialAgentPreset(body.preset),
             });
 
             return reply.code(200).send(draft);
