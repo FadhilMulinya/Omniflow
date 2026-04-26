@@ -50,6 +50,7 @@
     "@xyflow/react": "latest",
     "aos": "^2.3.4",
     "autoprefixer": "^10.4.20",
+    "bs58": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -82,6 +83,7 @@
   },
   "devDependencies": {
     "@react-native-async-storage/async-storage": "^3.0.1",
+    "@types/bs58": "^5.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
