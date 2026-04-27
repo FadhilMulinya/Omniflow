@@ -6,8 +6,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { financialAgentApi } from '@/api/financial.api';
 import {
     IconDots, IconArrowRight, IconClock, IconActivity, IconPlayerPause, IconPlayerPlay,
-    IconShieldLock, IconDatabase, IconNetwork, IconWallet
+    IconShieldLock, IconDatabase, IconNetwork, IconWallet,
+    IconCopy, IconCheck
 } from '@tabler/icons-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
@@ -25,6 +27,17 @@ export function AgentCard({ agent, onControlChange, index, compact = false }: Ag
     const address = agent.networkConfigs?.[0]?.wallet?.address;
     const [balance, setBalance] = useState<any>(null);
     const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyAddress = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!address) return;
+        navigator.clipboard.writeText(address);
+        setCopied(true);
+        toast.success('Address copied to clipboard');
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     useEffect(() => {
         const fetchBalance = async () => {
