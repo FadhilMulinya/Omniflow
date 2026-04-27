@@ -98,69 +98,61 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[200] flex items-center justify-center p-4"
                 >
-                    {/* Blurred backdrop */}
+                    {/* Blurred backdrop with secondary color */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+                        className="absolute inset-0 bg-[#020202]/60 backdrop-blur-sm"
                         onClick={handleClose}
                     />
 
-                    {/* Modal shell */}
+                    {/* Modal shell - Dominant background */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.93, y: 28 }}
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.93, y: 28 }}
-                        transition={{ duration: 0.45, ease }}
-                        className="relative w-full max-w-xl rounded-[2rem] border border-white/10 bg-[#0f0f11] shadow-[0_32px_80px_rgba(0,0,0,0.6)] overflow-hidden"
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        transition={{ duration: 0.4, ease }}
+                        className="relative w-full max-w-xl rounded-2xl border border-[#020202]/10 bg-[#eeeeee] shadow-2xl overflow-hidden"
                     >
                         <AnimatePresence mode="wait">
 
                             {/* ═══════════════════ STEP: NAME ═══════════════════ */}
                             {step === 'name' && (
-                                <motion.div key="name" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease }}>
-                                    {/* Gradient top bar */}
-                                    <div className="h-1 w-full bg-gradient-to-r from-primary via-violet-500 to-rose-500" />
-
+                                <motion.div key="name" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3, ease }}>
                                     <div className="p-8">
                                         {/* Close */}
-                                        <button onClick={handleClose} className="absolute top-5 right-5 p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/10 transition-all">
-                                            <X size={18} />
+                                        <button onClick={handleClose} className="absolute top-5 right-5 p-2 rounded-xl text-[#020202]/40 hover:text-[#020202] hover:bg-[#020202]/5 transition-all">
+                                            <X size={20} />
                                         </button>
 
-                                        {/* Icon + Label */}
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg shadow-primary/30">
-                                                <Bot className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/70">Step 1 of 2</p>
-                                                <h2 className="text-lg font-black tracking-tight text-white">Name Your Agent</h2>
-                                            </div>
+                                        {/* Header */}
+                                        <div className="mb-8">
+                                            <p className="text-xs font-black uppercase tracking-widest text-[#e0692e] mb-1">Step 1 of 2</p>
+                                            <h2 className="text-2xl font-black tracking-tight text-[#020202]">Name Your Agent</h2>
                                         </div>
 
-                                        <p className="text-sm text-white/50 font-medium mb-6 leading-relaxed">
+                                        <p className="text-sm text-[#020202]/70 font-medium mb-6 leading-relaxed">
                                             Give your agent an identity — a name it will carry inside your Financial Studio.
                                         </p>
 
-                                        <div className="space-y-2 mb-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Agent Name</label>
+                                        <div className="space-y-2 mb-8">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-[#020202]/70">Agent Name</label>
                                             <input
                                                 autoFocus
                                                 value={name}
                                                 onChange={e => setName(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && handleNameNext()}
                                                 placeholder="e.g. Treasury Sentinel"
-                                                className="w-full h-13 px-5 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 text-sm font-bold transition-all"
+                                                className="w-full h-14 px-5 rounded-xl bg-white border-2 border-[#020202]/10 text-[#020202] placeholder:text-[#020202]/30 focus:outline-none focus:border-[#e0692e] focus:ring-0 text-[15px] font-bold transition-all shadow-sm"
                                             />
                                         </div>
 
                                         <button
                                             onClick={handleNameNext}
-                                            className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-violet-600 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-primary/30"
+                                            className="w-full h-14 rounded-xl bg-[#e0692e] text-white font-black text-[15px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#e0692e]/90 transition-all shadow-[0_8px_20px_rgba(224,105,46,0.3)]"
                                         >
-                                            Continue <ArrowRight size={16} />
+                                            Continue <ArrowRight size={18} />
                                         </button>
                                     </div>
                                 </motion.div>
@@ -168,57 +160,44 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
 
                             {/* ═══════════════════ STEP: DESCRIPTION ═══════════════════ */}
                             {step === 'description' && (
-                                <motion.div key="desc" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease }}>
-                                    <div className="h-1 w-full bg-gradient-to-r from-primary via-violet-500 to-rose-500" />
-
+                                <motion.div key="desc" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3, ease }}>
                                     <div className="p-8">
-                                        <button onClick={handleClose} className="absolute top-5 right-5 p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/10 transition-all">
-                                            <X size={18} />
+                                        <button onClick={handleClose} className="absolute top-5 right-5 p-2 rounded-xl text-[#020202]/40 hover:text-[#020202] hover:bg-[#020202]/5 transition-all">
+                                            <X size={20} />
                                         </button>
 
-                                        <div className="flex items-center gap-3 mb-8">
-                                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-rose-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                                                <Wand2 className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400/70">Step 2 of 2</p>
-                                                <h2 className="text-lg font-black tracking-tight text-white">Define the Mission</h2>
-                                            </div>
+                                        <div className="mb-6">
+                                            <p className="text-xs font-black uppercase tracking-widest text-[#e0692e] mb-1">Step 2 of 2</p>
+                                            <h2 className="text-2xl font-black tracking-tight text-[#020202]">Define the Mission</h2>
                                         </div>
 
-                                        {/* Draft preview chip */}
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                            <span className="text-[11px] font-black text-primary tracking-wider">{name}</span>
-                                        </div>
-
-                                        <p className="text-sm text-white/50 font-medium mb-6 leading-relaxed">
-                                            Describe what <span className="font-bold text-white/80">{name}</span> should do in plain language. Onhandl converts it into a live financial policy.
+                                        <p className="text-sm text-[#020202]/70 font-medium mb-6 leading-relaxed">
+                                            Describe what <span className="font-bold text-[#020202]">{name}</span> should do in plain language. Onhandl converts it into a live financial policy.
                                         </p>
 
-                                        <div className="space-y-2 mb-6">
-                                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Mission</label>
+                                        <div className="space-y-2 mb-8">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-[#020202]/70">Mission</label>
                                             <textarea
                                                 autoFocus
                                                 value={description}
                                                 onChange={e => setDescription(e.target.value)}
                                                 placeholder="e.g. Save 30% of incoming CKB and forward the rest to my cold wallet…"
-                                                className="w-full min-h-[120px] px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/40 text-sm font-medium resize-none transition-all leading-relaxed"
+                                                className="w-full min-h-[140px] px-5 py-4 rounded-xl bg-white border-2 border-[#020202]/10 text-[#020202] placeholder:text-[#020202]/30 focus:outline-none focus:border-[#e0692e] focus:ring-0 text-[15px] font-medium resize-none transition-all leading-relaxed shadow-sm"
                                             />
                                         </div>
 
-                                        <div className="flex gap-3">
-                                            <button onClick={() => setStep('name')} className="h-12 px-5 rounded-2xl border border-white/10 text-sm font-bold text-white/40 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2">
-                                                <ArrowLeft size={16} />
+                                        <div className="flex gap-4">
+                                            <button onClick={() => setStep('name')} className="h-14 px-6 rounded-xl bg-white border-2 border-[#020202]/10 text-[15px] font-bold text-[#020202]/60 hover:text-[#020202] hover:border-[#020202]/20 transition-all flex items-center gap-2 shadow-sm">
+                                                <ArrowLeft size={18} /> Back
                                             </button>
                                             <button
                                                 onClick={handleDescriptionNext}
                                                 disabled={isCheckingAuth}
-                                                className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-violet-600 to-rose-500 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all shadow-xl shadow-violet-500/20"
+                                                className="flex-1 h-14 rounded-xl bg-[#e0692e] text-white font-black text-[15px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#e0692e]/90 disabled:opacity-50 transition-all shadow-[0_8px_20px_rgba(224,105,46,0.3)]"
                                             >
                                                 {isCheckingAuth
-                                                    ? <><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Checking…</>
-                                                    : <><Wand2 size={15} /> Create Agent</>}
+                                                    ? <><span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Checking…</>
+                                                    : <><Wand2 size={18} /> Create Agent</>}
                                             </button>
                                         </div>
                                     </div>
@@ -227,39 +206,29 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
 
                             {/* ═══════════════════ STEP: AUTH ═══════════════════ */}
                             {step === 'auth' && (
-                                <motion.div key="auth" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.3, ease }}>
-                                    <div className="h-1 w-full bg-gradient-to-r from-rose-500 via-primary to-violet-500" />
+                                <motion.div key="auth" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3, ease }}>
 
-                                    {/* Close */}
-                                    <button onClick={handleClose} className="absolute top-5 right-5 z-10 p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/10 transition-all">
-                                        <X size={18} />
-                                    </button>
-
-                                    {/* Draft context banner */}
-                                    <div className="px-6 pt-6 pb-4">
-                                        <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20">
-                                            <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                                                <Sparkles size={16} className="text-primary" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-primary/80">Draft Ready</p>
-                                                <p className="text-xs font-semibold text-white/60 truncate">
-                                                    <span className="font-black text-white">{name}</span> will be created right after you sign in.
-                                                </p>
-                                            </div>
+                                    {/* Header & Controls */}
+                                    <div className="pt-6 px-6 flex items-center justify-between">
+                                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#e0692e]/10 border border-[#e0692e]/20 text-[#e0692e]">
+                                            <Sparkles size={16} />
+                                            <span className="text-xs font-bold">Draft saved: {name}</span>
                                         </div>
+                                        <button onClick={handleClose} className="p-2 rounded-xl text-[#020202]/40 hover:text-[#020202] hover:bg-[#020202]/5 transition-all">
+                                            <X size={20} />
+                                        </button>
                                     </div>
 
                                     {/* Sign Up / Sign In pill toggle */}
-                                    <div className="px-6 pb-3">
-                                        <div className="flex p-1 gap-1 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="px-6 py-4">
+                                        <div className="flex p-1 gap-1 rounded-xl bg-[#020202]/5 border border-[#020202]/10">
                                             <button
                                                 onClick={() => setIsFlipped(false)}
                                                 className={cn(
-                                                    'flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all',
+                                                    'flex-1 py-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all',
                                                     !isFlipped
-                                                        ? 'bg-gradient-to-r from-primary to-violet-600 text-white shadow-lg shadow-primary/20'
-                                                        : 'text-white/40 hover:text-white/70'
+                                                        ? 'bg-white text-[#020202] shadow-sm'
+                                                        : 'text-[#020202]/50 hover:text-[#020202]'
                                                 )}
                                             >
                                                 Create Account
@@ -267,10 +236,10 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                                             <button
                                                 onClick={() => setIsFlipped(true)}
                                                 className={cn(
-                                                    'flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all',
+                                                    'flex-1 py-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all',
                                                     isFlipped
-                                                        ? 'bg-gradient-to-r from-violet-600 to-rose-500 text-white shadow-lg shadow-violet-500/20'
-                                                        : 'text-white/40 hover:text-white/70'
+                                                        ? 'bg-white text-[#020202] shadow-sm'
+                                                        : 'text-[#020202]/50 hover:text-[#020202]'
                                                 )}
                                             >
                                                 Sign In
@@ -279,10 +248,10 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                                     </div>
 
                                     {/* Flip card — each face clips the full-page component */}
-                                    <div className="overflow-hidden" style={{ perspective: '1400px', height: '440px' }}>
+                                    <div className="overflow-hidden bg-[#eeeeee]" style={{ perspective: '1400px', height: '480px' }}>
                                         <motion.div
                                             animate={{ rotateY: isFlipped ? 180 : 0 }}
-                                            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                                            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                                             style={{ transformStyle: 'preserve-3d', height: '100%', position: 'relative' }}
                                         >
                                             {/* FRONT — SignUp */}
@@ -290,7 +259,9 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                                                 className="absolute inset-0 overflow-auto"
                                                 style={{ backfaceVisibility: 'hidden' }}
                                             >
-                                                <SignUp />
+                                                <div className="scale-95 origin-top pt-2">
+                                                    <SignUp />
+                                                </div>
                                             </div>
 
                                             {/* BACK — SignIn */}
@@ -301,7 +272,9 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                                                     transform: 'rotateY(180deg)',
                                                 }}
                                             >
-                                                <SignIn />
+                                                <div className="scale-95 origin-top pt-2">
+                                                    <SignIn />
+                                                </div>
                                             </div>
                                         </motion.div>
                                     </div>
@@ -311,32 +284,21 @@ export function AgentBuilderModal({ isOpen, onClose }: AgentBuilderModalProps) {
                             {/* ═══════════════════ STEP: CREATING ═══════════════════ */}
                             {step === 'creating' && (
                                 <motion.div key="creating" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease }}
-                                    className="flex flex-col items-center justify-center py-20 gap-6 px-8"
+                                    className="flex flex-col items-center justify-center py-24 gap-6 px-8"
                                 >
                                     {/* Animated ring */}
                                     <div className="relative w-20 h-20">
-                                        <div className="w-20 h-20 rounded-full border-2 border-white/10" />
-                                        <div className="absolute inset-0 rounded-full border-t-2 border-primary animate-spin" />
-                                        <div className="absolute inset-0 rounded-full border-t-2 border-violet-400 animate-spin [animation-duration:1.8s] opacity-50" />
+                                        <div className="absolute inset-0 rounded-full border-4 border-[#020202]/10" />
+                                        <div className="absolute inset-0 rounded-full border-t-4 border-[#e0692e] animate-spin" />
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <Cpu size={26} className="text-primary" />
+                                            <Cpu size={28} className="text-[#e0692e]" />
                                         </div>
                                     </div>
                                     <div className="text-center">
-                                        <p className="font-black text-lg uppercase tracking-widest text-white">{name}</p>
-                                        <p className="text-sm text-white/40 mt-1 font-medium">Generating policies · Deploying agent…</p>
+                                        <p className="font-black text-xl tracking-tight text-[#020202]">{name}</p>
+                                        <p className="text-sm text-[#020202]/50 mt-2 font-medium">Generating policies · Deploying agent…</p>
                                     </div>
 
-                                    {/* Animated dots */}
-                                    <div className="flex gap-1.5">
-                                        {[0, 0.15, 0.3].map((delay, i) => (
-                                            <motion.div key={i}
-                                                animate={{ opacity: [0.2, 1, 0.2] }}
-                                                transition={{ duration: 1.2, repeat: Infinity, delay }}
-                                                className="w-1.5 h-1.5 rounded-full bg-primary"
-                                            />
-                                        ))}
-                                    </div>
                                 </motion.div>
                             )}
 
