@@ -8,14 +8,19 @@ interface IUser extends Document {
     password?: string;
     name?: string;
     whatsapp?: string;
+    telegramUsername?: string;
     telegram?: {
-        userId: string;
-        chatId: string;
+        userId?: string;
+        chatId?: string;
         username?: string;
         firstName?: string;
         lastName?: string;
-        linkedAt: Date;
-        lastAuthAt: Date;
+        linkedAt?: Date;
+        lastAuthAt?: Date;
+        permissions?: {
+            notifications: boolean;
+            write: boolean;
+        };
     };
     avatarUrl?: string;
     bio?: string;
@@ -50,6 +55,7 @@ const UserSchema: Schema = new Schema(
         password: { type: String },
         name: { type: String },
         whatsapp: { type: String },
+        telegramUsername: { type: String },
         telegram: {
             userId: { type: String },
             chatId: { type: String },
@@ -58,6 +64,10 @@ const UserSchema: Schema = new Schema(
             lastName: { type: String },
             linkedAt: { type: Date },
             lastAuthAt: { type: Date },
+            permissions: {
+                notifications: { type: Boolean, default: false },
+                write: { type: Boolean, default: false },
+            },
         },
         avatarUrl: { type: String, default: '' },
         bio: { type: String, maxlength: 500 },

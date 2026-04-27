@@ -2,175 +2,80 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api-client';
-import { AuthUI, ForgotPasswordForm, OtpVerifyForm, ResetPasswordForm } from '@/components/ui/auth-fuse';
+import Link from 'next/link';
+import { authApi } from '@/api';
+import { Button } from '@/components/ui/buttons/button';
+import { Input } from '@/components/ui/forms/input';
+import { Label } from '@/components/ui/forms/label';
+import { LogIn, Loader2, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
-type Step = 'form' | 'signup-otp' | 'forgot' | 'reset-otp' | 'reset-pw';
+export const dynamic = 'force-dynamic';
 
-export default function SigninPage() {
-    const [step, setStep] = useState<Step>('form');
-    const [pendingEmail, setPendingEmail] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [resetCode, setResetCode] = useState('');
+export default function SignIn() {
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState({ identifier: '', password: '' });
 
-    const clearError = () => setError('');
-
-    const handleSignIn = async ({ username, password }: { username: string; password: string }) => {
-        clearError();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         setLoading(true);
         try {
-            await apiFetch('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password }),
-            });
+            await authApi.login(form);
+            toast.success('Welcome back!');
             router.push('/dashboard');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (error: any) {
+            toast.error('Login failed', { description: error.message });
         } finally {
             setLoading(false);
         }
     };
-
-    const handleSignUp = async ({ username, email, password }: { username: string; email: string; password: string }) => {
-        clearError();
-        setLoading(true);
-        try {
-            const res = await apiFetch('/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({ username, email, password }),
-            });
-            if (res.requiresVerification) {
-                setPendingEmail(email);
-                setStep('signup-otp');
-            } else {
-                router.push('/dashboard');
-            }
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleForgotPassword = async (email: string) => {
-        clearError();
-        setLoading(true);
-        try {
-            await apiFetch('/auth/forgot-password', {
-                method: 'POST',
-                body: JSON.stringify({ email }),
-            });
-            setPendingEmail(email);
-            setStep('reset-otp');
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerifyResetOtp = async (code: string) => {
-        clearError();
-        // Just store code and advance — actual reset happens in next step
-        setResetCode(code);
-        setStep('reset-pw');
-    };
-
-    const handleResetPassword = async (newPassword: string) => {
-        clearError();
-        setLoading(true);
-        try {
-            await apiFetch('/auth/reset-password', {
-                method: 'POST',
-                body: JSON.stringify({ email: pendingEmail, code: resetCode, newPassword }),
-            });
-            setStep('form');
-            setError('');
-        } catch (err: any) {
-            setError(err.message);
-            setStep('reset-otp'); // send them back to re-enter code on failure
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const wrapper = (children: React.ReactNode) => (
-        <div className="w-full min-h-screen flex items-center justify-center px-4 py-8 bg-background">
-            <div className="w-full max-w-[400px] rounded-2xl border border-border/60 bg-card shadow-xl shadow-black/5 p-5 sm:p-8">{children}</div>
-        </div>
-    );
-
-    if (step === 'signup-otp') {
-        return wrapper(
-            <OtpVerifyForm
-                email={pendingEmail}
-                purpose="signup"
-                onSubmit={async (code) => {
-                    clearError();
-                    setLoading(true);
-                    try {
-                        await apiFetch('/auth/verify-email', {
-                            method: 'POST',
-                            body: JSON.stringify({ email: pendingEmail, code }),
-                        });
-                        router.push('/dashboard');
-                    } catch (err: any) {
-                        setError(err.message);
-                    } finally {
-                        setLoading(false);
-                    }
-                }}
-                onBack={() => { setStep('form'); clearError(); }}
-                error={error}
-                loading={loading}
-            />
-        );
-    }
-
-    if (step === 'forgot') {
-        return wrapper(
-            <ForgotPasswordForm
-                onSubmit={handleForgotPassword}
-                onBack={() => { setStep('form'); clearError(); }}
-                error={error}
-                loading={loading}
-            />
-        );
-    }
-
-    if (step === 'reset-otp') {
-        return wrapper(
-            <OtpVerifyForm
-                email={pendingEmail}
-                purpose="forgot_password"
-                onSubmit={handleVerifyResetOtp}
-                onBack={() => { setStep('forgot'); clearError(); }}
-                error={error}
-                loading={loading}
-            />
-        );
-    }
-
-    if (step === 'reset-pw') {
-        return wrapper(
-            <ResetPasswordForm
-                onSubmit={handleResetPassword}
-                error={error}
-                loading={loading}
-            />
-        );
-    }
 
     return (
-        <AuthUI
-            defaultSignIn={true}
-            onSignIn={handleSignIn}
-            onSignUp={handleSignUp}
-            onForgotPassword={() => { clearError(); setStep('forgot'); }}
-            error={error}
-            loading={loading}
-        />
+        <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+            <div className="w-full max-w-md space-y-8 bg-background p-8 rounded-3xl border border-border shadow-2xl">
+                <div className="text-center">
+                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <ShieldCheck size={28} />
+                    </div>
+                    <h1 className="text-2xl font-black tracking-tight uppercase">Login to Onhandl</h1>
+                    <p className="text-muted-foreground text-sm mt-1 font-medium">Continue managing your autonomous treasury</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Email or Username</Label>
+                        <Input
+                            required
+                            placeholder="Enter your email"
+                            value={form.identifier}
+                            onChange={e => setForm({ ...form, identifier: e.target.value })}
+                            className="rounded-2xl h-12"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label>Password</Label>
+                            <Link href="/forgot-password" title="Forgot Password?" className="text-[11px] font-bold text-primary hover:underline">Forgot?</Link>
+                        </div>
+                        <Input
+                            required
+                            type="password"
+                            placeholder="••••••••"
+                            value={form.password}
+                            onChange={e => setForm({ ...form, password: e.target.value })}
+                            className="rounded-2xl h-12"
+                        />
+                    </div>
+                    <Button disabled={loading} type="submit" className="w-full h-12 rounded-2xl bg-primary text-white font-bold hover:bg-primary/90 mt-4 shadow-lg shadow-primary/20">
+                        {loading ? <Loader2 className="animate-spin" /> : <><LogIn className="mr-2 h-4 w-4" /> Sign In</>}
+                    </Button>
+                </form>
+
+                <p className="text-center text-sm font-medium text-muted-foreground">
+                    Don't have an account? <Link href="/signup" className="text-primary font-bold hover:underline">Sign up for free</Link>
+                </p>
+            </div>
+        </div>
     );
 }

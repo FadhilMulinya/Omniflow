@@ -1,6 +1,7 @@
 import { telegramTransport, TelegramInboundMessage } from '../../../infrastructure/messaging/telegram/telegram.login';
 import { TelegramAuthRepository } from './telegram.repository';
 import { telegramSessionStore } from './telegram-session.store';
+import { TelegramPermissions } from './telegram.types';
 
 class TelegramAuthServiceClass {
   private webhookStarted = false;
@@ -45,12 +46,12 @@ class TelegramAuthServiceClass {
   async verifyCodeForUser(userId: string, code: string) {
     const identity = telegramSessionStore.verifyCode(code, userId);
 
-    const owner = await TelegramAuthRepository.findUserByTelegramUserId(identity.userId);
+    const owner = await TelegramAuthRepository.findByTelegramUserId(identity.userId);
     if (owner && String((owner as any)._id) !== userId) {
       throw Object.assign(new Error('This Telegram account is already linked to another user'), { code: 409 });
     }
 
-    const updated = await TelegramAuthRepository.linkTelegramToUser(userId, identity);
+    const updated = await TelegramAuthRepository.linkTelegram(userId, identity);
     telegramSessionStore.markAuthenticated(identity.userId);
     await telegramTransport.sendMessage(identity.chatId, '✅ Welcome to Onhandl. Telegram verification successful.');
 
@@ -72,14 +73,34 @@ class TelegramAuthServiceClass {
   }
 
   async unlink(userId: string) {
-    const existing = await TelegramAuthRepository.unlinkByUserId(userId);
-    const telegramUserId = (existing as any)?.telegram?.userId;
-    const chatId = (existing as any)?.telegram?.chatId;
+    const current = await TelegramAuthRepository.getByUserId(userId) as any;
+    const telegramUserId = current?.telegram?.userId;
+    const chatId = current?.telegram?.chatId;
+
+    await TelegramAuthRepository.unlinkTelegram(userId);
 
     if (telegramUserId) telegramSessionStore.terminate(telegramUserId);
     if (chatId) await telegramTransport.sendMessage(String(chatId), '✅ Your Telegram account has been unlinked from Onhandl.');
 
     return { success: true };
+  }
+
+  async getPermissions(userId: string): Promise<TelegramPermissions> {
+    const record = await TelegramAuthRepository.getByUserId(userId) as any;
+    return {
+      notifications: !!record?.telegram?.permissions?.notifications,
+      write: !!record?.telegram?.permissions?.write,
+    };
+  }
+
+  async updatePermissions(userId: string, permissions: Partial<TelegramPermissions>) {
+    const updated = await TelegramAuthRepository.updatePermissions(userId, permissions) as any;
+    return {
+      permissions: {
+        notifications: !!updated?.telegram?.permissions?.notifications,
+        write: !!updated?.telegram?.permissions?.write,
+      },
+    };
   }
 }
 

@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api-client';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/button';
 import { KeyRound, Eye, EyeOff, Save, CheckCircle2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ApiKeyField {
     key: string;
@@ -31,7 +32,7 @@ export function ApiKeysCard() {
 
 
     useEffect(() => {
-        apiFetch('/auth/api-keys').then((data: any) => {
+        apiFetch('/users/api-keys').then((data: any) => {
             setServerStatus({ gemini: data.hasGemini, openai: data.hasOpenai, ollama: data.hasOllama });
             // Pre-fill non-secret fields
             setKeys({
@@ -52,16 +53,18 @@ export function ApiKeysCard() {
             for (const { key } of FIELDS) {
                 if (keys[key] !== undefined && keys[key] !== '') payload[key] = keys[key];
             }
-            await apiFetch('/auth/api-keys', { method: 'PUT', body: JSON.stringify(payload) });
+            await apiFetch('/users/api-keys', { method: 'PUT', body: JSON.stringify(payload) });
             // Also persist to localStorage for in-browser use
             if (keys.gemini) localStorage.setItem('gemini_api_key', keys.gemini);
             if (keys.openai) localStorage.setItem('openai_api_key', keys.openai);
             if (keys.ollamaBaseUrl) localStorage.setItem('ollama_base_url', keys.ollamaBaseUrl);
             setSaved(true);
-            alert('API keys saved');
+            toast.success('API keys saved');
             setTimeout(() => setSaved(false), 3000);
         } catch (e: any) {
-            alert('Failed to save API keys: ' + e.message);
+            toast.error('Failed to save API keys', {
+                description: e.message,
+            });
         } finally {
             setSaving(false);
         }

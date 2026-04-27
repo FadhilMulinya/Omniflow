@@ -1,12 +1,19 @@
+export interface TelegramPermissions {
+  notifications: boolean;
+  write: boolean;
+}
+
 export type TelegramSessionState = 'pending' | 'authenticated';
 
-export interface TelegramIdentitySnapshot {
+export interface TelegramIdentity {
   userId: string;
   chatId: string;
   username?: string;
   firstName?: string;
   lastName?: string;
 }
+
+export interface TelegramIdentitySnapshot extends TelegramIdentity { }
 
 export interface TelegramSession {
   identity: TelegramIdentitySnapshot;
@@ -32,4 +39,13 @@ export interface SafeTelegramProfile {
   lastName?: string;
   linkedAt?: Date;
   lastAuthAt?: Date;
+  permissions?: TelegramPermissions;
+}
+
+export interface TelegramVerifyInput {
+  telegramUserId: string;
+  chatId: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
 }

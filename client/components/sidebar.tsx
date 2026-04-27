@@ -2,24 +2,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api-client';
+import { authApi } from '@/api';
 import { cn } from '@/lib/utils';
 import {
   Home, LayoutDashboard, Box, Settings,
   ChevronLeft, ChevronRight,
   LogOut, Menu, User, Headphones, Shield,
+  Building, Check, ChevronsUpDown, PlusCircle, LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/overlays/sheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import {
-  Building,
-  Check,
-  ChevronsUpDown,
-  PlusCircle,
-  LayoutGrid
-} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +25,9 @@ import {
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Assets', href: '/dashboard/assets', icon: Box },
+  { name: 'AI Assistant', href: '/bot', icon: LayoutGrid },
+  { name: 'Support', href: '/support', icon: Headphones },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -62,8 +59,7 @@ const SidebarContent = ({
       'h-full flex flex-col bg-background border-r border-border/60 transition-all duration-300 ease-in-out overflow-hidden',
       collapsed ? 'w-[60px]' : 'w-[220px]'
     )}>
-      {/* ── User identity — top of sidebar ── */}
-      {/* ── Workspace Selector ── */}
+      {/* Workspace Selector */}
       <div className={cn('px-2 py-2', collapsed && 'flex justify-center')}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -146,7 +142,7 @@ const SidebarContent = ({
         )}
       </div>
 
-      {/* ── Nav ── */}
+      {/* Nav */}
       <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -180,7 +176,7 @@ const SidebarContent = ({
           );
         })}
 
-        {/* Logout — directly below Settings */}
+        {/* Logout */}
         <button
           className={cn(
             'flex items-center rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-all duration-150 cursor-pointer',
@@ -188,7 +184,7 @@ const SidebarContent = ({
           )}
           title={collapsed ? 'Logout' : undefined}
           onClick={async () => {
-            try { await apiFetch('/auth/logout', { method: 'POST', body: JSON.stringify({}) }); } finally { router.replace('/signin'); }
+            try { await authApi.logout(); } finally { router.replace('/signin'); }
           }}
         >
           <LogOut className="w-[17px] h-[17px] shrink-0" />
@@ -208,9 +204,8 @@ const SidebarContent = ({
         </button>
       </nav>
 
-      {/* ── Bottom ── */}
+      {/* Bottom */}
       <div className="border-t border-border/60 p-2 space-y-0.5">
-        {/* Admin link — only shown to admins */}
         {isAdmin && (
           <Link
             href="/admin/auth"
@@ -263,11 +258,11 @@ const Sidebar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    apiFetch('/auth/me')
+    authApi.getMe()
       .then((data: any) => {
         setAvatarUrl(data.avatarUrl || null);
         setUserName(data.name || data.username || null);
-        setIsAdmin(data.isAdmin ?? false);
+        setIsAdmin(data.role === 'admin');
       })
       .catch(() => {/* unauthenticated */ });
   }, []);
@@ -276,12 +271,10 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Desktop */}
       <div className="hidden md:block">
         <SidebarContent collapsed={collapsed} toggleCollapse={() => setCollapsed(!collapsed)} {...sharedProps} />
       </div>
 
-      {/* Mobile top bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-12 bg-background border-b border-border/60 flex items-center px-3 gap-2">
         <Sheet>
           <SheetTrigger asChild>

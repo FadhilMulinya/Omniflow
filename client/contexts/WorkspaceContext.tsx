@@ -14,6 +14,7 @@ interface WorkspaceContextType {
   workspaces: Workspace[];
   activeWorkspace: Workspace | null;
   setActiveWorkspaceId: (id: string) => void;
+  createWorkspace: (name: string) => Promise<Workspace>;
   isLoading: boolean;
   error: string | null;
   refreshWorkspaces: () => Promise<void>;
@@ -31,7 +32,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiFetch('/workspaces');
+      const data = await apiFetch('/workspaces/workspaces');
       setWorkspaces(data);
 
       const savedId = localStorage.getItem('active_workspace_id');
@@ -62,12 +63,28 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [workspaces]);
 
+  const createWorkspace = useCallback(async (name: string) => {
+    const workspace = await apiFetch('/workspaces/workspaces', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+
+    setWorkspaces((prev) => {
+      const exists = prev.some((ws) => ws._id === workspace._id);
+      return exists ? prev : [...prev, workspace];
+    });
+    setActiveWorkspace(workspace);
+    localStorage.setItem('active_workspace_id', workspace._id);
+    return workspace;
+  }, []);
+
   return (
     <WorkspaceContext.Provider
       value={{
         workspaces,
         activeWorkspace,
         setActiveWorkspaceId,
+        createWorkspace,
         isLoading,
         error,
         refreshWorkspaces,

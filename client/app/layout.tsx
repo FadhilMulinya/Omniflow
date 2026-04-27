@@ -1,6 +1,7 @@
 import type React from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Figtree, JetBrains_Mono } from 'next/font/google';
+import { Toaster } from '@/components/ui/sonner';
 import '@/styles/globals.css';
 
 
@@ -40,6 +41,7 @@ export default function RootLayout({
         className={`${figtree.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );

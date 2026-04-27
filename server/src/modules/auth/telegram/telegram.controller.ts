@@ -70,6 +70,13 @@ export async function telegramAuthController(fastify: FastifyInstance) {
               lastName: { type: 'string' },
               linkedAt: { type: 'string', format: 'date-time' },
               lastAuthAt: { type: 'string', format: 'date-time' },
+              permissions: {
+                type: 'object',
+                properties: {
+                  notifications: { type: 'boolean' },
+                  write: { type: 'boolean' },
+                },
+              },
             },
           },
           ...standardErrorResponses([401, 500]),
@@ -112,4 +119,70 @@ export async function telegramAuthController(fastify: FastifyInstance) {
       }
     }
   );
+
+  fastify.get('/telegram/permissions', {
+    onRequest: [fastify.authenticate],
+    schema: {
+      tags: ['Auth'],
+      summary: 'Get Telegram permissions',
+      security: [cookieAuthSecurity],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            notifications: { type: 'boolean' },
+            write: { type: 'boolean' },
+          },
+        },
+        ...standardErrorResponses([401, 500]),
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      return reply.send(await TelegramAuthService.getPermissions(request.user.id));
+    } catch (e: any) {
+      return reply.code(e.code || 500).send({ error: e.message });
+    }
+  });
+
+  fastify.patch<{ Body: { notifications?: boolean; write?: boolean } }>('/telegram/permissions', {
+    onRequest: [fastify.authenticate],
+    schema: {
+      tags: ['Auth'],
+      summary: 'Update Telegram permissions',
+      security: [cookieAuthSecurity],
+      body: {
+        type: 'object',
+        properties: {
+          notifications: { type: 'boolean' },
+          write: { type: 'boolean' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            permissions: {
+              type: 'object',
+              properties: {
+                notifications: { type: 'boolean' },
+                write: { type: 'boolean' },
+              },
+            },
+          },
+        },
+        ...standardErrorResponses([400, 401, 500]),
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      const body = request.body || {};
+      if (body.notifications === undefined && body.write === undefined) {
+        return reply.code(400).send({ error: 'At least one permission must be provided' });
+      }
+      return reply.send(await TelegramAuthService.updatePermissions(request.user.id, body));
+    } catch (e: any) {
+      return reply.code(e.code || 500).send({ error: e.message });
+    }
+  });
 }

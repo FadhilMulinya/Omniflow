@@ -1,338 +1,169 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { apiFetch } from '@/api/api-client';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Terminal, Shield, Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { authApi, terminalApi, workspaceApi } from '@/api';
 import { Button } from '@/components/ui/buttons/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/data-display/card';
-import { Loader2 } from 'lucide-react';
-import { AuthUI, ForgotPasswordForm, OtpVerifyForm, ResetPasswordForm } from '@/components/ui/auth-fuse';
+import { toast } from 'sonner';
 
-type Step = 'form' | 'signup-otp' | 'forgot' | 'reset-otp' | 'reset-pw';
+export const dynamic = 'force-dynamic';
 
-function TerminalApprovePageContent() {
+function TerminalApproveContent() {
     const searchParams = useSearchParams();
-    const userCode = searchParams.get('userCode');
+    const router = useRouter();
+    const token = searchParams.get('token');
 
+    const [loading, setLoading] = useState(true);
+    const [approving, setApproving] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [workspaces, setWorkspaces] = useState<any[]>([]);
-    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [errorMessage, setErrorMessage] = useState('');
-
-    // Auth states
-    const [step, setStep] = useState<Step>('form');
-    const [pendingEmail, setPendingEmail] = useState('');
-    const [authError, setAuthError] = useState('');
-    const [authLoading, setAuthLoading] = useState(false);
-    const [resetCode, setResetCode] = useState('');
-
-    const clearAuthError = () => setAuthError('');
+    const [selectedWorkspace, setSelectedWorkspace] = useState('');
+    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     useEffect(() => {
-        const init = async () => {
-            try {
-                const userData = await apiFetch('/auth/me');
-                setUser(userData);
-                const workspacesData = await apiFetch('/workspaces/workspaces');
-                setWorkspaces(workspacesData);
-            } catch (err) {
-                setUser(null);
-            } finally {
-                setIsLoadingAuth(false);
-            }
-        };
-        init();
-    }, []);
-
-    const initUser = async () => {
-        try {
-            const userData = await apiFetch('/auth/me');
-            setUser(userData);
-            const workspacesData = await apiFetch('/workspaces/workspaces');
-            setWorkspaces(workspacesData);
-        } catch (err) {
-            setUser(null);
-        }
-    };
-
-    const handleSignIn = async ({ username, password }: { username: string; password: string }) => {
-        clearAuthError();
-        setAuthLoading(true);
-        try {
-            await apiFetch('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password }),
-            });
-            await initUser();
-        } catch (err: any) {
-            setAuthError(err.message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    const handleSignUp = async ({ username, email, password }: { username: string; email: string; password: string }) => {
-        clearAuthError();
-        setAuthLoading(true);
-        try {
-            const res = await apiFetch('/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({ username, email, password }),
-            });
-            if (res.requiresVerification) {
-                setPendingEmail(email);
-                setStep('signup-otp');
-            } else {
-                await initUser();
-            }
-        } catch (err: any) {
-            setAuthError(err.message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    const handleForgotPassword = async (email: string) => {
-        clearAuthError();
-        setAuthLoading(true);
-        try {
-            await apiFetch('/auth/forgot-password', {
-                method: 'POST',
-                body: JSON.stringify({ email }),
-            });
-            setPendingEmail(email);
-            setStep('reset-otp');
-        } catch (err: any) {
-            setAuthError(err.message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    const handleVerifyResetOtp = async (code: string) => {
-        clearAuthError();
-        setResetCode(code);
-        setStep('reset-pw');
-    };
-
-    const handleResetPassword = async (newPassword: string) => {
-        clearAuthError();
-        setAuthLoading(true);
-        try {
-            await apiFetch('/auth/reset-password', {
-                method: 'POST',
-                body: JSON.stringify({ email: pendingEmail, code: resetCode, newPassword }),
-            });
-            setStep('form');
-            setAuthError('');
-        } catch (err: any) {
-            setAuthError(err.message);
-            setStep('reset-otp');
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!userCode) {
+        if (!token) {
             setStatus('error');
-            setErrorMessage('Invalid session link: userCode is missing.');
-        }
-    }, [userCode]);
-
-    if (isLoadingAuth) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
-
-    if (!user) {
-        if (step === 'signup-otp') {
-            return (
-                <div className="w-full min-h-screen flex items-center justify-center bg-black px-4 py-8">
-                    <div className="w-full max-w-[400px] rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl p-5 sm:p-8">
-                        <OtpVerifyForm
-                            email={pendingEmail}
-                            purpose="signup"
-                            onSubmit={async (code) => {
-                                clearAuthError();
-                                setAuthLoading(true);
-                                try {
-                                    await apiFetch('/auth/verify-email', {
-                                        method: 'POST',
-                                        body: JSON.stringify({ email: pendingEmail, code }),
-                                    });
-                                    await initUser();
-                                } catch (err: any) {
-                                    setAuthError(err.message);
-                                } finally {
-                                    setAuthLoading(false);
-                                }
-                            }}
-                            onBack={() => { setStep('form'); clearAuthError(); }}
-                            error={authError}
-                            loading={authLoading}
-                        />
-                    </div>
-                </div>
-            );
+            setLoading(false);
+            return;
         }
 
-        if (step === 'forgot') {
-            return (
-                <div className="w-full min-h-screen flex items-center justify-center bg-black px-4 py-8">
-                    <div className="w-full max-w-[400px] rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl p-5 sm:p-8">
-                        <ForgotPasswordForm
-                            onSubmit={handleForgotPassword}
-                            onBack={() => { setStep('form'); clearAuthError(); }}
-                            error={authError}
-                            loading={authLoading}
-                        />
-                    </div>
-                </div>
-            );
+        async function init() {
+            try {
+                const [me, ws] = await Promise.all([
+                    authApi.getMe(),
+                    workspaceApi.getWorkspaces()
+                ]);
+                setUser(me);
+                setWorkspaces(ws);
+                if (ws.length > 0) setSelectedWorkspace(ws[0]._id);
+            } catch (err) {
+                router.push(`/signin?callback=/terminal/approve?token=${token}`);
+            } finally {
+                setLoading(false);
+            }
         }
-
-        if (step === 'reset-otp') {
-            return (
-                <div className="w-full min-h-screen flex items-center justify-center bg-black px-4 py-8">
-                    <div className="w-full max-w-[400px] rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl p-5 sm:p-8">
-                        <OtpVerifyForm
-                            email={pendingEmail}
-                            purpose="forgot_password"
-                            onSubmit={handleVerifyResetOtp}
-                            onBack={() => { setStep('forgot'); clearAuthError(); }}
-                            error={authError}
-                            loading={authLoading}
-                        />
-                    </div>
-                </div>
-            );
-        }
-
-        if (step === 'reset-pw') {
-            return (
-                <div className="w-full min-h-screen flex items-center justify-center bg-black px-4 py-8">
-                    <div className="w-full max-w-[400px] rounded-2xl border border-neutral-800 bg-neutral-900 shadow-2xl p-5 sm:p-8">
-                        <ResetPasswordForm
-                            onSubmit={handleResetPassword}
-                            error={authError}
-                            loading={authLoading}
-                        />
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="bg-black min-h-screen">
-                {/* We override the AuthUI's internal wrapper bg if needed, or just let it use its default */}
-                <AuthUI
-                    onSignIn={handleSignIn}
-                    onSignUp={handleSignUp}
-                    onForgotPassword={() => { clearAuthError(); setStep('forgot'); }}
-                    error={authError}
-                    loading={authLoading}
-                />
-            </div>
-        );
-    }
+        init();
+    }, [token, router]);
 
     const handleApprove = async () => {
-        if (!userCode) return;
-        setStatus('loading');
-
+        if (!token || !selectedWorkspace) return;
+        setApproving(true);
         try {
-            await apiFetch('/terminal/auth/approve', {
-                method: 'POST',
-                body: JSON.stringify({
-                    userCode,
-                    workspaceId: workspaces[0]?._id
-                })
-            });
+            await terminalApi.approve({ token, workspaceId: selectedWorkspace });
             setStatus('success');
-        } catch (error: any) {
+            toast.success('Terminal session authorized');
+        } catch (err: any) {
+            toast.error('Authorization failed', { description: err.message });
             setStatus('error');
-            setErrorMessage(error.message || 'Failed to approve session. It may have expired.');
+        } finally {
+            setApproving(false);
         }
     };
 
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
-            <Card className="w-full max-w-md border-neutral-800 bg-neutral-900 text-neutral-100 border shadow-2xl">
-                <CardHeader>
-                    <CardTitle className="text-xl text-white">Onhandl Terminal Request</CardTitle>
-                    <CardDescription className="text-neutral-400">
-                        A terminal session is requesting access to your Onhandl account.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {status === 'error' && (
-                        <div className="p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm">
-                            {errorMessage}
-                        </div>
-                    )}
-                    {status === 'success' && (
-                        <div className="p-3 bg-green-900/50 border border-green-500 rounded text-green-200 text-sm font-medium">
-                            Session approved! You may now close this window and return to your terminal.
-                        </div>
-                    )}
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
-                    {(status === 'idle' || status === 'loading') && (
-                        <div className="bg-neutral-950 p-6 rounded-xl font-mono text-center tracking-widest text-3xl border border-neutral-800 shadow-inner">
-                            {userCode}
-                        </div>
-                    )}
-                </CardContent>
-                <CardFooter className="pt-2">
-                    {status === 'idle' || status === 'error' || status === 'loading' ? (
-                        <Button
-                            className="w-full bg-white text-black hover:bg-neutral-200 py-6 text-base font-bold shadow-lg transition-all active:scale-95"
-                            onClick={handleApprove}
-                            disabled={status === 'loading' || !userCode}
-                        >
-                            {status === 'loading' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Approve Access
-                        </Button>
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+            <div className="w-full max-w-lg space-y-8 bg-background p-10 rounded-[2.5rem] border border-border/50 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="absolute top-0 right-0 p-6 opacity-5">
+                    <Terminal size={120} />
+                </div>
+
+                <div className="text-center relative z-10">
+                    <div className="w-16 h-16 bg-primary/10 text-primary rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-primary/20">
+                        {status === 'success' ? <CheckCircle size={32} /> :
+                            status === 'error' ? <AlertCircle size={32} /> : <Shield size={32} />}
+                    </div>
+
+                    {status === 'success' ? (
+                        <>
+                            <h1 className="text-2xl font-black tracking-tight mb-2 uppercase">Authorized</h1>
+                            <p className="text-muted-foreground font-medium">You can now close this window and return to your CLI.</p>
+                        </>
                     ) : (
-                        <div className="w-full space-y-3">
-                            {status === 'success' && (
-                                <Button
-                                    className="w-full border border-neutral-700 bg-transparent text-white hover:bg-neutral-800"
-                                    variant="outline"
-                                    onClick={() => window.close()}
-                                >
-                                    Close Window
-                                </Button>
-                            )}
-                            <Button
-                                className="w-full bg-neutral-800 text-white hover:bg-neutral-700"
-                                onClick={() => window.location.href = '/dashboard'}
-                            >
-                                Go to Dashboard
-                            </Button>
-                        </div>
+                        <>
+                            <h1 className="text-2xl font-black tracking-tight mb-2 uppercase">Authorize Terminal</h1>
+                            <p className="text-muted-foreground font-medium flex items-center justify-center gap-1.5">
+                                <Lock size={14} className="text-amber-500" /> CLI Session Request
+                            </p>
+                        </>
                     )}
-                </CardFooter>
-            </Card>
+                </div>
+
+                {status === 'idle' && (
+                    <div className="space-y-6 relative z-10 pt-4">
+                        <div className="p-4 bg-muted/30 rounded-2xl border border-border/40">
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 ml-1">Identity</p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center font-black text-primary">
+                                    {user?.username?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold">{user?.username}</p>
+                                    <p className="text-[11px] font-medium text-muted-foreground">{user?.email}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Select Workspace context</label>
+                            <div className="grid gap-2">
+                                {workspaces.map(ws => (
+                                    <button
+                                        key={ws._id}
+                                        onClick={() => setSelectedWorkspace(ws._id)}
+                                        className={cn(
+                                            "flex items-center justify-between p-4 rounded-2xl border transition-all text-left",
+                                            selectedWorkspace === ws._id ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/50 bg-muted/20 hover:bg-muted/40"
+                                        )}
+                                    >
+                                        <span className="text-sm font-bold">{ws.name}</span>
+                                        {selectedWorkspace === ws._id && <CheckCircle size={16} className="text-primary" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <Button
+                            disabled={approving || !selectedWorkspace}
+                            onClick={handleApprove}
+                            className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+                        >
+                            {approving ? <Loader2 className="animate-spin" /> : "Approve Session"}
+                        </Button>
+
+                        <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-tighter">
+                            Your terminal will have scoped access to this workspace only.
+                        </p>
+                    </div>
+                )}
+
+                {status === 'error' && (
+                    <div className="text-center pt-4">
+                        <p className="text-sm font-medium text-destructive mb-6">Invalid or expired authorization token.</p>
+                        <Button onClick={() => router.push('/dashboard')} variant="outline" className="rounded-2xl h-12 px-8 font-bold">Return Home</Button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
-import { Suspense } from 'react';
-
-export default function Page() {
+export default function TerminalApprovePage() {
     return (
-        <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        }>
-            <TerminalApprovePageContent />
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <TerminalApproveContent />
         </Suspense>
     );
+}
+
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
 }

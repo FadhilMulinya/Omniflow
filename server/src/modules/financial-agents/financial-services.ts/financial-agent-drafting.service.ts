@@ -7,6 +7,71 @@ import {
 } from './financial-agent-validation.service';
 import { buildFinancialAgentDraftPrompt } from './financial-agent-drafting.prompt';
 
+function buildFallbackDraft(input: {
+  name: string;
+  prompt: string;
+  preset: FinancialAgentPreset;
+}): DraftFinancialAgentInput {
+  return {
+    agent: {
+      name: input.name,
+      description: input.prompt,
+      subscribedEvents: ['FUNDS.RECEIVED'],
+      permissionConfig: {
+        allowedChains: ['CKB'],
+        allowedActions: ['ALLOCATE_FUNDS', 'TRANSFER_FUNDS', 'SWAP_FUNDS', 'INVEST_FUNDS'],
+      },
+      approvalConfig: {
+        fallbackRequireApprovalForNewRecipients: input.preset === 'conservative_treasury',
+        fallbackRequireApprovalForInvestments: input.preset !== 'aggressive_allocator',
+        fallbackRequireApprovalForSwaps: input.preset !== 'aggressive_allocator',
+      },
+      networkConfigs: [
+        {
+          network: 'CKB',
+          enabled: true,
+          allowedAssets: ['CKB'],
+          allowedActions: ['ALLOCATE_FUNDS', 'TRANSFER_FUNDS', 'SWAP_FUNDS', 'INVEST_FUNDS'],
+          recipientPolicy: 'all',
+          assetLimits: [
+            {
+              asset: 'CKB',
+              requireApprovalForNewRecipients: input.preset === 'conservative_treasury',
+              requireApprovalForInvestments: input.preset !== 'aggressive_allocator',
+              requireApprovalForSwaps: input.preset !== 'aggressive_allocator',
+            },
+          ],
+        },
+      ],
+    },
+    policies: [
+      {
+        trigger: 'FUNDS.RECEIVED',
+        conditions: [],
+        actions: [
+          {
+            type: 'ALLOCATE_FUNDS',
+            config: {
+              allocations: [
+                {
+                  kind: 'retain',
+                  percentage: 100,
+                  label: 'Retain funds in managed wallet',
+                },
+              ],
+            },
+          },
+        ],
+        priority: 1,
+      },
+    ],
+    assumptions: [
+      'Created with a safe fallback draft because AI drafting was unavailable.',
+      'Funds are retained in the managed wallet until a more specific policy is configured.',
+    ],
+  };
+}
+
 function extractBalancedJsonObjects(text: string): string[] {
   const objects: string[] = [];
   let depth = 0;
@@ -122,22 +187,31 @@ export const FinancialAgentDraftingService = {
         ? input.preset
         : 'balanced_allocator';
 
-    const completion = await AiService.generateCompletion({
-      messages: [
-        {
-          role: 'user',
-          content: buildFinancialAgentDraftPrompt({
-            name: input.name,
-            prompt: input.prompt,
-            preset,
-          }),
-        },
-      ],
-      temperature: 0.1,
-    });
+    try {
+      const completion = await AiService.generateCompletion({
+        messages: [
+          {
+            role: 'user',
+            content: buildFinancialAgentDraftPrompt({
+              name: input.name,
+              prompt: input.prompt,
+              preset,
+            }),
+          },
+        ],
+        temperature: 0.1,
+      });
 
-    const draft = parseDraftFromModelOutput(completion.content || '');
-    draft.agent.name = input.name;
-    return draft;
+      const draft = parseDraftFromModelOutput(completion.content || '');
+      draft.agent.name = input.name;
+      return draft;
+    } catch (err: any) {
+      console.warn('[FinancialAgentDraftingService] AI draft failed, using fallback draft:', err?.message || err);
+      return buildFallbackDraft({
+        name: input.name,
+        prompt: input.prompt,
+        preset,
+      });
+    }
   },
 };
