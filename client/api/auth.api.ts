@@ -46,4 +46,27 @@ export const authApi = {
             body: JSON.stringify({}),
         });
     },
+    verifyTelegram: async (code: string) => {
+        return apiFetch('/auth/telegram/verify', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        });
+    },
+    getTelegramPermissions: async () => {
+        return apiFetch('/auth/telegram/permissions');
+    },
+    updateTelegramPermissions: async (payload: any) => {
+        return apiFetch('/auth/telegram/permissions', {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+    },
+    getTelegramStatus: async () => {
+        return apiFetch('/auth/telegram/status');
+    },
+    unlinkTelegram: async () => {
+        return apiFetch('/auth/telegram/unlink', {
+            method: 'POST',
+        });
+    },
 };

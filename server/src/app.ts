@@ -19,21 +19,26 @@ export async function buildApp() {
   const app = Fastify({ logger: true });
 
   app.register(cors, {
-    origin: (origin: string | undefined, cb: (err: Error | null, allow: boolean) => void) => {
-      if (ENV.NODE_ENV !== 'production') {
+    origin: (origin, cb) => {
+      // In development, all origins are allowed.
+      // We reflect the request origin to satisfy credentials: true requirement.
+      if (ENV.NODE_ENV !== 'production' || !origin || ENV.ALLOWED_ORIGINS.includes(origin)) {
         cb(null, true);
         return;
       }
-
-      if (!origin || ENV.ALLOWED_ORIGINS.includes(origin)) {
-        cb(null, true);
-      } else {
-        cb(new Error('Not allowed by CORS'), false);
-      }
+      cb(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-workspace-id'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-api-key',
+      'x-workspace-id',
+      'x-ai-api-key',
+      'Origin',
+      'Accept'
+    ],
   });
 
   app.register(fastifyCookie);
