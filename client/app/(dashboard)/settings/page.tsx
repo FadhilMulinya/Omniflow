@@ -1,17 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api-client';
-import { Loader2, User, KeyRound, CreditCard, Bell, Coins, ChevronRight } from 'lucide-react';
+import { Loader2, User, KeyRound, CreditCard, Bell, Coins, ChevronRight, MessageCircle } from 'lucide-react';
 import { ProfileSection } from './components/profile-section';
 import { ApiKeysCard } from './components/api-keys-card';
+import { TelegramSection } from './components/telegram-section';
 import { toast } from 'sonner';
 
-type Section = 'profile' | 'api-keys';
+type Section = 'profile' | 'api-keys' | 'integrations';
 
 const NAV: { key: Section; label: string; icon: React.ElementType; description: string }[] = [
   { key: 'profile', label: 'Profile', icon: User, description: 'Your account info' },
   { key: 'api-keys', label: 'AI Provider Keys', icon: KeyRound, description: 'Gemini, OpenAI, Ollama' },
+  { key: 'integrations', label: 'Integrations', icon: MessageCircle, description: 'Telegram, WhatsApp, etc.' },
 ];
 
 export default function SettingsPage() {
@@ -21,6 +24,15 @@ export default function SettingsPage() {
   const [tokenInfo, setTokenInfo] = useState<{ tokens: number; plan: string } | null>(null);
   const [user, setUser] = useState({ username: '', email: '', whatsapp: '', telegramUsername: '', avatarUrl: '' });
 
+
+  const searchParams = useSearchParams();
+  const sectionParam = searchParams.get('section') as Section | null;
+
+  useEffect(() => {
+    if (sectionParam && NAV.some(n => n.key === sectionParam)) {
+      setActive(sectionParam);
+    }
+  }, [sectionParam]);
 
   useEffect(() => {
     apiFetch('/auth/me').then((data: any) => {
@@ -109,6 +121,9 @@ export default function SettingsPage() {
             )}
             {active === 'api-keys' && (
               <ApiKeysCard />
+            )}
+            {active === 'integrations' && (
+              <TelegramSection />
             )}
           </div>
         </div>

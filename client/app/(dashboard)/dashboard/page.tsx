@@ -11,7 +11,7 @@ import { AgentCard } from './components/AgentCard';
 import Link from 'next/link';
 import {
   Plus, Sparkles, ArrowRight,
-  LayoutGrid, List, Search, RefreshCw, X
+  LayoutGrid, List, Search, RefreshCw, X, Bell
 } from 'lucide-react';
 import { IconActivity, IconChartBar, IconClock, IconCpu, IconShieldCheck, IconWallet } from "@tabler/icons-react";
 import { cn } from '@/lib/utils';
@@ -93,6 +93,42 @@ export default function DashboardPage() {
     refreshAgents();
   }, [activeWorkspace]);
 
+  // Handle auto-resumption of agent drafts from landing page
+  useEffect(() => {
+    if (!activeWorkspace || loading) return;
+
+    const DRAFT_KEY = 'onhandl_agent_draft';
+    const checkDraft = async () => {
+      try {
+        const raw = sessionStorage.getItem(DRAFT_KEY);
+        if (!raw) return;
+
+        const draft = JSON.parse(raw);
+        if (draft.name && draft.description) {
+          // Clear it first to prevent double-creation
+          sessionStorage.removeItem(DRAFT_KEY);
+
+          import('sonner').then(({ toast }) => {
+            toast.loading(`Resuming creation of ${draft.name}...`);
+            financialAgentApi.draftFromPrompt(draft.name, draft.description, 'balanced_allocator')
+              .then(data => financialAgentApi.createFromStructured(data))
+              .then(() => {
+                toast.success(`${draft.name} deployed!`, { description: 'Draft resume successful.' });
+                refreshAgents();
+              })
+              .catch(err => {
+                toast.error('Failed to resume draft agent', { description: err.message });
+              });
+          });
+        }
+      } catch (err) {
+        console.error('Draft resumption error:', err);
+      }
+    };
+
+    checkDraft();
+  }, [activeWorkspace, loading]);
+
   const filteredAgents = agents.filter((agent) => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return true;
@@ -149,6 +185,15 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-4 mt-2">
+              <Link
+                href="/settings?section=integrations"
+                className="group flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors bg-muted/40 px-2.5 py-1 rounded-lg border border-border/40 hover:border-primary/40"
+              >
+                <Bell className="w-3 h-3 group-hover:animate-bounce" />
+                Notifications
+              </Link>
+            </div>
           </motion.div>
 
           <motion.div
@@ -173,74 +218,33 @@ export default function DashboardPage() {
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
               >
                 <Plus className="w-4 h-4" />
-                {isLite ? 'QUICK DRAFT' : 'NEW AGENT'}
+                NEW AGENT
               </Button>
             </div>
           </motion.div>
         </div>
 
 
-        {isLite ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease }}
-            className="mb-10 rounded-3xl border border-border/50 bg-background/85 p-6 shadow-xl shadow-black/5 backdrop-blur-2xl"
-          >
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
-                  <Sparkles className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Status Overview</p>
-                  <h2 className="text-xl font-black tracking-tight">
-                    {agents.length === 0 ? 'No agents yet' : `${activeAgents} of ${agents.length} agents active`}
-                  </h2>
-                  <p className="mt-1 text-sm font-medium text-muted-foreground">
-                    Create or adjust agents using plain language.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground shadow-xl shadow-primary/20"
-                >
-                  <Plus className="h-4 w-4" />
-                  Quick Draft
-                </Button>
-                <Button asChild variant="outline" className="inline-flex items-center gap-2 rounded-xl border-border/50 bg-card/70 backdrop-blur-sm">
-                  <Link href="/bot">
-                    Start with Assistant
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard icon={IconCpu} label="Total Agents" value={String(agents.length)} color="primary" delay={0.1} />
-            <StatCard icon={IconShieldCheck} label="Secured Agents" value={String(activeAgents)} color="emerald" delay={0.2} />
-            <StatCard
-              icon={IconWallet}
-              label="Total Assets"
-              value={totalAssets > 0 ? `${totalAssets.toLocaleString()} CKB` : '0.00'}
-              sub="CKB Network"
-              color="violet"
-              delay={0.3}
-            />
-            <StatCard
-              icon={IconChartBar}
-              label="Policy Hits"
-              value={String(totalPolicyHits)}
-              sub="Last 24h"
-              color="amber"
-              delay={0.4}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard icon={IconCpu} label="Total Agents" value={String(agents.length)} color="primary" delay={0.1} />
+          <StatCard icon={IconShieldCheck} label="Active Agents" value={String(activeAgents)} color="emerald" delay={0.2} />
+          <StatCard
+            icon={IconWallet}
+            label="Total Assets"
+            value={totalAssets > 0 ? `${totalAssets.toLocaleString()} CKB` : '0.00'}
+            sub="CKB Network"
+            color="violet"
+            delay={0.3}
+          />
+          <StatCard
+            icon={IconChartBar}
+            label="Policy Hits"
+            value={String(totalPolicyHits)}
+            sub="Last 24h"
+            color="amber"
+            delay={0.4}
+          />
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
           <div className="relative w-full sm:w-96 group">

@@ -19,6 +19,12 @@ export const authApi = {
             body: JSON.stringify(payload),
         });
     },
+    resendVerification: async (email: string) => {
+        return apiFetch('/auth/resend-verification', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
+    },
     forgotPassword: async (payload: any) => {
         return apiFetch('/auth/forgot-password', {
             method: 'POST',
@@ -44,6 +50,29 @@ export const authApi = {
         return apiFetch('/auth/logout', {
             method: 'POST',
             body: JSON.stringify({}),
+        });
+    },
+    verifyTelegram: async (code: string) => {
+        return apiFetch('/auth/telegram/verify', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        });
+    },
+    getTelegramPermissions: async () => {
+        return apiFetch('/auth/telegram/permissions');
+    },
+    updateTelegramPermissions: async (payload: any) => {
+        return apiFetch('/auth/telegram/permissions', {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+    },
+    getTelegramStatus: async () => {
+        return apiFetch('/auth/telegram/status');
+    },
+    unlinkTelegram: async () => {
+        return apiFetch('/auth/telegram/unlink', {
+            method: 'POST',
         });
     },
 };
