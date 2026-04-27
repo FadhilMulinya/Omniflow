@@ -17,37 +17,66 @@ function stringifyValue(value: unknown): string {
     return JSON.stringify(value);
 }
 
-function buildNotificationText(eventName: string, payload: Record<string, unknown>) {
-    const agentId = stringifyValue(payload.agentId);
-    const workspaceId = stringifyValue(payload.workspaceId);
-    const actionType = stringifyValue(payload.type);
-    const eventId = stringifyValue(payload.eventId || payload.id);
-    const error = stringifyValue(payload.error);
+function formatTimestamp(raw: unknown): string {
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    const date = Number.isFinite(n) && n > 0 ? new Date(n) : new Date();
+    return date.toLocaleString('en-US', { hour12: false });
+}
 
-    const lines = [
-        `Agent event: ${eventName}`,
-        agentId ? `Agent: ${agentId}` : '',
-        workspaceId ? `Workspace: ${workspaceId}` : '',
-        actionType ? `Action: ${actionType}` : '',
-        eventId ? `Event ID: ${eventId}` : '',
-        error ? `Error: ${error}` : '',
-    ].filter(Boolean);
+function pickAmountAndAsset(payload: Record<string, unknown>): { amount: string; asset: string } {
+    const nested = asRecord(payload.payload);
+    return {
+        amount: stringifyValue(payload.amount || nested.amount) || '0',
+        asset: stringifyValue(payload.asset || nested.asset) || 'TOKEN',
+    };
+}
 
-    return lines.join('\n');
+function pickTxHash(payload: Record<string, unknown>): string {
+    const nested = asRecord(payload.payload);
+    return stringifyValue(payload.txHash || nested.txHash);
+}
+
+function buildNotificationText(input: {
+    username: string;
+    agentName: string;
+    eventName: string;
+    payload: Record<string, unknown>;
+}): string {
+    const { username, agentName, eventName, payload } = input;
+    const nested = asRecord(payload.payload);
+    const { amount, asset } = pickAmountAndAsset(payload);
+    const at = formatTimestamp(payload.createdAt || nested.createdAt || Date.now());
+    const txHash = pickTxHash(payload);
+
+    let base: string;
+
+    if (eventName === 'FUNDS.RECEIVED') {
+        const fromAddress = stringifyValue(payload.payerAddress || nested.payerAddress || payload.from || nested.from) || 'unknown address';
+        base = `Hello ${username}, ${agentName} has received ${amount} ${asset} from ${fromAddress} at ${at}.`;
+    } else {
+        const toAddress = stringifyValue(payload.to || nested.to || payload.recipientAddress || nested.recipientAddress) || 'unknown address';
+        base = `Hello ${username}, ${agentName} has sent ${amount} ${asset} to ${toAddress} at ${at}.`;
+    }
+
+    if (!txHash) return base;
+    return `${base}\nTransaction hash: ${txHash}`;
 }
 
 async function notifyForEvent(eventName: string, rawPayload: unknown) {
     if (!telegramClient.isConfigured()) return;
 
     const payload = asRecord(rawPayload);
-    const eventId = stringifyValue(payload.eventId || payload.id);
-    const workspaceId = stringifyValue(payload.workspaceId);
-    const agentId = stringifyValue(payload.agentId);
+    const nested = asRecord(payload.payload);
+    const eventId = stringifyValue(payload.eventId || payload.id || nested.eventId || nested.id);
+    const txHash = pickTxHash(payload);
+    const workspaceId = stringifyValue(payload.workspaceId || nested.workspaceId);
+    const agentId = stringifyValue(payload.agentId || nested.agentId);
 
     const recipients = await TelegramEventNotifierRepository.findTargetUsers({ workspaceId, agentId });
     if (recipients.length === 0) return;
 
-    const text = buildNotificationText(eventName, payload);
+    const agentName = (await TelegramEventNotifierRepository.findAgentName(agentId)) || 'Your agent';
+    const uniquenessSeed = eventId || txHash || stringifyValue(payload.createdAt || nested.createdAt);
 
     for (const recipient of recipients as any[]) {
         const chatId = recipient?.telegram?.chatId;
@@ -56,7 +85,7 @@ async function notifyForEvent(eventName: string, rawPayload: unknown) {
         const key = buildIdempotencyKey([
             'tg-notify',
             eventName,
-            eventId || 'no-event-id',
+            uniquenessSeed || 'no-seed',
             agentId || 'no-agent-id',
             String(recipient._id),
             chatId,
@@ -65,11 +94,18 @@ async function notifyForEvent(eventName: string, rawPayload: unknown) {
         const acquired = await IdempotencyService.acquire({
             scope: 'telegram-event-notifications',
             key,
-            metadata: { eventName, eventId, agentId, workspaceId, userId: String(recipient._id) },
+            metadata: { eventName, eventId, txHash, agentId, workspaceId, userId: String(recipient._id) },
             lockMs: 10 * 60 * 1000,
         });
 
         if (!acquired.acquired) continue;
+
+        const text = buildNotificationText({
+            username: recipient?.username || 'there',
+            agentName,
+            eventName,
+            payload,
+        });
 
         try {
             await telegramClient.sendMessage(String(chatId), text);
@@ -85,14 +121,9 @@ async function notifyForEvent(eventName: string, rawPayload: unknown) {
 }
 
 const EVENT_NAMES = [
-    'PAYMENT_LINK.PAID',
     'FUNDS.RECEIVED',
-    'APPROVAL.GRANTED',
-    'APPROVAL.REJECTED',
-    'FINANCIAL_ACTION.STARTED',
-    'FINANCIAL_ACTION.EXECUTED',
-    'FINANCIAL_ACTION.COMPLETED',
-    'FINANCIAL_ACTION.FAILED',
+    'FUNDS.SENT',
+    'FUNDS.TRANSFERRED',
 ] as const;
 
 let notifierWired = false;

@@ -4,6 +4,12 @@ import { Workspace } from '../../../infrastructure/database/models/Workspace';
 import { FinancialAgent } from '../../../infrastructure/database/models/FinancialAgent';
 
 export const TelegramEventNotifierRepository = {
+    async findAgentName(agentId?: string) {
+        if (!agentId || !mongoose.Types.ObjectId.isValid(agentId)) return null;
+        const agent = await FinancialAgent.findById(agentId).select('name').lean();
+        return agent?.name || null;
+    },
+
     async findTargetUsers(event: { workspaceId?: string; agentId?: string }) {
         const userIds = new Set<string>();
 
@@ -31,10 +37,14 @@ export const TelegramEventNotifierRepository = {
         return User.find({
             _id: { $in: Array.from(userIds) },
             'telegram.chatId': { $exists: true, $ne: '' },
-            'telegram.permissions.notifications': true,
             'notifications.telegram': true,
+            $or: [
+                { 'telegram.permissions.notifications': true },
+                { 'telegram.permissions.notifications': { $exists: false } },
+            ],
         })
             .select('_id username telegram notifications')
             .lean();
     },
 };
+
