@@ -28,6 +28,9 @@ Return exactly one valid JSON object.
 Do not include markdown fences.
 Do not include any text before or after JSON.
 
+You are performing strict information extraction, not loose summarization.
+Every explicit operational detail in the user request is mandatory structured data unless it is impossible to encode safely.
+
 Important: agents must have explicit allowedActions. In the normal default case, use the full supported policy action set:
 ["ALLOCATE_FUNDS", "TRANSFER_FUNDS", "SWAP_FUNDS", "INVEST_FUNDS"].
 Do not include "RETAIN_FUNDS" in allowedActions or blockedActions. "RETAIN_FUNDS" is an internal executable action only.
@@ -178,7 +181,14 @@ Critical drafting rules:
 20. Only generate narrower allowedActions or blockedActions when the user explicitly asks to restrict actions.
 21. If a policy uses ALLOCATE_FUNDS, allowedActions must still include any concrete actions that allocation may produce, especially TRANSFER_FUNDS and SWAP_FUNDS.
 22. Do not create overly narrow action allowlists by default.
-23.If the user does not explicitly restrict actions, set both global and network allowedActions to the full supported set and do not narrow them based on preset alone.
+23. If the user does not explicitly restrict actions, set both global and network allowedActions to the full supported set and do not narrow them based on preset alone.
+24. Preserve every explicit identifier from the user request verbatim, including wallet addresses, recipient addresses, assets, chain names, and any other operational identifiers. Never shorten, normalize, paraphrase, or replace them.
+25. Preserve every explicit numeric or conditional instruction from the user request, including percentages, amounts, intervals, thresholds, ordering, and whether any remainder should be retained, transferred, swapped, invested, or held for approval.
+26. When the user defines a distribution of funds, encode the full distribution explicitly so no remainder is left implicit. If part of the funds should stay in the agent wallet, represent that remainder as a retain allocation.
+27. When explicit transfer recipients are supplied, carry them into runnable policy actions and the relevant recipient controls for that network.
+28. A draft is invalid if an explicit user-supplied operational detail appears only in description text but is missing from executable policy configuration or required guardrails.
+29. Before returning JSON, verify that all explicit operational details from the user request survive in the final structured output wherever they are operationally relevant.
+30. Prefer faithful extraction over brevity. If a user-supplied detail cannot be safely represented, do not drop it silently; record it in assumptions.
 
 
 Preset behavior:
@@ -191,4 +201,37 @@ ${preset}
 
 User request:
 ${input.prompt}`;
+}
+
+export function buildFinancialAgentDraftRepairPrompt(input: {
+  name: string;
+  prompt: string;
+  preset?: FinancialAgentPreset;
+  failureReason: string;
+  explicitRecipientAddresses: string[];
+  previousOutput?: string;
+}) {
+  const addressList =
+    input.explicitRecipientAddresses.length > 0
+      ? input.explicitRecipientAddresses.join(', ')
+      : 'none detected';
+
+  return `${buildFinancialAgentDraftPrompt({
+    name: input.name,
+    prompt: input.prompt,
+    preset: input.preset,
+  })}
+
+Your previous response was rejected and must be corrected.
+
+Rejection reason:
+${input.failureReason}
+
+Explicit user-supplied recipient addresses detected in the request that MUST appear verbatim in runnable transfer actions and the relevant recipient controls:
+${addressList}
+
+Previous rejected output:
+${input.previousOutput?.trim() || '(empty response)'}
+
+Return the full corrected JSON object only.`;
 }
