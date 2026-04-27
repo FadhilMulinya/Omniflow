@@ -95,7 +95,7 @@ export const Hero: React.FC<HeroProps> = ({ handleAnchorClick, onStartBuilder })
               onClick={onStartBuilder}
               className="h-12 px-8 bg-fl-dark text-fl-ink-inv rounded-full flex items-center justify-center font-bold text-sm hover:opacity-90 transition-all shadow-2xl shadow-fl-dark/10"
             >
-              Create Your First Agent
+              Start Creating
               <ArrowRight className="ml-2 w-4 h-4" />
             </button>
           </motion.div>
