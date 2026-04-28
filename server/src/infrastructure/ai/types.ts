@@ -1,4 +1,4 @@
-import { CharacterSchema } from '../../core/characters/schema';
+import { financialAgentSchema } from '../../core/financial-runtime/Schema/financial.schema';
 import { ENV } from '../../shared/config/environments';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
@@ -31,7 +31,7 @@ export interface CompletionRequest {
     messages: CompletionMessage[];
     temperature?: number;
     maxTokens?: number;
-    character?: CharacterSchema;
+    character?: typeof financialAgentSchema;
     apiKey?: string;
     baseUrl?: string;
 }

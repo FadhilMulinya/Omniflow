@@ -41,33 +41,4 @@ export function registerAgentHandlers(fastify: FastifyInstance) {
         },
     }, async () => AdminService.listDraftAgents());
 
-    // GET /api/admin/executions — all execution runs
-    fastify.get<{ Querystring: { page?: string } }>('/executions', {
-        onRequest: [fastify.authorizeAdmin],
-        schema: {
-            tags: ['Admin'],
-            summary: 'List global executions (Admin)',
-            description: 'Returns a paginated list of all agent execution runs across the entire platform.',
-            security: [cookieAuthSecurity],
-            querystring: {
-                type: 'object',
-                properties: { page: { type: 'string', default: '1' } },
-            },
-            response: {
-                200: {
-                    description: 'Global execution history',
-                    type: 'object',
-                    properties: {
-                        executions: { type: 'array', items: executionSchema },
-                        total: { type: 'number' },
-                        pages: { type: 'number' },
-                    },
-                },
-                ...standardErrorResponses([401, 403]),
-            },
-        },
-    }, async (request) => {
-        const page = parseInt(request.query.page ?? '1', 10);
-        return AdminService.listExecutions(page);
-    });
 }

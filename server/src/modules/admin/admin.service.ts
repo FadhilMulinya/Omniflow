@@ -10,16 +10,6 @@ export const AdminService = {
         return AdminRepository.findAgents({ isDraft: true });
     },
 
-    // ── Executions ────────────────────────────────────────────────────────────
-    async listExecutions(page: number) {
-        const limit = 50;
-        const skip = (page - 1) * limit;
-        const [runs, total] = await Promise.all([
-            AdminRepository.findExecutions(skip, limit),
-            AdminRepository.countExecutions(),
-        ]);
-        return { runs, total, page };
-    },
 
     // ── Blog ──────────────────────────────────────────────────────────────────
     async listBlogPosts() {
