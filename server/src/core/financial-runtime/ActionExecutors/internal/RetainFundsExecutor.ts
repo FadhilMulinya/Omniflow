@@ -1,4 +1,4 @@
-import { eventBus } from '../../../../infrastructure/events/eventBus';
+import { eventBus } from '../../eventBus';
 import type { ExecutableAction } from '../../types';
 import type { ActionExecutorHandler, ExecutorContext } from '../executor.types';
 

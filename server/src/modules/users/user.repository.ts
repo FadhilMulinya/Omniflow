@@ -7,10 +7,4 @@ export const UserRepository = {
     async findByIdAndUpdate(id: string, update: Record<string, unknown>, options?: any) {
         return User.findByIdAndUpdate(id, update, options);
     },
-    async findByStripeId(userId: string) {
-        return User.findById(userId).select('stripeAccountId');
-    },
-    async updateStripeAccountId(userId: string, stripeAccountId: string) {
-        return User.findByIdAndUpdate(userId, { stripeAccountId });
-    },
 };

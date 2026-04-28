@@ -2,7 +2,7 @@ import { IFinancialAgent } from '../../../../../infrastructure/database/models/F
 import { FinancialAgentRepository } from '../../../../../modules/financial-agents/financial-repositories/financial-agent.repository';
 import { FinancialAgentStateRepository } from '../../../../../modules/financial-agents/financial-repositories/financial-agent-state.repository';
 import { MonitorTransactionsTool } from '../../../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_indexer_monitor_transactions';
-import { eventBus } from '../../../../../infrastructure/events/eventBus';
+import { eventBus } from '../../../eventBus';
 import { IdempotencyService, buildIdempotencyKey } from '../../../../../infrastructure/idempotency/idempotency.service';
 
 export class CkbFundsReceivedSource {

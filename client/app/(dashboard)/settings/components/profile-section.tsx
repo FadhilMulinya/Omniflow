@@ -13,7 +13,7 @@ import { Loader2, Save, CheckCircle2, User, Mail, Phone, MessageCircle, Camera }
 import { toast } from 'sonner';
 
 interface Props {
-  user: { username: string; email: string; whatsapp: string; telegramUsername: string; avatarUrl: string };
+  user: { username: string; email: string; avatarUrl: string };
   setUser: (u: any) => void;
 }
 

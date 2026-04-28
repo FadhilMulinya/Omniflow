@@ -97,7 +97,7 @@ These are the main endpoints for the current product.
 | POST | `/auth/reset-password` | No | Reset password from OTP | `email`, `code`, `newPassword` |
 | GET | `/auth/me` | Cookie or terminal token | Get current user profile | None |
 | GET | `/auth/me/avatar` | Cookie | Get current avatar and display name | None |
-| POST | `/auth/me` | Cookie | Update editable profile fields | `username`, `email`, `whatsapp`, `telegramUsername`, `avatarUrl` |
+| POST | `/auth/me` | Cookie | Update editable profile fields | `username`, `email`, `avatarUrl` |
 
 Frontend notes:
 

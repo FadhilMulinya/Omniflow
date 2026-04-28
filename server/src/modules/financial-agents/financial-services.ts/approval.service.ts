@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { eventBus } from '../../../infrastructure/events/eventBus';
+import { eventBus } from '../../../core/financial-runtime/eventBus';
 import { FinancialAgent } from '../../../infrastructure/database/models/FinancialAgent';
 import { ApprovalRequestRepository } from '../financial-repositories/approval.repository';
 

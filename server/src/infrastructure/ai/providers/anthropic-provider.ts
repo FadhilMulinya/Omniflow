@@ -2,6 +2,34 @@ import { IAIProvider, CompletionRequest, CompletionResponse } from '../types';
 import { buildSystemPrompt } from '../utils';
 import { ENV } from "../../../shared/config/environments";
 
+function extractAnthropicTextPart(part: unknown): string {
+    if (typeof part === 'string') return part;
+    if (part && typeof part === 'object') {
+        const record = part as Record<string, unknown>;
+        if (typeof record.text === 'string') return record.text;
+        if (typeof record.content === 'string') return record.content;
+    }
+    return '';
+}
+
+function extractAnthropicCompletionText(response: any): string {
+    if (Array.isArray(response?.content)) {
+        const content = response.content.map(extractAnthropicTextPart).join('');
+        if (content) {
+            return content;
+        }
+    }
+
+    if (typeof response?.content === 'string') {
+        return response.content;
+    }
+
+    throw Object.assign(
+        new Error('Anthropic provider returned an unsupported completion payload shape'),
+        { code: 502 }
+    );
+}
+
 export class AnthropicProvider implements IAIProvider {
     private defaultModel = ENV.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
     
@@ -84,15 +112,7 @@ export class AnthropicProvider implements IAIProvider {
         console.log(`Generating completion with model: ${model}`);
         
         const response = await this.makeRequest('/messages', body, request.apiKey, request.baseUrl);
-        
-        let content = '';
-        if (response.content && response.content.length > 0) {
-            if (response.content[0].text) {
-                content = response.content[0].text;
-            } else if (response.content[0].content) {
-                content = response.content[0].content;
-            }
-        }
+        const content = extractAnthropicCompletionText(response);
         
         return {
             content: content,

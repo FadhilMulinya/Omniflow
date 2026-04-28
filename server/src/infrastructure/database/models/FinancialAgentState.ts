@@ -19,7 +19,7 @@ export interface IFinancialAgentState extends Document {
 
     // Aggregated totals (computed and cached)
     totalUsdValue?: string;       // sum of all asset USD values
-    totalNativeAmount?: string;   // for CKB: sum of all CKB-denominated assets in CKB
+    totalNativeAmount?: string;   // ie. for CKB: sum of all CKB-denominated assets in CKB
 
     lastFullSyncAt?: Date;        // when ALL balances were last synced together
     isSyncing?: boolean;          // lock flag to prevent parallel sync jobs
@@ -31,7 +31,7 @@ export interface IFinancialAgentState extends Document {
     pendingApprovalIds: Types.ObjectId[];
 
     // Spend tracking (for policy enforcement)
-    dailySpent: Record<string, string>;    // { CKB: '500000000' }
+    dailySpent: Record<string, string>;    // ie. { CKB: '500000000' }
     weeklySpent: Record<string, string>;
     monthlySpent: Record<string, string>;
     spendWindowResetAt: {

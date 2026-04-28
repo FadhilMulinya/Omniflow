@@ -1,10 +1,10 @@
-import { eventBus } from '../../../infrastructure/events/eventBus';
+import { eventBus } from '../eventBus';
 import type { IFinancialAgent } from '../../../infrastructure/database/models/FinancialAgent';
 import type { ExecutableAction, RuntimeEvent } from '../types';
 import { ActionExecutorRegistry } from './registry';
 
 export class ActionExecutor {
-  constructor(private readonly registry = new ActionExecutorRegistry()) {}
+  constructor(private readonly registry = new ActionExecutorRegistry()) { }
 
   async execute(agentOrAgentId: IFinancialAgent | string, action: ExecutableAction, event: RuntimeEvent): Promise<void> {
     const agent = typeof agentOrAgentId === 'string' ? undefined : agentOrAgentId;

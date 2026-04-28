@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { EventRouter } from '../../../core/financial-runtime/EventRouter';
 import { RuntimeEvent } from '../../../core/financial-runtime/types';
-import { eventBus } from '../../../infrastructure/events/eventBus';
+import { eventBus } from '../../../core/financial-runtime/eventBus';
 
 function readString(payload: Record<string, unknown>, key: string): string | undefined {
     const value = payload[key];

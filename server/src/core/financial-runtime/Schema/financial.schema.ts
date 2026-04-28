@@ -184,5 +184,8 @@ export const financialAgentSchema = {
             "additionalProperties": false
         }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "instructions": {
+        "length": "",
+    }
 };

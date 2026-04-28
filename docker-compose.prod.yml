@@ -27,7 +27,6 @@ services:
       ALLOWED_ORIGINS: https://onhandl.com,https://www.onhandl.com
       APP_URL: https://onhandl.com
       API_URL: https://api.onhandl.com/api
-      STRIPE_REDIRECT_URI: https://api.onhandl.com/api/payments/stripe/callback
       COOKIE_DOMAIN: .onhandl.com
       TELEGRAM_WEBHOOK_DOMAIN: api.onhandl.com
       TELEGRAM_WEBHOOK_PORT: 3002

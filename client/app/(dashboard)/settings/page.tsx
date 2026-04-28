@@ -21,8 +21,7 @@ function SettingsPageContent() {
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<Section>('profile');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [tokenInfo, setTokenInfo] = useState<{ tokens: number; plan: string } | null>(null);
-  const [user, setUser] = useState({ username: '', email: '', whatsapp: '', telegramUsername: '', avatarUrl: '' });
+  const [user, setUser] = useState({ username: '', email: '', avatarUrl: '' });
 
 
   const searchParams = useSearchParams();
@@ -36,8 +35,7 @@ function SettingsPageContent() {
 
   useEffect(() => {
     apiFetch('/auth/me').then((data: any) => {
-      setUser({ username: data.username || '', email: data.email || '', whatsapp: data.whatsapp || '', telegramUsername: data.telegramUsername || '', avatarUrl: data.avatarUrl || '' });
-      setTokenInfo({ tokens: data.tokens ?? 0, plan: data.plan ?? 'free' });
+      setUser({ username: data.username || '', email: data.email || '', avatarUrl: data.avatarUrl || '' });
     }).catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
   }, []);
@@ -59,7 +57,7 @@ function SettingsPageContent() {
         {/* Page header */}
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your account, billing, integrations and preferences.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your account, integrations and preferences.</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-5">
