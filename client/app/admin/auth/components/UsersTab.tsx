@@ -9,9 +9,7 @@ interface UserRow {
   email?: string;
   username?: string;
   name?: string;
-  plan: string;
   isAdmin: boolean;
-  tokens: number;
   createdAt: string;
 }
 
@@ -40,8 +38,6 @@ export function UsersTab({ users: initial }: { users: UserRow[] }) {
         <thead>
           <tr className="border-b border-border/60 text-left text-muted-foreground">
             <th className="pb-3 pr-4 font-medium">User</th>
-            <th className="pb-3 pr-4 font-medium">Plan</th>
-            <th className="pb-3 pr-4 font-medium">Tokens</th>
             <th className="pb-3 pr-4 font-medium">Joined</th>
             <th className="pb-3 font-medium">Actions</th>
           </tr>
@@ -63,10 +59,6 @@ export function UsersTab({ users: initial }: { users: UserRow[] }) {
                   )}
                 </div>
               </td>
-              <td className="py-3 pr-4">
-                <span className="capitalize text-xs bg-accent/60 px-2 py-1 rounded">{u.plan}</span>
-              </td>
-              <td className="py-3 pr-4 text-muted-foreground">{u.tokens.toLocaleString()}</td>
               <td className="py-3 pr-4 text-muted-foreground">
                 {new Date(u.createdAt).toLocaleDateString()}
               </td>

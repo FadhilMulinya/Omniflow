@@ -95,22 +95,10 @@ export const Hero: React.FC<HeroProps> = ({ handleAnchorClick, onStartBuilder })
               onClick={onStartBuilder}
               className="h-12 px-8 bg-fl-dark text-fl-ink-inv rounded-full flex items-center justify-center font-bold text-sm hover:opacity-90 transition-all shadow-2xl shadow-fl-dark/10"
             >
-              Start Creating
+              Create Auto Wallet
               <ArrowRight className="ml-2 w-4 h-4" />
             </button>
           </motion.div>
-
-          {/* trusted by */}
-          <div className="mt-20 flex flex-wrap items-center gap-x-12 gap-y-6">
-            <p className="label-factory !mb-0 opacity-40">Network Native</p>
-            <div className="flex flex-wrap items-center gap-8">
-              {['CKB', 'BTC'].map((name) => (
-                <span key={name} className="text-[15px] font-black tracking-tight text-fl-line-strong grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-default">
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Lottie Animation Side */}

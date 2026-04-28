@@ -4,7 +4,6 @@ import { Testimonial, FaqItem } from './types';
 export const WAITLIST_TOTAL_SPOTS = 6_000;
 
 export const WAITLIST_BENEFITS = [
-    '25% lifetime discount',
     'Exclusive beta features',
     'Direct product team access',
     'Shape the roadmap',
@@ -66,11 +65,6 @@ export const faqItems: FaqItem[] = [
     {
         question: 'Can I integrate AI Builder with my existing tools?',
         answer:
-            'Yes, we offer over 100 pre-built integrations with popular tools and services like Slack, Google Workspace, Salesforce, Zapier, and more. If you need a custom integration, our Enterprise plan includes custom integration development.',
-    },
-    {
-        question: 'How much is the subscription?',
-        answer:
-            'The subscription is free for now',
+            'Yes, we offer over 100 pre-built integrations with popular tools and services like Slack, Google Workspace, Salesforce, Zapier, and more.',
     },
 ];

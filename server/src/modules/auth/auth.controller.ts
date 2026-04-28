@@ -348,7 +348,7 @@ export async function authController(fastify: FastifyInstance) {
             try {
                 const user = await UserService.getProfile(
                     request.user.id,
-                    'username email name whatsapp telegram avatarUrl bio  plan planExpiry notifications savedPaymentMethods apiKeys profileViews isAdmin createdAt updatedAt'
+                    'username email name whatsapp telegram avatarUrl bio notifications savedPaymentMethods apiKeys profileViews isAdmin createdAt updatedAt'
                 );
                 return reply.send(toSafeUserProfile(user));
             } catch (e: any) {

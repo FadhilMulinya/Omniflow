@@ -67,7 +67,6 @@ export async function verifyEmailOtp(email: string, code: string) {
         password,
         name,
         isEmailVerified: true,
-        plan: 'free',
     });
 
     await Workspace.create({
