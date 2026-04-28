@@ -1,12 +1,9 @@
 import { z } from 'zod';
 import { validateCkbAddress } from '../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_wallet_tool';
-
-export const FINANCIAL_DRAFT_EVENT_TYPES = [
-  'FUNDS.RECEIVED',
-  'TIME.MONTH_STARTED',
-  'APPROVAL.GRANTED',
-  'APPROVAL.REJECTED',
-] as const;
+import { SupportedNetwork } from '../../../infrastructure/database/models/FinancialAgent';
+import { SUPPORTED_NETWORKS } from '../../../infrastructure/database/models/FinancialAgent';
+import { FINANCIAL_EVENT_TYPES } from '../../../core/financial-runtime/types';
+import { FINANCIAL_AGENT_PRESETS } from '../../../core/financial-runtime/types';
 
 export const FINANCIAL_AGENT_PRESETS = [
   'conservative_treasury',
@@ -21,9 +18,6 @@ export const FINANCIAL_DRAFT_ACTION_TYPES = [
   'INVEST_FUNDS',
 ] as const;
 
-export const SUPPORTED_NETWORKS = [
-  'CKB',
-] as const;
 
 export const RECIPIENT_POLICIES = [
   'allowlist',
@@ -31,10 +25,9 @@ export const RECIPIENT_POLICIES = [
 ] as const;
 
 export type FinancialAgentPreset = typeof FINANCIAL_AGENT_PRESETS[number];
-export type SupportedNetwork = typeof SUPPORTED_NETWORKS[number];
 export type FinancialDraftActionType = typeof FINANCIAL_DRAFT_ACTION_TYPES[number];
 
-const DEFAULT_NETWORK: SupportedNetwork = 'CKB';
+const DEFAULT_NETWORK: SupportedNetwork = SUPPORTED_NETWORKS[0];
 const DEFAULT_ALLOWED_ACTIONS: FinancialDraftActionType[] = [...FINANCIAL_DRAFT_ACTION_TYPES];
 
 const numericStringSchema = z
@@ -163,7 +156,7 @@ const networkConfigDraftSchema = z.object({
 });
 
 export const draftPolicySchema = z.object({
-  trigger: z.enum(FINANCIAL_DRAFT_EVENT_TYPES),
+  trigger: z.enum(FINANCIAL_EVENT_TYPES),
   conditions: z.array(policyConditionSchema),
   actions: z.array(draftPolicyActionSchema).min(1),
   priority: z.number().int().min(1).optional(),
@@ -173,7 +166,7 @@ export const draftFinancialAgentInputSchema = z.object({
   agent: z.object({
     name: z.string().min(1),
     description: z.string().min(1),
-    subscribedEvents: z.array(z.enum(FINANCIAL_DRAFT_EVENT_TYPES)).min(1),
+    subscribedEvents: z.array(z.enum(FINANCIAL_EVENT_TYPES)).min(1),
 
     permissionConfig: z.object({
       allowedChains: z.array(z.enum(SUPPORTED_NETWORKS)).optional(),

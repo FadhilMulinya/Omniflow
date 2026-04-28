@@ -14,7 +14,7 @@ export type RecipientPolicy = typeof RECIPIENT_POLICIES[number];
 
 export interface AgentWalletConfig {
   address: string;
-  privateKey: string; // raw for now, encrypt later
+  privateKey: string; // TODO: Implement vTEE`s private key storage
   walletType: 'managed';
 }
 

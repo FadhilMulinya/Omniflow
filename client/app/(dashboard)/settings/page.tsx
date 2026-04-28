@@ -22,7 +22,7 @@ function SettingsPageContent() {
   const [active, setActive] = useState<Section>('profile');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [tokenInfo, setTokenInfo] = useState<{ tokens: number; plan: string } | null>(null);
-  const [user, setUser] = useState({ username: '', email: '', whatsapp: '', telegramUsername: '', avatarUrl: '' });
+  const [user, setUser] = useState({ username: '', email: '', avatarUrl: '' });
 
 
   const searchParams = useSearchParams();
@@ -36,7 +36,7 @@ function SettingsPageContent() {
 
   useEffect(() => {
     apiFetch('/auth/me').then((data: any) => {
-      setUser({ username: data.username || '', email: data.email || '', whatsapp: data.whatsapp || '', telegramUsername: data.telegramUsername || '', avatarUrl: data.avatarUrl || '' });
+      setUser({ username: data.username || '', email: data.email || '', avatarUrl: data.avatarUrl || '' });
       setTokenInfo({ tokens: data.tokens ?? 0, plan: data.plan ?? 'free' });
     }).catch(() => toast.error('Failed to load profile'))
       .finally(() => setLoading(false));
