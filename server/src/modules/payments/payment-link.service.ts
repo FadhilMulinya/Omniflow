@@ -1,7 +1,7 @@
 import { PaymentLinkService as CorePaymentLinkService } from '../../core/payments/payment-links/payment-link.service';
 import { PaymentLinkRepository } from './payment-link.repository';
 import { IPaymentLink } from '../../infrastructure/database/models/PaymentLink';
-import { eventBus } from '../../infrastructure/events/eventBus';
+import { eventBus } from '../../core/financial-runtime/eventBus';
 import mongoose from 'mongoose';
 
 interface CreatePaymentLinkDTO {

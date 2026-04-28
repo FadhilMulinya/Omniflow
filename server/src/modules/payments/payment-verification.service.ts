@@ -6,7 +6,7 @@ import {
     ChainTransactionVerifier,
     ChainVerificationResult,
 } from '../../core/payments/payment-links/payment-link.types';
-import { eventBus } from '../../infrastructure/events/eventBus';
+import { eventBus } from '../../core/financial-runtime/eventBus';
 
 /** Registry of chain-specific transaction verifiers. */
 const verifiers = new Map<string, ChainTransactionVerifier>([

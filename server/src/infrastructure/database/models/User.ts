@@ -1,17 +1,26 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { required } from 'zod/v4-mini';
 
 interface IUser extends Document {
     email: string;
     username: string;
     password: string;
     name: string;
-    telegram: {
+    telegram?: {
         userId: string;
         chatId: string;
         username: string;
         firstName?: string;
         lastName?: string;
+        linkedAt?: Date;
+        lastAuthAt?: Date;
+        permissions?: {
+            notifications: boolean;
+            write: boolean;
+        };
+    };
+    whatsapp?: {
+        phoneNumber: string;
+        userId: string;
         linkedAt?: Date;
         lastAuthAt?: Date;
         permissions?: {

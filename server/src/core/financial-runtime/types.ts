@@ -75,9 +75,11 @@ export interface RuntimeEvent<T extends FinancialEventType = FinancialEventType>
   createdAt: number;
 }
 
+export type policyConditionOp = 'eq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
+
 export interface PolicyCondition {
   field: string;
-  op: 'eq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
+  op: policyConditionOp;
   value: unknown;
 }
 

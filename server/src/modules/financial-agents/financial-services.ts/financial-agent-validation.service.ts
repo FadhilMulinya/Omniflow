@@ -3,7 +3,10 @@ import { validateCkbAddress } from '../../../infrastructure/blockchain/ckb/ckb-s
 import { SupportedNetwork } from '../../../infrastructure/database/models/FinancialAgent';
 import { SUPPORTED_NETWORKS } from '../../../infrastructure/database/models/FinancialAgent';
 import { FINANCIAL_EVENT_TYPES } from '../../../core/financial-runtime/types';
-import { FINANCIAL_AGENT_PRESETS } from '../../../core/financial-runtime/types';
+import { FinancialPolicyActionType } from '../../../core/financial-runtime/types';
+import { FINANCIAL_POLICY_ACTION_TYPES } from '../../../core/financial-runtime/types';
+import { policyConditionOp } from '../../../core/financial-runtime/types';
+import { PolicyEngine } from '../../../core/financial-runtime/PolicyEngine';
 
 export const FINANCIAL_AGENT_PRESETS = [
   'conservative_treasury',
@@ -11,12 +14,6 @@ export const FINANCIAL_AGENT_PRESETS = [
   'aggressive_allocator',
 ] as const;
 
-export const FINANCIAL_DRAFT_ACTION_TYPES = [
-  'ALLOCATE_FUNDS',
-  'TRANSFER_FUNDS',
-  'SWAP_FUNDS',
-  'INVEST_FUNDS',
-] as const;
 
 
 export const RECIPIENT_POLICIES = [
@@ -25,10 +22,10 @@ export const RECIPIENT_POLICIES = [
 ] as const;
 
 export type FinancialAgentPreset = typeof FINANCIAL_AGENT_PRESETS[number];
-export type FinancialDraftActionType = typeof FINANCIAL_DRAFT_ACTION_TYPES[number];
+export type FinancialDraftActionType = typeof FINANCIAL_POLICY_ACTION_TYPES[number];
 
 const DEFAULT_NETWORK: SupportedNetwork = SUPPORTED_NETWORKS[0];
-const DEFAULT_ALLOWED_ACTIONS: FinancialDraftActionType[] = [...FINANCIAL_DRAFT_ACTION_TYPES];
+const DEFAULT_ALLOWED_ACTIONS: FinancialPolicyActionType[] = [...FINANCIAL_POLICY_ACTION_TYPES];
 
 const numericStringSchema = z
   .string()
@@ -37,7 +34,7 @@ const numericStringSchema = z
 
 const policyConditionSchema = z.object({
   field: z.string().min(1),
-  op: z.enum(['eq', 'gt', 'gte', 'lt', 'lte', 'in']),
+  op: z.enum(policyConditionOp),
   value: z.unknown(),
 });
 
@@ -145,8 +142,8 @@ const networkConfigDraftSchema = z.object({
   allowedAssets: z.array(z.string().min(1)).optional(),
   blockedAssets: z.array(z.string().min(1)).optional(),
 
-  allowedActions: z.array(z.enum(FINANCIAL_DRAFT_ACTION_TYPES)).optional(),
-  blockedActions: z.array(z.enum(FINANCIAL_DRAFT_ACTION_TYPES)).optional(),
+  allowedActions: z.array(z.enum(FINANCIAL_POLICY_ACTION_TYPES)).optional(),
+  blockedActions: z.array(z.enum(FINANCIAL_POLICY_ACTION_TYPES)).optional(),
 
   recipientPolicy: z.enum(RECIPIENT_POLICIES).optional().default('all'),
   allowedRecipients: z.array(z.string().min(1)).optional(),
@@ -171,8 +168,8 @@ export const draftFinancialAgentInputSchema = z.object({
     permissionConfig: z.object({
       allowedChains: z.array(z.enum(SUPPORTED_NETWORKS)).optional(),
       blockedChains: z.array(z.enum(SUPPORTED_NETWORKS)).optional(),
-      allowedActions: z.array(z.enum(FINANCIAL_DRAFT_ACTION_TYPES)).optional(),
-      blockedActions: z.array(z.enum(FINANCIAL_DRAFT_ACTION_TYPES)).optional(),
+      allowedActions: z.array(z.enum(FINANCIAL_POLICY_ACTION_TYPES)).optional(),
+      blockedActions: z.array(z.enum(FINANCIAL_POLICY_ACTION_TYPES)).optional(),
     }),
 
     approvalConfig: z.object({
