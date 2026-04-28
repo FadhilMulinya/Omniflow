@@ -1,4 +1,4 @@
-import { Testimonial, PricingPlan, FaqItem } from './types';
+import { Testimonial, FaqItem } from './types';
 
 /** Waitlist section — capacity messaging */
 export const WAITLIST_TOTAL_SPOTS = 6_000;
@@ -46,67 +46,6 @@ export const testimonials: Testimonial[] = [
     },
 ];
 
-export const pricingPlans: PricingPlan[] = [
-    {
-        name: 'Free',
-        price: '$0',
-        period: '/month',
-        description: 'Get started with AI automation, no credit card required.',
-        features: ['Up to 3 AI agents', 'Basic templates', 'Community support'],
-        detailedFeatures: [
-            'Up to 3 AI agents',
-            'Basic templates',
-            'Community support',
-            '1,000 welcome tokens',
-        ],
-        ctaText: 'Get Started',
-    },
-    {
-        name: 'Starter',
-        price: '$8',
-        period: '/month',
-        description: 'For individuals ready to build and deploy more agents.',
-        features: ['Up to 10 AI agents', 'Delete & re-edit agents', 'All templates'],
-        detailedFeatures: [
-            'Up to 10 AI agents',
-            'Delete & re-edit agents',
-            'All templates',
-            'Email support',
-        ],
-        ctaText: 'Get Started',
-    },
-    {
-        name: 'Pro',
-        price: '$16',
-        period: '/month',
-        description: 'For power users with advanced automation needs.',
-        features: ['Up to 100 AI agents', 'Priority support', 'Advanced analytics'],
-        popular: true,
-        detailedFeatures: [
-            'Up to 100 AI agents',
-            'Delete & re-edit agents',
-            'Priority support',
-            'Advanced analytics',
-            'Revenue dashboard',
-        ],
-        ctaText: 'Get Started',
-    },
-    {
-        name: 'Unlimited',
-        price: '$30',
-        period: '/month',
-        description: 'No limits — build and deploy as many agents as you need.',
-        features: ['Unlimited AI agents', 'Dedicated support', 'Custom integrations'],
-        detailedFeatures: [
-            'Unlimited AI agents',
-            'Delete & re-edit agents',
-            'Dedicated support',
-            'Custom integrations',
-            'SLA guarantees',
-        ],
-        ctaText: 'Get Started',
-    },
-];
 
 export const faqItems: FaqItem[] = [
     {
@@ -130,8 +69,8 @@ export const faqItems: FaqItem[] = [
             'Yes, we offer over 100 pre-built integrations with popular tools and services like Slack, Google Workspace, Salesforce, Zapier, and more. If you need a custom integration, our Enterprise plan includes custom integration development.',
     },
     {
-        question: 'Do you offer a free trial?',
+        question: 'How much is the subscription?',
         answer:
-            'Yes, we offer a 14-day free trial of our Pro plan, no credit card required. This gives you full access to our platform so you can build and test your AI agents before committing. We also offer a demo for enterprise clients with a personalized walkthrough.',
+            'The subscription is free for now',
     },
 ];

@@ -9,17 +9,6 @@ export interface Testimonial {
     };
 }
 
-export interface PricingPlan {
-    name: string;
-    price: string;
-    period?: string;
-    description: string;
-    features: string[];
-    popular?: boolean;
-    detailedFeatures: string[];
-    ctaText: string;
-}
-
 export interface FaqItem {
     question: string;
     answer: string;
