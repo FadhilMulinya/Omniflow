@@ -1,11 +1,18 @@
 import { z } from 'zod';
 import { validateCkbAddress } from '../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_wallet_tool';
-import { SupportedNetwork } from '../../../infrastructure/database/models/FinancialAgent';
-import { SUPPORTED_NETWORKS } from '../../../infrastructure/database/models/FinancialAgent';
-import { FINANCIAL_EVENT_TYPES } from '../../../core/financial-runtime/types';
-import { FinancialPolicyActionType } from '../../../core/financial-runtime/types';
-import { FINANCIAL_POLICY_ACTION_TYPES } from '../../../core/financial-runtime/types';
-import { policyConditionOp } from '../../../core/financial-runtime/types';
+import {
+  SupportedNetwork,
+  SUPPORTED_NETWORKS
+} from '../../../infrastructure/database/models/FinancialAgent';
+export { SupportedNetwork, SUPPORTED_NETWORKS };
+
+import {
+  FINANCIAL_EVENT_TYPES,
+  FINANCIAL_POLICY_ACTION_TYPES,
+  FinancialPolicyActionType,
+  POLICY_CONDITION_OPS,
+  policyConditionOp,
+} from '../../../core/financial-runtime/types';
 import { PolicyEngine } from '../../../core/financial-runtime/PolicyEngine';
 
 export const FINANCIAL_AGENT_PRESETS = [
@@ -24,7 +31,10 @@ export const RECIPIENT_POLICIES = [
 export type FinancialAgentPreset = typeof FINANCIAL_AGENT_PRESETS[number];
 export type FinancialDraftActionType = typeof FINANCIAL_POLICY_ACTION_TYPES[number];
 
-const DEFAULT_NETWORK: SupportedNetwork = SUPPORTED_NETWORKS[0];
+export const FINANCIAL_DRAFT_EVENT_TYPES = FINANCIAL_EVENT_TYPES;
+export const FINANCIAL_DRAFT_ACTION_TYPES = FINANCIAL_POLICY_ACTION_TYPES;
+
+export const DEFAULT_NETWORK: SupportedNetwork = SUPPORTED_NETWORKS[0];
 const DEFAULT_ALLOWED_ACTIONS: FinancialPolicyActionType[] = [...FINANCIAL_POLICY_ACTION_TYPES];
 
 const numericStringSchema = z
@@ -34,7 +44,7 @@ const numericStringSchema = z
 
 const policyConditionSchema = z.object({
   field: z.string().min(1),
-  op: z.enum(policyConditionOp),
+  op: z.enum(POLICY_CONDITION_OPS),
   value: z.unknown(),
 });
 

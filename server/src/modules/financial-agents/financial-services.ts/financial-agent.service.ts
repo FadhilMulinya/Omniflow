@@ -12,9 +12,9 @@ import {
 import { FinancialAgentDraftingService } from './financial-agent-drafting.service';
 import { PolicyAction, PolicyCondition } from '../../../core/financial-runtime/types';
 import {
-    generatePrivateKey,
     getAddress,
 } from '../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_wallet_tool';
+import { generatePrivateKey } from '../../../infrastructure/blockchain/generate-key';
 
 export interface CreateFinancialAgentStructuredInput {
     mode: 'structured';

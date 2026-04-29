@@ -6,6 +6,7 @@ import { FinancialAgentStateRepository } from '../../../modules/financial-agents
 import { FinancialPolicyRepository } from '../../../modules/financial-agents/financial-repositories/financial-policy.repository';
 import { FinancialAgentValidationService } from '../../../modules/financial-agents/financial-services.ts/financial-agent-validation.service';
 import * as ckbWalletTool from '../../../infrastructure/blockchain/ckb/ckb-specific-tools/ckb_wallet_tool';
+import { generatePrivateKey } from '../../../infrastructure/blockchain/generate-key';
 
 vi.mock('../../../modules/financial-agents/financial-repositories/financial-agent.repository');
 vi.mock('../../../modules/financial-agents/financial-repositories/financial-agent-state.repository');
@@ -52,7 +53,7 @@ describe('FinancialAgentService.createFromStructured', () => {
         vi.mocked(FinancialAgentValidationService.validateDraft).mockResolvedValue(mockDraft);
 
         // Mock wallet tool
-        vi.mocked(ckbWalletTool.generatePrivateKey).mockReturnValue('mock-private-key');
+        vi.mocked(generatePrivateKey).mockReturnValue('mock-private-key');
         vi.mocked(ckbWalletTool.getAddress).mockResolvedValue('mock-address');
 
         // Mock repositories
