@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/forms/input';
 import { Label } from '@/components/ui/forms/label';
 import { UserPlus, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { GoogleSignInButton } from '../signin/page';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,6 +87,7 @@ export default function SignUp({ onSuccess }: SignUpProps = {}) {
                     <Button disabled={loading} type="submit" className="w-full h-12 rounded-2xl bg-primary text-white font-bold hover:bg-primary/90 mt-4 shadow-lg shadow-primary/20">
                         {loading ? <Loader2 className="animate-spin" /> : <><UserPlus className="mr-2 h-4 w-4" /> Create Account</>}
                     </Button>
+                    <GoogleSignInButton />
                 </form>
 
                 <p className="text-center text-sm font-medium text-muted-foreground">
