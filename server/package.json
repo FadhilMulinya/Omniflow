@@ -25,6 +25,7 @@
     "dotenv": "^16.4.5",
     "fastify": "^4.26.2",
     "fastify-plugin": "^5.1.0",
+    "google-auth-library": "^10.6.2",
     "mongoose": "^8.2.1",
     "nodemailer": "^8.0.4",
     "openai": "^6.32.0",

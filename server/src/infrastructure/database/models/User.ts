@@ -3,8 +3,15 @@ import mongoose, { Schema, Document } from 'mongoose';
 interface IUser extends Document {
     email: string;
     username: string;
-    password: string;
-    name: string;
+    password?: string;
+    name?: string;
+
+    google?: {
+        id: string;
+        linkedAt?: Date;
+        lastAuthAt?: Date;
+    };
+
     telegram?: {
         userId: string;
         chatId: string;
@@ -40,8 +47,13 @@ const UserSchema: Schema = new Schema(
     {
         email: { type: String, unique: true, required: true },
         username: { type: String, unique: true, required: true },
-        password: { type: String, required: true },
-        name: { type: String, required: true },
+        password: { type: String, required: false },
+        name: { type: String, required: false },
+        google: {
+            id: { type: String },
+            linkedAt: { type: Date },
+            lastAuthAt: { type: Date },
+        },
         telegram: {
             userId: { type: String },
             chatId: { type: String },
@@ -77,7 +89,7 @@ const UserSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-
+UserSchema.index({ 'google.id': 1 }, { unique: true, sparse: true });
 UserSchema.index({ 'telegram.userId': 1 }, { unique: true, sparse: true });
 
 export const User = mongoose.model<IUser>('User', UserSchema);

@@ -14,18 +14,19 @@ import {
     userProfileSchema,
     authUserSchema,
 } from '../../shared/docs';
+import crypto from 'crypto';
+import { GoogleAuthService } from './google/google-auth.service';
 
 function setAuthCookie(fastify: any, reply: any, userId: string, username: string, isAdmin = false) {
     const token = fastify.jwt.sign({ id: userId, username, isAdmin });
-    const isProd = process.env.NODE_ENV === 'production';
     const cookieOptions: Record<string, unknown> = {
         path: '/',
         httpOnly: true,
-        secure: isProd,
-        sameSite: 'lax',
+        secure: true, // Required for sameSite: 'none'
+        sameSite: 'none', // Required for cross-site cookies (ngrok -> localhost)
         maxAge: 60 * 60 * 24 * 7,
     };
-    if (isProd && ENV.COOKIE_DOMAIN) cookieOptions.domain = ENV.COOKIE_DOMAIN;
+    if (ENV.COOKIE_DOMAIN) cookieOptions.domain = ENV.COOKIE_DOMAIN;
     return reply.setCookie('auth_token', token, cookieOptions);
 }
 
@@ -44,7 +45,87 @@ function toSafeUserProfile(record: any) {
     };
 }
 
+function createOAuthState() {
+    const payload = {
+        nonce: crypto.randomBytes(16).toString('hex'),
+        ts: Date.now(),
+    };
+
+    const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+
+    const signature = crypto
+        .createHmac('sha256', ENV.JWT_SECRET)
+        .update(encoded)
+        .digest('base64url');
+
+    return `${encoded}.${signature}`;
+}
+
+function verifyOAuthState(state: string) {
+    const [encoded, signature] = state.split('.');
+
+    if (!encoded || !signature) return false;
+
+    const expectedSignature = crypto
+        .createHmac('sha256', ENV.JWT_SECRET)
+        .update(encoded)
+        .digest('base64url');
+
+    if (signature !== expectedSignature) return false;
+
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString());
+
+    const ageMs = Date.now() - payload.ts;
+
+    return ageMs < 10 * 60 * 1000;
+}
+
 export async function authController(fastify: FastifyInstance) {
+    fastify.get('/google', async (_request, reply) => {
+        try {
+            const state = createOAuthState();
+
+            const url = GoogleAuthService.getAuthUrl(state);
+
+            return reply.redirect(url);
+        } catch (e: any) {
+            return reply.code(e.code || 500).send({ error: e.message });
+        }
+    });
+
+    fastify.get<{ Querystring: { code?: string; state?: string } }>(
+        '/google/callback',
+        async (request, reply) => {
+            const { code, state } = request.query;
+
+            if (!code || !state || !verifyOAuthState(state)) {
+                return reply.code(400).send({
+                    error: 'Invalid Google OAuth state',
+                    debug: {
+                        hasCode: Boolean(code),
+                        hasState: Boolean(state),
+                        validState: state ? verifyOAuthState(state) : false,
+                    },
+                });
+            }
+
+            try {
+                const user = await GoogleAuthService.authenticate(code);
+
+                setAuthCookie(
+                    fastify,
+                    reply,
+                    String(user._id),
+                    user.username ?? '',
+                    user.isAdmin
+                );
+
+                return reply.redirect(`${ENV.CLIENT_URL}/dashboard`);
+            } catch (e: any) {
+                return reply.code(e.code || 500).send({ error: e.message });
+            }
+        }
+    );
     fastify.post<{ Body: { username?: string; email?: string; password?: string; name?: string } }>(
         '/register',
         {
@@ -250,8 +331,8 @@ export async function authController(fastify: FastifyInstance) {
             .setCookie('auth_token', '', {
                 path: '/',
                 httpOnly: true,
-                sameSite: 'lax',
-                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'none',
+                secure: true,
                 expires: new Date(0),
             })
             .send({ success: true, message: 'Logged out successfully' })

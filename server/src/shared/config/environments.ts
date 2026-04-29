@@ -46,6 +46,12 @@ export const ENV = {
     TELEGRAM_WEBHOOK_PATH: process.env.TELEGRAM_WEBHOOK_PATH || '/telegram/webhook',
     TELEGRAM_WEBHOOK_PORT: Number(process.env.TELEGRAM_WEBHOOK_PORT || 3001),
     TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET || '',
+
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+
+    CLIENT_URL: process.env.CLIENT_URL,
     
 };
 
