@@ -65,6 +65,7 @@ export const Features: React.FC = () => {
                         const Icon = f.icon;
                         const isLarge = f.size === 'large';
                         const isFull  = f.size === 'full';
+
                         return (
                             <motion.div
                                 key={f.title}
@@ -74,21 +75,21 @@ export const Features: React.FC = () => {
                                 transition={{ duration: 0.45, delay: i * 0.05, ease }}
                                 className={`relative p-8 bg-fl-surface hover:bg-fl-surface-2 transition-colors duration-200 group cursor-default
                                     ${isLarge ? 'lg:col-span-2' : ''}
-                                    ${isFull  ? 'lg:col-span-3' : ''}
+                                    ${isFull ? 'lg:col-span-3 flex flex-col items-center justify-center text-center min-h-[220px]' : ''}
                                 `}
                             >
-                                <span className="text-[11px] uppercase tracking-[0.06em] text-fl-ink-3 mb-6 block">
+                                <span className={`uppercase tracking-[0.06em] text-fl-ink-3 mb-6 block ${isFull ? 'text-[13px]' : 'text-[11px]'}`}>
                                     {f.label}
                                 </span>
 
-                                <div className="w-10 h-10 rounded-lg border border-fl-line bg-fl-base flex items-center justify-center mb-5 group-hover:border-fl-accent/40 transition-colors">
-                                    <Icon className="w-5 h-5 text-fl-ink-2 group-hover:text-fl-accent transition-colors" />
+                                <div className={`rounded-lg border border-fl-line bg-fl-base flex items-center justify-center mb-5 group-hover:border-fl-accent/40 transition-colors ${isFull ? 'w-12 h-12' : 'w-10 h-10'}`}>
+                                    <Icon className={`text-fl-ink-2 group-hover:text-fl-accent transition-colors ${isFull ? 'w-6 h-6' : 'w-5 h-5'}`} />
                                 </div>
 
-                                <h3 className="text-[17px] font-normal tracking-factory-nav text-fl-ink mb-3">
+                                <h3 className={`font-normal tracking-factory-nav text-fl-ink mb-3 ${isFull ? 'text-[22px]' : 'text-[17px]'}`}>
                                     {f.title}
                                 </h3>
-                                <p className="text-[14px] text-fl-ink-3 leading-relaxed">
+                                <p className={`text-fl-ink-3 leading-relaxed ${isFull ? 'text-[16px] max-w-[480px]' : 'text-[14px]'}`}>
                                     {f.description}
                                 </p>
 
