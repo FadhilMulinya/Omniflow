@@ -12,7 +12,6 @@ import { Faq } from '@/components/landing/faq';
 import { Features } from '@/components/landing/features';
 import { Footer } from '@/components/landing/footer';
 import { Hero } from '@/components/landing/hero';
-import { HowItWorks } from '@/components/landing/how-it-works';
 import { Navigation } from '@/components/landing/navigation';
 import { Partners } from '@/components/landing/partners';
 import { Testimonials } from '@/components/landing/testimonials';
@@ -41,7 +40,6 @@ export function LandingPage() {
         <Hero handleAnchorClick={handleAnchorClick} onStartBuilder={() => setIsBuilderOpen(true)} />
         <Partners />
         <Features />
-        <HowItWorks />
         <Testimonials
           testimonials={testimonials}
           currentTestimonial={currentTestimonial}

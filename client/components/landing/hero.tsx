@@ -50,7 +50,7 @@ export const Hero: React.FC<HeroProps> = ({ handleAnchorClick, onStartBuilder })
             className="flex items-center gap-2 mb-10"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-fl-accent" />
-            <span className="label-factory">Agent-Native Visual Agent Builder</span>
+            <span className="label-factory">Automate what happens to your money</span>
           </motion.div>
 
           {/* Main heading */}

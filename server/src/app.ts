@@ -19,15 +19,7 @@ export async function buildApp() {
   const app = Fastify({ logger: true });
 
   app.register(cors, {
-    origin: (origin, cb) => {
-      // In development, all origins are allowed.
-      // We reflect the request origin to satisfy credentials: true requirement.
-      if (ENV.NODE_ENV !== 'production' || !origin || ENV.ALLOWED_ORIGINS.includes(origin)) {
-        cb(null, true);
-        return;
-      }
-      cb(new Error('Not allowed by CORS'), false);
-    },
+    origin: ['http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [

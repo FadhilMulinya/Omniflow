@@ -10,25 +10,29 @@ const ease = landingEase;
 
 const features = [
     {
-        icon: MousePointerClick, label: '01', title: 'Drag-and-Drop Agent Builder',
-        description: 'Build complex AI agents visually. Define logic, and watch agents come alive — no engineering background needed.',
+        icon: MousePointerClick, label: '01', title: 'Automatic Money Actions',
+        description: 'When money arrives, it instantly follows your rules  no manual overhead needed.',
         size: 'large'
     },
     {
-        icon: Plug, label: '02', title: '100+ Integrations',
-        description: 'Slack, Salesforce, Google Workspace, Zapier, and more. Connect everything seamlessly.', size: 'normal'
+        icon: Plug, label: '02', title: 'Smart Fund Splitting',
+        description: 'Split incoming funds across accounts, wallets, or protocols based on custom rules.', size: 'normal'
     },
     {
-        icon: Zap, label: '04', title: 'Real-time Testing',
-        description: 'Iterate instantly. Debug, tweak, and validate your agent before pushing to production.', size: 'normal'
+        icon: LayoutTemplate, label: '03', title: 'Always in Control',
+        description: 'You decide the rules. You can change or stop them anytime.', size: 'normal'
     },
     {
-        icon: ShieldCheck, label: '05', title: 'Enterprise Security',
-        description: 'End-to-end encryption, RBAC, SOC 2 compliance, and audit logs out of the box.', size: 'normal'
+        icon: Zap, label: '04', title: 'Social Notifications',
+        description: 'Get notified on your preffered network when your wallet does anything.', size: 'normal'
+    },
+    {
+        icon: ShieldCheck, label: '05', title: 'Live Activity Updates',
+        description: 'See exactly what happened to your money, clearly and in real time.', size: 'normal'
     },
     {
         icon: BarChart3, label: '06', title: 'Deep Analytics',
-        description: 'Track every execution. Understand performance trends and optimize automatically.', size: 'normal'
+        description: 'Track every execution. Understand performance trends and optimize automatically.', size: 'full'
     },
 ];
 
@@ -45,12 +49,12 @@ export const Features: React.FC = () => {
                         <div>
                             <p className="label-factory mb-4">Capabilities</p>
                             <h2 className="text-[40px] md:text-[52px] font-normal tracking-factory-h2 leading-none text-fl-ink max-w-[480px]">
-                                Everything you need to ship
+                                Everything you need to automate money in real time
                             </h2>
                         </div>
                         <p className="text-[15px] text-fl-ink-2 leading-relaxed max-w-[380px]">
-                            A complete platform to build, test, and deploy intelligent AI agents
-                            without writing a single line of code.
+                            A real-time system that reacts to incoming funds and executes financial actions instantly
+                            no manual steps required.
                         </p>
                     </div>
                 </div>
@@ -60,6 +64,8 @@ export const Features: React.FC = () => {
                     {features.map((f, i) => {
                         const Icon = f.icon;
                         const isLarge = f.size === 'large';
+                        const isFull  = f.size === 'full';
+
                         return (
                             <motion.div
                                 key={f.title}
@@ -67,20 +73,23 @@ export const Features: React.FC = () => {
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true, margin: '-60px' }}
                                 transition={{ duration: 0.45, delay: i * 0.05, ease }}
-                                className={`relative p-8 bg-fl-surface hover:bg-fl-surface-2 transition-colors duration-200 group cursor-default ${isLarge ? 'lg:col-span-2' : ''}`}
+                                className={`relative p-8 bg-fl-surface hover:bg-fl-surface-2 transition-colors duration-200 group cursor-default
+                                    ${isLarge ? 'lg:col-span-2' : ''}
+                                    ${isFull ? 'lg:col-span-3 flex flex-col items-center justify-center text-center min-h-[220px]' : ''}
+                                `}
                             >
-                                <span className="text-[11px] uppercase tracking-[0.06em] text-fl-ink-3 mb-6 block">
+                                <span className={`uppercase tracking-[0.06em] text-fl-ink-3 mb-6 block ${isFull ? 'text-[13px]' : 'text-[11px]'}`}>
                                     {f.label}
                                 </span>
 
-                                <div className="w-10 h-10 rounded-lg border border-fl-line bg-fl-base flex items-center justify-center mb-5 group-hover:border-fl-accent/40 transition-colors">
-                                    <Icon className="w-5 h-5 text-fl-ink-2 group-hover:text-fl-accent transition-colors" />
+                                <div className={`rounded-lg border border-fl-line bg-fl-base flex items-center justify-center mb-5 group-hover:border-fl-accent/40 transition-colors ${isFull ? 'w-12 h-12' : 'w-10 h-10'}`}>
+                                    <Icon className={`text-fl-ink-2 group-hover:text-fl-accent transition-colors ${isFull ? 'w-6 h-6' : 'w-5 h-5'}`} />
                                 </div>
 
-                                <h3 className="text-[17px] font-normal tracking-factory-nav text-fl-ink mb-3">
+                                <h3 className={`font-normal tracking-factory-nav text-fl-ink mb-3 ${isFull ? 'text-[22px]' : 'text-[17px]'}`}>
                                     {f.title}
                                 </h3>
-                                <p className="text-[14px] text-fl-ink-3 leading-relaxed">
+                                <p className={`text-fl-ink-3 leading-relaxed ${isFull ? 'text-[16px] max-w-[480px]' : 'text-[14px]'}`}>
                                     {f.description}
                                 </p>
 

@@ -9,6 +9,9 @@ export function middleware(request: NextRequest) {
     const isProtectedRoute =
         request.nextUrl.pathname.startsWith('/dashboard');
 
+    /* 
+    // Commented out to allow client-side AuthGuard to handle it, 
+    // as middleware cannot see cross-domain cookies during development.
     if (isProtectedRoute && !token) {
         const url = request.nextUrl.clone();
         url.pathname = '/signin';
@@ -16,6 +19,7 @@ export function middleware(request: NextRequest) {
         url.searchParams.set('from', request.nextUrl.pathname);
         return NextResponse.redirect(url);
     }
+    */
 
     if (isAuthPage && token) {
         const url = request.nextUrl.clone();
