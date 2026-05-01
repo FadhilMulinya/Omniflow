@@ -1,5 +1,5 @@
 // src/shared/utils/ckb-validator.ts
-import * as crypto from "crypto";
+
 import * as cccModule from '@ckb-ccc/core';
 // import { ccc as cccCore } from "@ckb-ccc/core";
 
@@ -7,14 +7,7 @@ import * as cccModule from '@ckb-ccc/core';
 export const ccc = (cccModule as any).default || cccModule;
 export const cccClient = new ccc.ClientPublicTestnet();
 
-/**
- * Generates a high-entropy 32-byte hex private key.
- */
-export function generatePrivateKey(): string {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    return "0x" + [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
-}
+
 
 /**
  * Derives lock args from a private key (Blake160 of public key).

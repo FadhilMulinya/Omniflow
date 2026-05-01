@@ -27,7 +27,7 @@ function setAuthCookie(fastify: any, reply: any, userId: string, username: strin
         maxAge: 60 * 60 * 24 * 7,
     };
     if (ENV.COOKIE_DOMAIN) cookieOptions.domain = ENV.COOKIE_DOMAIN;
-    return reply.setCookie('auth_token', token, cookieOptions);
+    return reply.setCookie('token', token, cookieOptions);
 }
 
 function toSafeUserProfile(record: any) {
@@ -328,7 +328,7 @@ export async function authController(fastify: FastifyInstance) {
             },
         },
         async (_request, reply) => reply
-            .setCookie('auth_token', '', {
+            .setCookie('token', '', {
                 path: '/',
                 httpOnly: true,
                 sameSite: 'none',

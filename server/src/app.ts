@@ -19,7 +19,7 @@ export async function buildApp() {
   const app = Fastify({ logger: true });
 
   app.register(cors, {
-    origin: ['http://localhost:3000'],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -38,7 +38,7 @@ export async function buildApp() {
   app.register(fastifyJwt, {
     secret: ENV.JWT_SECRET,
     cookie: {
-      cookieName: 'auth_token',
+      cookieName: 'token',
       signed: false,
     },
   });

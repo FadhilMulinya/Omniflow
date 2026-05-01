@@ -75,7 +75,8 @@ export interface RuntimeEvent<T extends FinancialEventType = FinancialEventType>
   createdAt: number;
 }
 
-export type policyConditionOp = 'eq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in';
+export const POLICY_CONDITION_OPS = ['eq', 'gt', 'gte', 'lt', 'lte', 'in'] as const;
+export type policyConditionOp = typeof POLICY_CONDITION_OPS[number];
 
 export interface PolicyCondition {
   field: string;
@@ -85,105 +86,105 @@ export interface PolicyCondition {
 
 export type PolicyAction =
   | {
-      type: 'ALLOCATE_FUNDS';
-      config: {
-        allocations: Array<
-          | {
-              kind: 'transfer';
-              percentage: number;
-              to: string;
-              asset?: string;
-              chain?: string;
-              label?: string;
-            }
-          | {
-              kind: 'swap';
-              percentage: number;
-              toAsset: string;
-              fromAsset?: string;
-              chain?: string;
-              strategy?: string;
-              label?: string;
-            }
-          | {
-              kind: 'retain';
-              percentage: number;
-              label?: string;
-            }
-        >;
-      };
-    }
-  | {
-      type: 'TRANSFER_FUNDS';
-      config: {
-        to: string;
-        amount: string;
-        asset: string;
-        chain: string;
-        label?: string;
-      };
-    }
-  | {
-      type: 'SWAP_FUNDS';
-      config: {
-        amount: string;
-        fromAsset: string;
-        toAsset: string;
-        chain: string;
-        strategy?: string;
-        label?: string;
-      };
-    }
-  | {
-      type: 'INVEST_FUNDS';
-      config: {
-        strategy: string;
-        amount: string;
-        asset: string;
-        chain: string;
-        label?: string;
-      };
+    type: 'ALLOCATE_FUNDS';
+    config: {
+      allocations: Array<
+        | {
+          kind: 'transfer';
+          percentage: number;
+          to: string;
+          asset?: string;
+          chain?: string;
+          label?: string;
+        }
+        | {
+          kind: 'swap';
+          percentage: number;
+          toAsset: string;
+          fromAsset?: string;
+          chain?: string;
+          strategy?: string;
+          label?: string;
+        }
+        | {
+          kind: 'retain';
+          percentage: number;
+          label?: string;
+        }
+      >;
     };
+  }
+  | {
+    type: 'TRANSFER_FUNDS';
+    config: {
+      to: string;
+      amount: string;
+      asset: string;
+      chain: string;
+      label?: string;
+    };
+  }
+  | {
+    type: 'SWAP_FUNDS';
+    config: {
+      amount: string;
+      fromAsset: string;
+      toAsset: string;
+      chain: string;
+      strategy?: string;
+      label?: string;
+    };
+  }
+  | {
+    type: 'INVEST_FUNDS';
+    config: {
+      strategy: string;
+      amount: string;
+      asset: string;
+      chain: string;
+      label?: string;
+    };
+  };
 
 export type ExecutableAction =
   | {
-      type: 'TRANSFER_FUNDS';
-      config: {
-        to: string;
-        amount: string;
-        asset: string;
-        chain: string;
-        label?: string;
-      };
-    }
-  | {
-      type: 'SWAP_FUNDS';
-      config: {
-        amount: string;
-        fromAsset: string;
-        toAsset: string;
-        chain: string;
-        strategy?: string;
-        label?: string;
-      };
-    }
-  | {
-      type: 'INVEST_FUNDS';
-      config: {
-        strategy: string;
-        amount: string;
-        asset: string;
-        chain: string;
-        label?: string;
-      };
-    }
-  | {
-      type: 'RETAIN_FUNDS';
-      config: {
-        amount: string;
-        label?: string;
-      };
+    type: 'TRANSFER_FUNDS';
+    config: {
+      to: string;
+      amount: string;
+      asset: string;
+      chain: string;
+      label?: string;
     };
+  }
+  | {
+    type: 'SWAP_FUNDS';
+    config: {
+      amount: string;
+      fromAsset: string;
+      toAsset: string;
+      chain: string;
+      strategy?: string;
+      label?: string;
+    };
+  }
+  | {
+    type: 'INVEST_FUNDS';
+    config: {
+      strategy: string;
+      amount: string;
+      asset: string;
+      chain: string;
+      label?: string;
+    };
+  }
+  | {
+    type: 'RETAIN_FUNDS';
+    config: {
+      amount: string;
+      label?: string;
+    };
+  };
 
 export interface MatchedPolicy {
   policyId: string;

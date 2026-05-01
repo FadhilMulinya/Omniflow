@@ -1,6 +1,7 @@
 import { BlockchainTool } from "../../types";
 import { GenerateWalletInput, GenerateWalletSchema } from "./ckb_contracts_tool";
-import { generatePrivateKey, getAddress, generateLockArgs } from "./ckb_wallet_tool";
+import { getAddress, generateLockArgs } from "./ckb_wallet_tool";
+import { generatePrivateKey } from "../../generate-key";
 
 /**
  * blockchain.ckb.wallet.generate_wallet
